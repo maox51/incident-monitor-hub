@@ -1,0 +1,367 @@
+
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Download, Filter, Eye, Image as ImageIcon } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+
+const ReportesView = () => {
+  const [filtros, setFiltros] = useState({
+    fechaInicio: "",
+    fechaFin: "",
+    area_id: "",
+    clasificacion_id: "",
+    estado: "",
+    prioridad: ""
+  });
+
+  // Obtener áreas para el filtro
+  const { data: areas } = useQuery({
+    queryKey: ["areas"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("areas")
+        .select("*")
+        .eq("activo", true)
+        .order("nombre");
+      return data || [];
+    },
+  });
+
+  // Obtener clasificaciones para el filtro
+  const { data: clasificaciones } = useQuery({
+    queryKey: ["clasificaciones"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("clasificaciones")
+        .select("*")
+        .eq("activo", true)
+        .order("nombre");
+      return data || [];
+    },
+  });
+
+  // Obtener incidencias filtradas
+  const { data: incidencias, isLoading, refetch } = useQuery({
+    queryKey: ["incidencias-filtradas", filtros],
+    queryFn: async () => {
+      console.log("Fetching filtered incidencias with filters:", filtros);
+      
+      let query = supabase
+        .from("incidencias")
+        .select(`
+          *,
+          areas(nombre, descripcion),
+          clasificaciones(nombre, color),
+          imagenes_incidencias(id, url_imagen, nombre_archivo)
+        `)
+        .order("created_at", { ascending: false });
+
+      // Aplicar filtros
+      if (filtros.fechaInicio) {
+        query = query.gte("fecha_incidencia", filtros.fechaInicio);
+      }
+      if (filtros.fechaFin) {
+        query = query.lte("fecha_incidencia", filtros.fechaFin);
+      }
+      if (filtros.area_id) {
+        query = query.eq("area_id", filtros.area_id);
+      }
+      if (filtros.clasificacion_id) {
+        query = query.eq("clasificacion_id", filtros.clasificacion_id);
+      }
+      if (filtros.estado) {
+        query = query.eq("estado", filtros.estado);
+      }
+      if (filtros.prioridad) {
+        query = query.eq("prioridad", filtros.prioridad);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("Error fetching incidencias:", error);
+        throw error;
+      }
+
+      console.log("Filtered incidencias:", data);
+      return data || [];
+    },
+  });
+
+  const handleFiltroChange = (campo: string, valor: string) => {
+    setFiltros(prev => ({ ...prev, [campo]: valor }));
+  };
+
+  const limpiarFiltros = () => {
+    setFiltros({
+      fechaInicio: "",
+      fechaFin: "",
+      area_id: "",
+      clasificacion_id: "",
+      estado: "",
+      prioridad: ""
+    });
+  };
+
+  const exportarReporte = () => {
+    if (!incidencias || incidencias.length === 0) return;
+
+    const csv = [
+      ["Título", "Área", "Clasificación", "Estado", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
+      ...incidencias.map(inc => [
+        `"${inc.titulo}"`,
+        `"${inc.areas?.nombre || ''}"`,
+        `"${inc.clasificaciones?.nombre || ''}"`,
+        `"${inc.estado}"`,
+        `"${inc.prioridad}"`,
+        `"${inc.reportado_por}"`,
+        `"${format(new Date(inc.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}"`,
+        `"${inc.descripcion}"`
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `reporte_incidencias_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getPrioridadColor = (prioridad: string) => {
+    switch (prioridad) {
+      case "critica": return "bg-red-500";
+      case "alta": return "bg-orange-500";
+      case "media": return "bg-yellow-500";
+      case "baja": return "bg-green-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case "abierta": return "bg-red-100 text-red-800";
+      case "en_proceso": return "bg-blue-100 text-blue-800";
+      case "resuelta": return "bg-green-100 text-green-800";
+      case "cerrada": return "bg-gray-100 text-gray-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Panel de filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros de Búsqueda
+          </CardTitle>
+          <CardDescription>
+            Utiliza los filtros para generar reportes específicos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fechaInicio">Fecha Inicio</Label>
+              <Input
+                id="fechaInicio"
+                type="date"
+                value={filtros.fechaInicio}
+                onChange={(e) => handleFiltroChange("fechaInicio", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fechaFin">Fecha Fin</Label>
+              <Input
+                id="fechaFin"
+                type="date"
+                value={filtros.fechaFin}
+                onChange={(e) => handleFiltroChange("fechaFin", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Área</Label>
+              <Select value={filtros.area_id} onValueChange={(value) => handleFiltroChange("area_id", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las áreas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas las áreas</SelectItem>
+                  {areas?.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Clasificación</Label>
+              <Select value={filtros.clasificacion_id} onValueChange={(value) => handleFiltroChange("clasificacion_id", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas</SelectItem>
+                  {clasificaciones?.map((clasificacion) => (
+                    <SelectItem key={clasificacion.id} value={clasificacion.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: clasificacion.color }}
+                        />
+                        {clasificacion.nombre}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select value={filtros.estado} onValueChange={(value) => handleFiltroChange("estado", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="abierta">Abierta</SelectItem>
+                  <SelectItem value="en_proceso">En Proceso</SelectItem>
+                  <SelectItem value="resuelta">Resuelta</SelectItem>
+                  <SelectItem value="cerrada">Cerrada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Prioridad</Label>
+              <Select value={filtros.prioridad} onValueChange={(value) => handleFiltroChange("prioridad", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="baja">Baja</SelectItem>
+                  <SelectItem value="media">Media</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="critica">Crítica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <Button onClick={limpiarFiltros} variant="outline">
+              Limpiar Filtros
+            </Button>
+            <Button onClick={exportarReporte} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resultados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Resultados del Reporte</span>
+            <Badge variant="secondary">
+              {incidencias?.length || 0} incidencias encontradas
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : incidencias && incidencias.length > 0 ? (
+            <div className="space-y-4">
+              {incidencias.map((incidencia) => (
+                <Card key={incidencia.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2">{incidencia.titulo}</h3>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Badge variant="outline">
+                            {incidencia.areas?.nombre}
+                          </Badge>
+                          <Badge 
+                            variant="outline"
+                            style={{ 
+                              borderColor: incidencia.clasificaciones?.color,
+                              color: incidencia.clasificaciones?.color 
+                            }}
+                          >
+                            {incidencia.clasificaciones?.nombre}
+                          </Badge>
+                          <Badge className={getEstadoColor(incidencia.estado)}>
+                            {incidencia.estado.replace('_', ' ')}
+                          </Badge>
+                          <Badge className={`text-white ${getPrioridadColor(incidencia.prioridad)}`}>
+                            {incidencia.prioridad}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right text-sm text-gray-500">
+                        <p>{format(new Date(incidencia.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
+                        <p>Por: {incidencia.reportado_por}</p>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-700 mb-3">{incidencia.descripcion}</p>
+                    
+                    {incidencia.observaciones && (
+                      <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                        <strong>Observaciones:</strong> {incidencia.observaciones}
+                      </div>
+                    )}
+
+                    {incidencia.imagenes_incidencias && incidencia.imagenes_incidencias.length > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>{incidencia.imagenes_incidencias.length} imagen(es) adjunta(s)</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Eye className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-gray-600">No se encontraron incidencias con los filtros aplicados</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ReportesView;

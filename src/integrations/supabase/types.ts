@@ -9,7 +9,167 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      areas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clasificaciones: {
+        Row: {
+          activo: boolean
+          color: string | null
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          color?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          color?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      imagenes_incidencias: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          id: string
+          incidencia_id: string
+          nombre_archivo: string
+          tamaño_bytes: number | null
+          tipo_archivo: string | null
+          url_imagen: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          incidencia_id: string
+          nombre_archivo: string
+          tamaño_bytes?: number | null
+          tipo_archivo?: string | null
+          url_imagen: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          incidencia_id?: string
+          nombre_archivo?: string
+          tamaño_bytes?: number | null
+          tipo_archivo?: string | null
+          url_imagen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagenes_incidencias_incidencia_id_fkey"
+            columns: ["incidencia_id"]
+            isOneToOne: false
+            referencedRelation: "incidencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidencias: {
+        Row: {
+          area_id: string
+          clasificacion_id: string
+          created_at: string
+          descripcion: string
+          estado: string
+          fecha_incidencia: string
+          fecha_resolucion: string | null
+          id: string
+          observaciones: string | null
+          prioridad: string
+          reportado_por: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          area_id: string
+          clasificacion_id: string
+          created_at?: string
+          descripcion: string
+          estado?: string
+          fecha_incidencia?: string
+          fecha_resolucion?: string | null
+          id?: string
+          observaciones?: string | null
+          prioridad?: string
+          reportado_por: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          area_id?: string
+          clasificacion_id?: string
+          created_at?: string
+          descripcion?: string
+          estado?: string
+          fecha_incidencia?: string
+          fecha_resolucion?: string | null
+          id?: string
+          observaciones?: string | null
+          prioridad?: string
+          reportado_por?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidencias_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidencias_clasificacion_id_fkey"
+            columns: ["clasificacion_id"]
+            isOneToOne: false
+            referencedRelation: "clasificaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
