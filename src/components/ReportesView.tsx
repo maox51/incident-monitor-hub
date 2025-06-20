@@ -16,10 +16,10 @@ const ReportesView = () => {
   const [filtros, setFiltros] = useState({
     fechaInicio: "",
     fechaFin: "",
-    area_id: "",
-    clasificacion_id: "",
-    estado: "",
-    prioridad: ""
+    area_id: "all",
+    clasificacion_id: "all",
+    estado: "all",
+    prioridad: "all"
   });
 
   // Obtener áreas para el filtro
@@ -71,16 +71,16 @@ const ReportesView = () => {
       if (filtros.fechaFin) {
         query = query.lte("fecha_incidencia", filtros.fechaFin);
       }
-      if (filtros.area_id) {
+      if (filtros.area_id && filtros.area_id !== "all") {
         query = query.eq("area_id", filtros.area_id);
       }
-      if (filtros.clasificacion_id) {
+      if (filtros.clasificacion_id && filtros.clasificacion_id !== "all") {
         query = query.eq("clasificacion_id", filtros.clasificacion_id);
       }
-      if (filtros.estado) {
+      if (filtros.estado && filtros.estado !== "all") {
         query = query.eq("estado", filtros.estado);
       }
-      if (filtros.prioridad) {
+      if (filtros.prioridad && filtros.prioridad !== "all") {
         query = query.eq("prioridad", filtros.prioridad);
       }
 
@@ -104,10 +104,10 @@ const ReportesView = () => {
     setFiltros({
       fechaInicio: "",
       fechaFin: "",
-      area_id: "",
-      clasificacion_id: "",
-      estado: "",
-      prioridad: ""
+      area_id: "all",
+      clasificacion_id: "all",
+      estado: "all",
+      prioridad: "all"
     });
   };
 
@@ -201,7 +201,7 @@ const ReportesView = () => {
                   <SelectValue placeholder="Todas las áreas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las áreas</SelectItem>
+                  <SelectItem value="all">Todas las áreas</SelectItem>
                   {areas?.map((area) => (
                     <SelectItem key={area.id} value={area.id}>
                       {area.nombre}
@@ -218,7 +218,7 @@ const ReportesView = () => {
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {clasificaciones?.map((clasificacion) => (
                     <SelectItem key={clasificacion.id} value={clasificacion.id}>
                       <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ const ReportesView = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="abierta">Abierta</SelectItem>
                   <SelectItem value="en_proceso">En Proceso</SelectItem>
                   <SelectItem value="resuelta">Resuelta</SelectItem>
@@ -257,7 +257,7 @@ const ReportesView = () => {
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="baja">Baja</SelectItem>
                   <SelectItem value="media">Media</SelectItem>
                   <SelectItem value="alta">Alta</SelectItem>
