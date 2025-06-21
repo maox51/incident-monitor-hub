@@ -113,9 +113,7 @@ export type Database = {
           clasificacion_id: string
           created_at: string
           descripcion: string
-          estado: string
           fecha_incidencia: string
-          fecha_resolucion: string | null
           id: string
           observaciones: string | null
           prioridad: string
@@ -128,9 +126,7 @@ export type Database = {
           clasificacion_id: string
           created_at?: string
           descripcion: string
-          estado?: string
           fecha_incidencia?: string
-          fecha_resolucion?: string | null
           id?: string
           observaciones?: string | null
           prioridad?: string
@@ -143,9 +139,7 @@ export type Database = {
           clasificacion_id?: string
           created_at?: string
           descripcion?: string
-          estado?: string
           fecha_incidencia?: string
-          fecha_resolucion?: string | null
           id?: string
           observaciones?: string | null
           prioridad?: string

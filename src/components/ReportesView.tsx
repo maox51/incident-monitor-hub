@@ -20,7 +20,6 @@ const ReportesView = () => {
     fechaFin: "",
     area_id: "all",
     clasificacion_id: "all",
-    estado: "all",
     prioridad: "all"
   });
 
@@ -79,9 +78,6 @@ const ReportesView = () => {
       if (filtros.clasificacion_id && filtros.clasificacion_id !== "all") {
         query = query.eq("clasificacion_id", filtros.clasificacion_id);
       }
-      if (filtros.estado && filtros.estado !== "all") {
-        query = query.eq("estado", filtros.estado);
-      }
       if (filtros.prioridad && filtros.prioridad !== "all") {
         query = query.eq("prioridad", filtros.prioridad);
       }
@@ -108,7 +104,6 @@ const ReportesView = () => {
       fechaFin: "",
       area_id: "all",
       clasificacion_id: "all",
-      estado: "all",
       prioridad: "all"
     });
   };
@@ -120,12 +115,11 @@ const ReportesView = () => {
     }
 
     const csv = [
-      ["Título", "Área", "Clasificación", "Estado", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
+      ["Título", "Área", "Clasificación", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
       ...incidencias.map(inc => [
         `"${inc.titulo}"`,
         `"${inc.areas?.nombre || ''}"`,
         `"${inc.clasificaciones?.nombre || ''}"`,
-        `"${inc.estado}"`,
         `"${inc.prioridad}"`,
         `"${inc.reportado_por}"`,
         `"${format(new Date(inc.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}"`,
@@ -171,16 +165,6 @@ const ReportesView = () => {
     }
   };
 
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case "abierta": return "bg-red-100 text-red-800";
-      case "en_proceso": return "bg-blue-100 text-blue-800";
-      case "resuelta": return "bg-green-100 text-green-800";
-      case "cerrada": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Panel de filtros */}
@@ -191,11 +175,11 @@ const ReportesView = () => {
             Filtros de Búsqueda
           </CardTitle>
           <CardDescription>
-            Utiliza los filtros para generar reportes específicos
+            Utiliza los filtros para generar reportes específicos de incidencias del sistema de monitoreo
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="fechaInicio">Fecha Inicio</Label>
               <Input
@@ -234,7 +218,7 @@ const ReportesView = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Clasificación</Label>
+              <Label>Tipo de Incidencia</Label>
               <Select value={filtros.clasificacion_id} onValueChange={(value) => handleFiltroChange("clasificacion_id", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
@@ -252,22 +236,6 @@ const ReportesView = () => {
                       </div>
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Estado</Label>
-              <Select value={filtros.estado} onValueChange={(value) => handleFiltroChange("estado", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="abierta">Abierta</SelectItem>
-                  <SelectItem value="en_proceso">En Proceso</SelectItem>
-                  <SelectItem value="resuelta">Resuelta</SelectItem>
-                  <SelectItem value="cerrada">Cerrada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -309,7 +277,7 @@ const ReportesView = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Resultados del Reporte</span>
+            <span>Reporte de Incidencias - Monitoreo de Casino</span>
             <Badge variant="secondary">
               {incidencias?.length || 0} incidencias encontradas
             </Badge>
@@ -345,9 +313,6 @@ const ReportesView = () => {
                             }}
                           >
                             {incidencia.clasificaciones?.nombre}
-                          </Badge>
-                          <Badge className={getEstadoColor(incidencia.estado)}>
-                            {incidencia.estado.replace('_', ' ')}
                           </Badge>
                           <Badge className={`text-white ${getPrioridadColor(incidencia.prioridad)}`}>
                             {incidencia.prioridad}
