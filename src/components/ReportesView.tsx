@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Download, Filter, Eye, Image as ImageIcon } from "lucide-react";
+import { Calendar, Download, Filter, Eye, Image as ImageIcon, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { exportToPDF } from "@/utils/pdfExport";
+import { toast } from "sonner";
 
 const ReportesView = () => {
   const [filtros, setFiltros] = useState({
@@ -111,8 +112,11 @@ const ReportesView = () => {
     });
   };
 
-  const exportarReporte = () => {
-    if (!incidencias || incidencias.length === 0) return;
+  const exportarCSV = () => {
+    if (!incidencias || incidencias.length === 0) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
 
     const csv = [
       ["Título", "Área", "Clasificación", "Estado", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
@@ -137,6 +141,23 @@ const ReportesView = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    toast.success("Reporte CSV exportado correctamente");
+  };
+
+  const exportarPDF = () => {
+    if (!incidencias || incidencias.length === 0) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
+
+    try {
+      exportToPDF(incidencias, filtros);
+      toast.success("Reporte PDF exportado correctamente");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Error al exportar el PDF");
+    }
   };
 
   const getPrioridadColor = (prioridad: string) => {
@@ -221,15 +242,13 @@ const ReportesView = () => {
                   <SelectItem value="all">Todas</SelectItem>
                   {clasificaciones?.map((clasificacion) => (
                     <SelectItem key={clasificacion.id} value={clasificacion.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: clasificacion.color }}
-                        />
-                        {clasificacion.nombre}
-                      </div>
-                    </SelectItem>
-                  ))}
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: clasificacion.color }}
+                      />
+                      {clasificacion.nombre}
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -271,9 +290,13 @@ const ReportesView = () => {
             <Button onClick={limpiarFiltros} variant="outline">
               Limpiar Filtros
             </Button>
-            <Button onClick={exportarReporte} className="flex items-center gap-2">
+            <Button onClick={exportarCSV} variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Exportar CSV
+            </Button>
+            <Button onClick={exportarPDF} className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Exportar PDF
             </Button>
           </div>
         </CardContent>
