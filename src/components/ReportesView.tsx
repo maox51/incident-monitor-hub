@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -242,13 +243,15 @@ const ReportesView = () => {
                   <SelectItem value="all">Todas</SelectItem>
                   {clasificaciones?.map((clasificacion) => (
                     <SelectItem key={clasificacion.id} value={clasificacion.id}>
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: clasificacion.color }}
-                      />
-                      {clasificacion.nombre}
-                    </div>
-                  </SelectItem>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: clasificacion.color }}
+                        />
+                        {clasificacion.nombre}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
