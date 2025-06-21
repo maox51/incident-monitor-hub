@@ -76,6 +76,20 @@ const IncidenciaForm = () => {
       // Subir imágenes si las hay
       if (imagenes.length > 0) {
         console.log("Uploading images...");
+        
+        // Crear bucket si no existe
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === 'incidencias-images');
+        
+        if (!bucketExists) {
+          const { error: bucketError } = await supabase.storage.createBucket('incidencias-images', {
+            public: true
+          });
+          if (bucketError) {
+            console.error("Error creating bucket:", bucketError);
+          }
+        }
+        
         for (let i = 0; i < imagenes.length; i++) {
           const archivo = imagenes[i];
           const nombreArchivo = `${incidencia.id}_${Date.now()}_${archivo.name}`;
@@ -132,9 +146,6 @@ const IncidenciaForm = () => {
       });
       setImagenes([]);
       setPreviewUrls([]);
-      
-      // Actualizar cache
-      queryClient.invalidateQueries({ queryKey: ["dashboard-estadisticas"] });
     },
     onError: (error) => {
       console.error("Error creating incidencia:", error);
@@ -191,7 +202,7 @@ const IncidenciaForm = () => {
       <CardHeader>
         <CardTitle>Registrar Nueva Incidencia</CardTitle>
         <CardDescription>
-          Completa el formulario para registrar una nueva incidencia en el sistema
+          Completa el formulario para registrar una nueva incidencia en el sistema de monitoreo
         </CardDescription>
       </CardHeader>
       <CardContent>
