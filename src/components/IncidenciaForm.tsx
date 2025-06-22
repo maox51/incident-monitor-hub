@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,26 +89,29 @@ const IncidenciaForm = () => {
   const crearIncidencia = useMutation({
     mutationFn: async (datos: any) => {
       console.log("Creating incidencia with data:", datos);
-      
-      // Verificar que el usuario esté autenticado
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) {
-        throw new Error("Usuario no autenticado");
-      }
-      
-      console.log("Current user:", currentUser.id);
+      console.log("Current user:", user?.id);
       console.log("User profile:", profile);
       
-      // Verificar que el usuario tenga permisos (monitor o admin)
-      if (!profile || (profile.role !== 'monitor' && profile.role !== 'admin')) {
-        throw new Error("No tienes permisos para crear incidencias");
+      // Verificar autenticación y permisos antes de intentar crear
+      if (!user) {
+        throw new Error("Debes iniciar sesión para crear incidencias");
       }
       
-      // Crear la incidencia con fecha actual
+      if (!profile) {
+        throw new Error("No se pudo cargar el perfil de usuario");
+      }
+      
+      if (profile.role !== 'monitor' && profile.role !== 'admin') {
+        throw new Error("No tienes permisos para crear incidencias. Solo monitores y administradores pueden crear incidencias.");
+      }
+      
+      // Crear la incidencia con fecha actual y verificación de permisos
       const incidenciaData = {
         ...datos,
         fecha_incidencia: new Date().toISOString()
       };
+      
+      console.log("Attempting to insert incidencia:", incidenciaData);
       
       const { data: incidencia, error } = await supabase
         .from("incidencias")
@@ -123,10 +125,10 @@ const IncidenciaForm = () => {
 
       if (error) {
         console.error("Error creating incidencia:", error);
-        throw error;
+        throw new Error(`Error al crear la incidencia: ${error.message}`);
       }
 
-      console.log("Incidencia created:", incidencia);
+      console.log("Incidencia created successfully:", incidencia);
 
       // Enviar notificación si es prioridad alta o crítica
       if (incidencia.prioridad === 'alta' || incidencia.prioridad === 'critica') {
@@ -245,7 +247,7 @@ const IncidenciaForm = () => {
       let errorMessage = "Hubo un error al crear la incidencia. Por favor intenta de nuevo.";
       
       if (error.message?.includes("row-level security")) {
-        errorMessage = "No tienes permisos para crear incidencias. Contacta al administrador.";
+        errorMessage = "Error de permisos: No puedes crear incidencias. Contacta al administrador.";
       } else if (error.message?.includes("not authenticated")) {
         errorMessage = "Debes iniciar sesión para crear incidencias.";
       } else if (error.message?.includes("No tienes permisos")) {
@@ -318,6 +320,15 @@ const IncidenciaForm = () => {
       toast({
         title: "Error de autenticación",
         description: "Debes iniciar sesión para crear incidencias.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (profile.role !== 'monitor' && profile.role !== 'admin') {
+      toast({
+        title: "Sin permisos",
+        description: "Solo monitores y administradores pueden crear incidencias.",
         variant: "destructive",
       });
       return;
