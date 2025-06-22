@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const IncidenciaForm = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
   
   const [formData, setFormData] = useState({
     titulo: "",
@@ -54,18 +56,54 @@ const IncidenciaForm = () => {
     },
   });
 
+  // Función para enviar notificación
+  const sendNotification = async (incidenciaData: any, areaData: any, clasificacionData: any) => {
+    try {
+      console.log("Attempting to send notification for priority:", incidenciaData.prioridad);
+      
+      if (incidenciaData.prioridad === 'alta' || incidenciaData.prioridad === 'critica') {
+        const { data, error } = await supabase.functions.invoke('send-notification', {
+          body: {
+            incidencia_id: incidenciaData.id,
+            titulo: incidenciaData.titulo,
+            descripcion: incidenciaData.descripcion,
+            prioridad: incidenciaData.prioridad,
+            area_nombre: areaData?.nombre || 'Sin área',
+            clasificacion_nombre: clasificacionData?.nombre || 'Sin clasificación',
+            reportado_por: incidenciaData.reportado_por
+          }
+        });
+
+        if (error) {
+          console.error("Error sending notification:", error);
+        } else {
+          console.log("Notification sent successfully:", data);
+        }
+      }
+    } catch (error) {
+      console.error("Error in sendNotification:", error);
+      // No mostrar error al usuario ya que la notificación es secundaria
+    }
+  };
+
   // Mutación para crear incidencia
   const crearIncidencia = useMutation({
     mutationFn: async (datos: any) => {
       console.log("Creating incidencia with data:", datos);
       
       // Verificar que el usuario esté autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
         throw new Error("Usuario no autenticado");
       }
       
-      console.log("User authenticated:", user.id);
+      console.log("Current user:", currentUser.id);
+      console.log("User profile:", profile);
+      
+      // Verificar que el usuario tenga permisos (monitor o admin)
+      if (!profile || (profile.role !== 'monitor' && profile.role !== 'admin')) {
+        throw new Error("No tienes permisos para crear incidencias");
+      }
       
       // Crear la incidencia con fecha actual
       const incidenciaData = {
@@ -76,7 +114,11 @@ const IncidenciaForm = () => {
       const { data: incidencia, error } = await supabase
         .from("incidencias")
         .insert([incidenciaData])
-        .select()
+        .select(`
+          *,
+          areas(id, nombre),
+          clasificaciones(id, nombre)
+        `)
         .single();
 
       if (error) {
@@ -85,6 +127,11 @@ const IncidenciaForm = () => {
       }
 
       console.log("Incidencia created:", incidencia);
+
+      // Enviar notificación si es prioridad alta o crítica
+      if (incidencia.prioridad === 'alta' || incidencia.prioridad === 'critica') {
+        await sendNotification(incidencia, incidencia.areas, incidencia.clasificaciones);
+      }
 
       // Subir imágenes si las hay
       if (imagenes.length > 0) {
@@ -163,10 +210,16 @@ const IncidenciaForm = () => {
 
       return incidencia;
     },
-    onSuccess: () => {
+    onSuccess: (incidencia) => {
+      let successMessage = "La incidencia ha sido registrada exitosamente.";
+      
+      if (incidencia.prioridad === 'alta' || incidencia.prioridad === 'critica') {
+        successMessage += " Se ha enviado una notificación a los administradores debido a la prioridad " + incidencia.prioridad + ".";
+      }
+      
       toast({
         title: "Incidencia creada",
-        description: "La incidencia ha sido registrada exitosamente.",
+        description: successMessage,
       });
       
       // Limpiar formulario
@@ -195,6 +248,8 @@ const IncidenciaForm = () => {
         errorMessage = "No tienes permisos para crear incidencias. Contacta al administrador.";
       } else if (error.message?.includes("not authenticated")) {
         errorMessage = "Debes iniciar sesión para crear incidencias.";
+      } else if (error.message?.includes("No tienes permisos")) {
+        errorMessage = error.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -258,8 +313,45 @@ const IncidenciaForm = () => {
       return;
     }
 
+    // Verificar autenticación antes de enviar
+    if (!user || !profile) {
+      toast({
+        title: "Error de autenticación",
+        description: "Debes iniciar sesión para crear incidencias.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     crearIncidencia.mutate(formData);
   };
+
+  // Mostrar mensaje si el usuario no tiene permisos
+  if (!user || !profile) {
+    return (
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Acceso Restringido</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Debes iniciar sesión para crear incidencias.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (profile.role !== 'monitor' && profile.role !== 'admin') {
+    return (
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Acceso Restringido</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>No tienes permisos para crear incidencias. Solo los monitores y administradores pueden crear incidencias.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="max-w-4xl mx-auto">
