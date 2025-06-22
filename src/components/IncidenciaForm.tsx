@@ -59,10 +59,23 @@ const IncidenciaForm = () => {
     mutationFn: async (datos: any) => {
       console.log("Creating incidencia with data:", datos);
       
-      // Crear la incidencia
+      // Verificar que el usuario esté autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuario no autenticado");
+      }
+      
+      console.log("User authenticated:", user.id);
+      
+      // Crear la incidencia con fecha actual
+      const incidenciaData = {
+        ...datos,
+        fecha_incidencia: new Date().toISOString()
+      };
+      
       const { data: incidencia, error } = await supabase
         .from("incidencias")
-        .insert([datos])
+        .insert([incidenciaData])
         .select()
         .single();
 
@@ -77,36 +90,56 @@ const IncidenciaForm = () => {
       if (imagenes.length > 0) {
         console.log("Uploading images...");
         
-        // Crear bucket si no existe
-        const { data: buckets } = await supabase.storage.listBuckets();
+        // Verificar si el bucket existe, y crearlo si no existe
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        
+        if (bucketsError) {
+          console.error("Error listing buckets:", bucketsError);
+        }
+        
         const bucketExists = buckets?.some(bucket => bucket.name === 'incidencias-images');
         
         if (!bucketExists) {
+          console.log("Creating bucket...");
           const { error: bucketError } = await supabase.storage.createBucket('incidencias-images', {
-            public: true
+            public: true,
+            allowedMimeTypes: ['image/*'],
+            fileSizeLimit: 10485760 // 10MB
           });
           if (bucketError) {
             console.error("Error creating bucket:", bucketError);
+            // No lanzar error aquí, intentar continuar sin el bucket
           }
         }
         
+        // Intentar subir imágenes
         for (let i = 0; i < imagenes.length; i++) {
           const archivo = imagenes[i];
-          const nombreArchivo = `${incidencia.id}_${Date.now()}_${archivo.name}`;
+          const nombreArchivo = `${incidencia.id}_${Date.now()}_${i}_${archivo.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
           
-          const { error: uploadError } = await supabase.storage
+          console.log(`Uploading image ${i + 1}/${imagenes.length}:`, nombreArchivo);
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from("incidencias-images")
-            .upload(nombreArchivo, archivo);
+            .upload(nombreArchivo, archivo, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
           if (uploadError) {
             console.error("Error uploading image:", uploadError);
-            throw uploadError;
+            // Continuar con las demás imágenes si una falla
+            continue;
           }
+
+          console.log("Image uploaded successfully:", uploadData);
 
           // Obtener URL pública
           const { data: urlData } = supabase.storage
             .from("incidencias-images")
             .getPublicUrl(nombreArchivo);
+
+          console.log("Public URL:", urlData.publicUrl);
 
           // Guardar referencia en la base de datos
           const { error: dbError } = await supabase
@@ -121,7 +154,9 @@ const IncidenciaForm = () => {
 
           if (dbError) {
             console.error("Error saving image reference:", dbError);
-            throw dbError;
+            // No lanzar error, continuar con las demás imágenes
+          } else {
+            console.log("Image reference saved successfully");
           }
         }
       }
@@ -146,12 +181,27 @@ const IncidenciaForm = () => {
       });
       setImagenes([]);
       setPreviewUrls([]);
+      
+      // Invalidar queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ["dashboard-estadisticas"] });
+      queryClient.invalidateQueries({ queryKey: ["incidencias"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error creating incidencia:", error);
+      
+      let errorMessage = "Hubo un error al crear la incidencia. Por favor intenta de nuevo.";
+      
+      if (error.message?.includes("row-level security")) {
+        errorMessage = "No tienes permisos para crear incidencias. Contacta al administrador.";
+      } else if (error.message?.includes("not authenticated")) {
+        errorMessage = "Debes iniciar sesión para crear incidencias.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: "Hubo un error al crear la incidencia. Por favor intenta de nuevo.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -165,10 +215,24 @@ const IncidenciaForm = () => {
     const files = event.target.files;
     if (files) {
       const nuevasImagenes = Array.from(files);
-      setImagenes(prev => [...prev, ...nuevasImagenes]);
+      
+      // Validar tamaño de archivos (max 10MB cada uno)
+      const archivosValidos = nuevasImagenes.filter(file => {
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "Archivo muy grande",
+            description: `El archivo ${file.name} excede el límite de 10MB.`,
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      });
+      
+      setImagenes(prev => [...prev, ...archivosValidos]);
       
       // Crear URLs de preview
-      nuevasImagenes.forEach(file => {
+      archivosValidos.forEach(file => {
         const url = URL.createObjectURL(file);
         setPreviewUrls(prev => [...prev, url]);
       });
@@ -184,8 +248,8 @@ const IncidenciaForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.titulo || !formData.descripcion || !formData.area_id || 
-        !formData.clasificacion_id || !formData.reportado_por) {
+    if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id || 
+        !formData.clasificacion_id || !formData.reportado_por.trim()) {
       toast({
         title: "Campos requeridos",
         description: "Por favor completa todos los campos obligatorios.",
@@ -260,7 +324,7 @@ const IncidenciaForm = () => {
                       <div className="flex items-center gap-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: clasificacion.color }}
+                          style={{ backgroundColor: clasificacion.color || '#6B7280' }}
                         />
                         {clasificacion.nombre}
                       </div>
@@ -326,7 +390,7 @@ const IncidenciaForm = () => {
                 <p className="mt-2 text-sm text-gray-600">
                   Haz clic para subir imágenes o arrastra y suelta
                 </p>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB cada una</p>
               </label>
             </div>
 
@@ -343,7 +407,7 @@ const IncidenciaForm = () => {
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                     >
                       <X className="h-3 w-3" />
                     </button>

@@ -11,46 +11,61 @@ const Dashboard = () => {
     queryFn: async () => {
       console.log("Fetching dashboard statistics...");
       
-      // Obtener conteos por estado
+      // Obtener incidencias con sus relaciones
       const { data: incidencias } = await supabase
         .from("incidencias")
-        .select("estado, prioridad, area_id, clasificacion_id, areas(nombre), clasificaciones(nombre, color)");
+        .select(`
+          *,
+          areas(nombre),
+          clasificaciones(nombre, color)
+        `);
 
       console.log("Incidencias data:", incidencias);
 
-      const estadoCount = incidencias?.reduce((acc: any, inc: any) => {
-        acc[inc.estado] = (acc[inc.estado] || 0) + 1;
-        return acc;
-      }, {}) || {};
+      if (!incidencias) return {
+        total: 0,
+        porPrioridad: {},
+        porArea: {},
+        porClasificacion: {},
+        recientes: 0
+      };
 
-      const prioridadCount = incidencias?.reduce((acc: any, inc: any) => {
+      const prioridadCount = incidencias.reduce((acc: any, inc: any) => {
         acc[inc.prioridad] = (acc[inc.prioridad] || 0) + 1;
         return acc;
-      }, {}) || {};
+      }, {});
 
-      const areaCount = incidencias?.reduce((acc: any, inc: any) => {
+      const areaCount = incidencias.reduce((acc: any, inc: any) => {
         const area = inc.areas?.nombre || 'Sin área';
         acc[area] = (acc[area] || 0) + 1;
         return acc;
-      }, {}) || {};
+      }, {});
 
-      const clasificacionCount = incidencias?.reduce((acc: any, inc: any) => {
+      const clasificacionCount = incidencias.reduce((acc: any, inc: any) => {
         const clasificacion = inc.clasificaciones?.nombre || 'Sin clasificación';
         acc[clasificacion] = (acc[clasificacion] || 0) + 1;
         return acc;
-      }, {}) || {};
+      }, {});
+
+      // Contar incidencias de las últimas 24 horas
+      const hace24Horas = new Date();
+      hace24Horas.setHours(hace24Horas.getHours() - 24);
+      
+      const recientes = incidencias.filter(inc => 
+        new Date(inc.created_at) > hace24Horas
+      ).length;
 
       return {
-        total: incidencias?.length || 0,
-        porEstado: estadoCount,
+        total: incidencias.length,
         porPrioridad: prioridadCount,
         porArea: areaCount,
-        porClasificacion: clasificacionCount
+        porClasificacion: clasificacionCount,
+        recientes
       };
     },
   });
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  const COLORS = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#8B5CF6', '#6366F1', '#EC4899'];
 
   if (isLoading) {
     return (
@@ -81,6 +96,11 @@ const Dashboard = () => {
     color: COLORS[index % COLORS.length]
   }));
 
+  const dataPorPrioridad = Object.entries(estadisticas?.porPrioridad || {}).map(([prioridad, count]) => ({
+    prioridad,
+    cantidad: count
+  }));
+
   return (
     <div className="space-y-6">
       {/* Tarjetas de resumen */}
@@ -97,36 +117,36 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Abiertas</CardTitle>
+            <CardTitle className="text-sm font-medium">Prioridad Alta</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {estadisticas?.porEstado?.abierta || 0}
+            <div className="text-2xl font-bold text-red-600">
+              {estadisticas?.porPrioridad?.alta || 0}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resueltas</CardTitle>
+            <CardTitle className="text-sm font-medium">Prioridad Crítica</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {estadisticas?.porEstado?.resuelta || 0}
+            <div className="text-2xl font-bold text-red-800">
+              {estadisticas?.porPrioridad?.critica || 0}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En Proceso</CardTitle>
+            <CardTitle className="text-sm font-medium">Últimas 24h</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {estadisticas?.porEstado?.en_proceso || 0}
+              {estadisticas?.recientes || 0}
             </div>
           </CardContent>
         </Card>
@@ -180,6 +200,25 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Gráfico de Prioridades */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Incidencias por Prioridad</CardTitle>
+          <CardDescription>Distribución de incidencias según su nivel de prioridad</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={dataPorPrioridad}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="prioridad" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="cantidad" fill="#10B981" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };
