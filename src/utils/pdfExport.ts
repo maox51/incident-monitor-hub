@@ -37,8 +37,11 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
   const usableWidth = pageWidth - (margin * 2);
+  const footerHeight = 25;
+  const headerHeight = 50;
+  const usableHeight = pageHeight - headerHeight - footerHeight;
   
-  // Configuración de colores corporativos (como tuplas de 3 elementos)
+  // Colores corporativos
   const colors = {
     primary: [20, 53, 147] as [number, number, number],
     secondary: [107, 114, 128] as [number, number, number],
@@ -46,124 +49,125 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     success: [16, 185, 129] as [number, number, number],
     warning: [245, 158, 11] as [number, number, number],
     danger: [239, 68, 68] as [number, number, number],
-    light: [248, 250, 252] as [number, number, number]
+    light: [248, 250, 252] as [number, number, number],
+    white: [255, 255, 255] as [number, number, number]
   };
+  
+  let currentPage = 1;
   
   // Función para agregar encabezado corporativo
   const addHeader = () => {
     // Fondo del encabezado
     doc.setFillColor(...colors.primary);
-    doc.rect(0, 0, pageWidth, 45, 'F');
+    doc.rect(0, 0, pageWidth, headerHeight, 'F');
     
-    // Logo placeholder o título principal
-    doc.setFontSize(24);
-    doc.setTextColor(255, 255, 255);
+    // Título principal
+    doc.setFontSize(20);
+    doc.setTextColor(...colors.white);
     doc.setFont('helvetica', 'bold');
     doc.text('SISTEMA DE MONITOREO CORPORATIVO', pageWidth / 2, 20, { align: 'center' });
     
     // Subtítulo
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Reporte Detallado de Incidencias Operacionales', pageWidth / 2, 30, { align: 'center' });
+    doc.text('Reporte Ejecutivo de Incidencias Operacionales', pageWidth / 2, 32, { align: 'center' });
     
     // Línea decorativa
     doc.setDrawColor(...colors.accent);
-    doc.setLineWidth(2);
-    doc.line(margin, 40, pageWidth - margin, 40);
+    doc.setLineWidth(1);
+    doc.line(margin, headerHeight - 5, pageWidth - margin, headerHeight - 5);
   };
   
-  // Función para agregar pie de página profesional
-  const addFooter = (pageNumber: number, totalPages: number) => {
-    const footerY = pageHeight - 20;
+  // Función para agregar pie de página
+  const addFooter = () => {
+    const footerY = pageHeight - 15;
     
-    // Línea superior del pie
+    // Línea superior
     doc.setDrawColor(...colors.secondary);
     doc.setLineWidth(0.5);
-    doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+    doc.line(margin, footerY - 8, pageWidth - margin, footerY - 8);
     
     // Información del pie
     doc.setFontSize(8);
     doc.setTextColor(...colors.secondary);
     doc.setFont('helvetica', 'normal');
     
-    // Fecha y hora de generación
-    const fechaGeneracion = format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: es });
+    const fechaGeneracion = format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es });
     doc.text(`Generado: ${fechaGeneracion}`, margin, footerY);
-    
-    // Número de página
-    doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth / 2, footerY, { align: 'center' });
-    
-    // Marca corporativa
-    doc.text('Sistema de Gestión de Incidencias v2.0', pageWidth - margin, footerY, { align: 'right' });
+    doc.text(`Página ${currentPage}`, pageWidth / 2, footerY, { align: 'center' });
+    doc.text('Sistema de Gestión v2.0', pageWidth - margin, footerY, { align: 'right' });
   };
   
-  // Función para crear sección con título
+  // Función para crear nueva página
+  const addNewPage = () => {
+    doc.addPage();
+    currentPage++;
+    addHeader();
+    addFooter();
+    return headerHeight + 10; // Retorna la posición Y inicial
+  };
+  
+  // Función para verificar espacio disponible
+  const checkSpace = (currentY: number, neededSpace: number) => {
+    if (currentY + neededSpace > pageHeight - footerHeight) {
+      return addNewPage();
+    }
+    return currentY;
+  };
+  
+  // Función para agregar sección con título
   const addSection = (title: string, yPosition: number) => {
-    doc.setFillColor(...colors.light);
-    doc.rect(margin, yPosition - 2, usableWidth, 8, 'F');
+    yPosition = checkSpace(yPosition, 15);
     
-    doc.setFontSize(12);
+    doc.setFillColor(...colors.light);
+    doc.rect(margin, yPosition - 2, usableWidth, 10, 'F');
+    
+    doc.setFontSize(11);
     doc.setTextColor(...colors.primary);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, margin + 2, yPosition + 3);
+    doc.text(title, margin + 3, yPosition + 5);
     
     return yPosition + 15;
   };
   
-  // Agregar primera página con encabezado
+  // Primera página con información del reporte
   addHeader();
+  addFooter();
+  let yPosition = headerHeight + 15;
   
-  let yPosition = 55;
-  
-  // Sección de información del reporte
+  // Información del reporte
   yPosition = addSection('INFORMACIÓN DEL REPORTE', yPosition);
   
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
   
-  const infoReporte = [
-    [`Total de incidencias incluidas:`, `${incidencias.length} registros`],
-    [`Fecha de generación:`, format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: es })],
-    [`Período del reporte:`, filtros.fechaInicio && filtros.fechaFin ? 
+  const infoData = [
+    ['Total de incidencias:', incidencias.length.toString()],
+    ['Fecha de generación:', format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })],
+    ['Período analizado:', filtros.fechaInicio && filtros.fechaFin ? 
       `${format(new Date(filtros.fechaInicio), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(filtros.fechaFin), 'dd/MM/yyyy', { locale: es })}` : 
       'Todos los períodos'],
-    [`Estado del sistema:`, 'Operativo']
+    ['Estado del sistema:', 'Operativo']
   ];
   
-  infoReporte.forEach(([label, value]) => {
-    doc.setFont('helvetica', 'bold');
-    doc.text(label, margin + 5, yPosition);
-    doc.setFont('helvetica', 'normal');
-    doc.text(value, margin + 70, yPosition);
-    yPosition += 6;
+  // Crear tabla para información del reporte
+  autoTable(doc, {
+    body: infoData,
+    startY: yPosition,
+    styles: { fontSize: 9, cellPadding: 3 },
+    columnStyles: {
+      0: { cellWidth: 60, fontStyle: 'bold', fillColor: colors.light },
+      1: { cellWidth: usableWidth - 60 }
+    },
+    margin: { left: margin, right: margin },
+    theme: 'plain'
   });
   
-  yPosition += 10;
+  yPosition = (doc as any).lastAutoTable.finalY + 15;
   
-  // Sección de filtros aplicados
-  yPosition = addSection('FILTROS APLICADOS', yPosition);
-  
-  const filtrosAplicados = [];
-  if (filtros.fechaInicio) filtrosAplicados.push(`Desde: ${format(new Date(filtros.fechaInicio), 'dd/MM/yyyy', { locale: es })}`);
-  if (filtros.fechaFin) filtrosAplicados.push(`Hasta: ${format(new Date(filtros.fechaFin), 'dd/MM/yyyy', { locale: es })}`);
-  if (filtros.area) filtrosAplicados.push(`Área: ${filtros.area}`);
-  if (filtros.clasificacion) filtrosAplicados.push(`Clasificación: ${filtros.clasificacion}`);
-  if (filtros.prioridad) filtrosAplicados.push(`Prioridad: ${filtros.prioridad}`);
-  
-  if (filtrosAplicados.length === 0) {
-    doc.text('No se aplicaron filtros específicos - Mostrando todas las incidencias', margin + 5, yPosition);
-    yPosition += 8;
-  } else {
-    filtrosAplicados.forEach(filtro => {
-      doc.text(`• ${filtro}`, margin + 5, yPosition);
-      yPosition += 6;
-    });
-  }
-  
-  yPosition += 10;
-  
-  // Estadísticas del reporte
+  // Estadísticas
+  yPosition = checkSpace(yPosition, 60);
   yPosition = addSection('ANÁLISIS ESTADÍSTICO', yPosition);
   
   const stats = {
@@ -172,48 +176,41 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
       acc[inc.prioridad] = (acc[inc.prioridad] || 0) + 1;
       return acc;
     }, {}),
-    porArea: incidencias.reduce((acc: any, inc) => {
-      const area = inc.areas?.nombre || 'Sin área';
-      acc[area] = (acc[area] || 0) + 1;
-      return acc;
-    }, {}),
     conImagenes: incidencias.filter(inc => inc.imagenes_incidencias && inc.imagenes_incidencias.length > 0).length
   };
   
-  // Mostrar estadísticas de prioridad con colores
-  doc.setFont('helvetica', 'bold');
-  doc.text('Distribución por Prioridad:', margin + 5, yPosition);
-  yPosition += 8;
+  const statsData = [
+    ['Prioridad Crítica', (stats.porPrioridad.critica || 0).toString()],
+    ['Prioridad Alta', (stats.porPrioridad.alta || 0).toString()],
+    ['Prioridad Media', (stats.porPrioridad.media || 0).toString()],
+    ['Prioridad Baja', (stats.porPrioridad.baja || 0).toString()],
+    ['Con Evidencia Fotográfica', stats.conImagenes.toString()]
+  ];
   
-  Object.entries(stats.porPrioridad).forEach(([prioridad, cantidad]) => {
-    const color = prioridad === 'critica' ? colors.danger : 
-                 prioridad === 'alta' ? colors.warning : 
-                 prioridad === 'media' ? colors.accent : colors.success;
-    
-    doc.setTextColor(...color);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`• ${prioridad.toUpperCase()}:`, margin + 10, yPosition);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${cantidad} incidencias`, margin + 50, yPosition);
-    yPosition += 6;
+  autoTable(doc, {
+    body: statsData,
+    startY: yPosition,
+    styles: { fontSize: 9, cellPadding: 3 },
+    columnStyles: {
+      0: { cellWidth: 80, fillColor: colors.light },
+      1: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
+    },
+    margin: { left: margin, right: margin },
+    theme: 'grid'
   });
   
-  yPosition += 8;
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Incidencias con evidencia fotográfica: ${stats.conImagenes}`, margin + 5, yPosition);
-  yPosition += 15;
+  yPosition = (doc as any).lastAutoTable.finalY + 15;
   
-  // Tabla resumen con ancho fijo para evitar desajustes
-  yPosition = addSection('RESUMEN EJECUTIVO', yPosition);
+  // Tabla resumen de incidencias
+  yPosition = checkSpace(yPosition, 80);
+  yPosition = addSection('RESUMEN EJECUTIVO DE INCIDENCIAS', yPosition);
   
   const tableData = incidencias.map(inc => [
-    inc.id.slice(0, 8) + '...',
-    inc.titulo.length > 30 ? inc.titulo.substring(0, 27) + '...' : inc.titulo,
+    inc.id.slice(0, 8),
+    inc.titulo.length > 25 ? inc.titulo.substring(0, 22) + '...' : inc.titulo,
     inc.areas?.nombre || 'N/A',
     inc.prioridad.toUpperCase(),
-    format(new Date(inc.fecha_incidencia), 'dd/MM/yy', { locale: es }),
+    format(new Date(inc.fecha_incidencia), 'dd/MM', { locale: es }),
     (inc.imagenes_incidencias?.length || 0).toString()
   ]);
   
@@ -223,14 +220,13 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     startY: yPosition,
     styles: {
       fontSize: 8,
-      cellPadding: 3,
-      overflow: 'linebreak',
-      cellWidth: 'wrap'
+      cellPadding: 2,
+      overflow: 'linebreak'
     },
     headStyles: {
       fillColor: colors.primary,
-      textColor: [255, 255, 255] as [number, number, number],
-      fontSize: 9,
+      textColor: colors.white,
+      fontSize: 8,
       fontStyle: 'bold',
       halign: 'center'
     },
@@ -238,163 +234,129 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
       fillColor: colors.light,
     },
     columnStyles: {
-      0: { cellWidth: 25, halign: 'center' },
-      1: { cellWidth: 45 },
+      0: { cellWidth: 20, halign: 'center' },
+      1: { cellWidth: 50 },
       2: { cellWidth: 25, halign: 'center' },
       3: { cellWidth: 20, halign: 'center' },
-      4: { cellWidth: 20, halign: 'center' },
-      5: { cellWidth: 15, halign: 'center' }
+      4: { cellWidth: 18, halign: 'center' },
+      5: { cellWidth: 12, halign: 'center' }
     },
     margin: { left: margin, right: margin },
-    didDrawPage: function (data) {
-      const pageCount = doc.getNumberOfPages();
-      const currentPage = doc.getCurrentPageInfo().pageNumber;
-      addFooter(currentPage, pageCount);
-    },
+    didDrawPage: function () {
+      addFooter();
+    }
   });
   
-  // Páginas detalladas para cada incidencia
-  if (incidencias.length <= 15) {
-    incidencias.forEach((inc, index) => {
-      doc.addPage();
-      addHeader();
-      
-      let detailY = 55;
-      
-      // Título de la incidencia
-      doc.setFontSize(16);
-      doc.setTextColor(...colors.primary);
-      doc.setFont('helvetica', 'bold');
-      const tituloLines = doc.splitTextToSize(`INCIDENCIA ${index + 1}: ${inc.titulo.toUpperCase()}`, usableWidth);
-      tituloLines.forEach((line: string) => {
-        doc.text(line, margin, detailY);
-        detailY += 8;
-      });
-      detailY += 10;
-      
-      // Información principal en tabla estructurada
-      const detallesInfo = [
-        ['ID del Registro', inc.id],
-        ['Área Afectada', inc.areas?.nombre || 'No especificada'],
-        ['Clasificación', inc.clasificaciones?.nombre || 'No clasificada'],
-        ['Nivel de Prioridad', inc.prioridad.toUpperCase()],
-        ['Reportado por', inc.reportado_por],
-        ['Fecha de Incidencia', format(new Date(inc.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })],
-        ['Fecha de Registro', format(new Date(inc.created_at), 'dd/MM/yyyy HH:mm', { locale: es })],
-        ['Evidencias Adjuntas', `${inc.imagenes_incidencias?.length || 0} archivos`]
-      ];
-      
-      autoTable(doc, {
-        body: detallesInfo,
-        startY: detailY,
-        styles: {
-          fontSize: 10,
-          cellPadding: 4
-        },
-        columnStyles: {
-          0: { 
-            cellWidth: 50, 
-            fontStyle: 'bold',
-            fillColor: colors.light
-          },
-          1: { cellWidth: usableWidth - 50 }
-        },
-        margin: { left: margin, right: margin },
-        theme: 'grid'
-      });
-      
-      detailY = (doc as any).lastAutoTable.finalY + 15;
-      
-      // Descripción detallada
-      detailY = addSection('DESCRIPCIÓN DETALLADA', detailY);
-      
-      const descripcionLines = doc.splitTextToSize(inc.descripcion, usableWidth - 10);
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-      
-      descripcionLines.forEach((line: string) => {
-        if (detailY > pageHeight - 40) {
-          doc.addPage();
-          addHeader();
-          detailY = 55;
-        }
-        doc.text(line, margin + 5, detailY);
-        detailY += 6;
-      });
-      
-      // Observaciones si existen
-      if (inc.observaciones) {
-        detailY += 10;
-        detailY = addSection('OBSERVACIONES ADICIONALES', detailY);
-        
-        const observacionesLines = doc.splitTextToSize(inc.observaciones, usableWidth - 10);
-        observacionesLines.forEach((line: string) => {
-          if (detailY > pageHeight - 40) {
-            doc.addPage();
-            addHeader();
-            detailY = 55;
-          }
-          doc.text(line, margin + 5, detailY);
-          detailY += 6;
-        });
-      }
-      
-      // Lista de evidencias
-      if (inc.imagenes_incidencias && inc.imagenes_incidencias.length > 0) {
-        detailY += 10;
-        detailY = addSection('EVIDENCIAS FOTOGRÁFICAS', detailY);
-        
-        inc.imagenes_incidencias.forEach((img, imgIndex) => {
-          if (detailY > pageHeight - 40) {
-            doc.addPage();
-            addHeader();
-            detailY = 55;
-          }
-          doc.text(`${imgIndex + 1}. ${img.nombre_archivo}`, margin + 5, detailY);
-          detailY += 6;
-        });
+  // Páginas detalladas para incidencias importantes (solo las más críticas)
+  const incidenciasCriticas = incidencias.filter(inc => 
+    inc.prioridad === 'critica' || inc.prioridad === 'alta'
+  ).slice(0, 10); // Máximo 10 incidencias detalladas
+  
+  incidenciasCriticas.forEach((inc, index) => {
+    yPosition = addNewPage();
+    
+    // Título de la incidencia
+    doc.setFontSize(14);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`INCIDENCIA DETALLADA ${index + 1}`, margin, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    const tituloLines = doc.splitTextToSize(inc.titulo.toUpperCase(), usableWidth);
+    tituloLines.forEach((line: string) => {
+      doc.text(line, margin, yPosition);
+      yPosition += 6;
+    });
+    yPosition += 10;
+    
+    // Información principal
+    const detallesInfo = [
+      ['ID', inc.id],
+      ['Área', inc.areas?.nombre || 'No especificada'],
+      ['Clasificación', inc.clasificaciones?.nombre || 'No clasificada'],
+      ['Prioridad', inc.prioridad.toUpperCase()],
+      ['Reportado por', inc.reportado_por],
+      ['Fecha', format(new Date(inc.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })],
+      ['Evidencias', `${inc.imagenes_incidencias?.length || 0} archivos`]
+    ];
+    
+    autoTable(doc, {
+      body: detallesInfo,
+      startY: yPosition,
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 40, fontStyle: 'bold', fillColor: colors.light },
+        1: { cellWidth: usableWidth - 40 }
+      },
+      margin: { left: margin, right: margin },
+      theme: 'grid',
+      didDrawPage: function () {
+        addFooter();
       }
     });
-  }
+    
+    yPosition = (doc as any).lastAutoTable.finalY + 15;
+    
+    // Descripción
+    yPosition = checkSpace(yPosition, 30);
+    yPosition = addSection('DESCRIPCIÓN', yPosition);
+    
+    const descripcionLines = doc.splitTextToSize(inc.descripcion, usableWidth - 10);
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    
+    descripcionLines.forEach((line: string) => {
+      yPosition = checkSpace(yPosition, 6);
+      doc.text(line, margin + 5, yPosition);
+      yPosition += 5;
+    });
+    
+    // Observaciones si existen
+    if (inc.observaciones) {
+      yPosition += 10;
+      yPosition = checkSpace(yPosition, 30);
+      yPosition = addSection('OBSERVACIONES', yPosition);
+      
+      const observacionesLines = doc.splitTextToSize(inc.observaciones, usableWidth - 10);
+      observacionesLines.forEach((line: string) => {
+        yPosition = checkSpace(yPosition, 6);
+        doc.text(line, margin + 5, yPosition);
+        yPosition += 5;
+      });
+    }
+  });
   
-  // Página final con conclusiones y recomendaciones
-  doc.addPage();
-  addHeader();
-  
-  let conclusionY = 55;
-  conclusionY = addSection('CONCLUSIONES Y RECOMENDACIONES', conclusionY);
+  // Página de conclusiones
+  yPosition = addNewPage();
+  yPosition = addSection('CONCLUSIONES Y RECOMENDACIONES', yPosition);
   
   const conclusiones = [
-    `Se registraron un total de ${stats.total} incidencias en el período analizado.`,
-    `Las incidencias de prioridad crítica representan ${((stats.porPrioridad.critica || 0) / stats.total * 100).toFixed(1)}% del total.`,
-    `El ${(stats.conImagenes / stats.total * 100).toFixed(1)}% de las incidencias cuenta con evidencia fotográfica.`,
-    `Se recomienda implementar medidas preventivas en las áreas con mayor incidencia.`,
-    `Es crucial mantener la documentación fotográfica para mejorar la resolución de incidentes.`
+    `Se registraron ${stats.total} incidencias en el período analizado.`,
+    `${stats.porPrioridad.critica || 0} incidencias de prioridad crítica requieren atención inmediata.`,
+    `El ${(stats.conImagenes / stats.total * 100).toFixed(1)}% cuenta con evidencia fotográfica.`,
+    'Se recomienda implementar medidas preventivas en áreas críticas.',
+    'Mantener documentación fotográfica para mejor resolución de incidentes.'
   ];
   
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
   
   conclusiones.forEach(conclusion => {
-    const lines = doc.splitTextToSize(conclusion, usableWidth - 10);
+    yPosition = checkSpace(yPosition, 8);
+    const lines = doc.splitTextToSize(`• ${conclusion}`, usableWidth - 10);
     lines.forEach((line: string) => {
-      doc.text(`• ${line}`, margin + 5, conclusionY);
-      conclusionY += 6;
+      doc.text(line, margin + 5, yPosition);
+      yPosition += 6;
     });
-    conclusionY += 3;
+    yPosition += 3;
   });
   
-  // Calcular total de páginas y agregar pies de página
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    // Los pies de página se agregan automáticamente en didDrawPage
-  }
-  
-  // Descargar el archivo con nombre descriptivo
+  // Descargar archivo
   const fechaReporte = format(new Date(), 'yyyy-MM-dd_HH-mm');
-  const nombreArchivo = `Reporte_Incidencias_Corporativo_${fechaReporte}.pdf`;
+  const nombreArchivo = `Reporte_Incidencias_${fechaReporte}.pdf`;
   doc.save(nombreArchivo);
 };

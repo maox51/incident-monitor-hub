@@ -35,13 +35,22 @@ const AuthPage = () => {
     signup: false
   });
 
-  // Validar dominio empresarial - Solo dominios corporativos .com
+  // Validar dominio empresarial - Dominios corporativos específicos
   const validateBusinessEmail = (email: string) => {
-    // Dominios corporativos permitidos (todos terminan en .com)
+    // Dominios corporativos permitidos
     const businessDomains = [
-      '@empresa.com', '@company.com', '@corp.com', '@organizacion.com',
-      '@corporativo.com', '@business.com', '@industria.com', '@casino.com',
-      '@monitoreo.com', '@seguridad.com', '@operaciones.com'
+      '@grupoesvasa.com',
+      '@empresa.com', 
+      '@company.com', 
+      '@corp.com', 
+      '@organizacion.com',
+      '@corporativo.com', 
+      '@business.com', 
+      '@industria.com', 
+      '@casino.com',
+      '@monitoreo.com', 
+      '@seguridad.com', 
+      '@operaciones.com'
     ];
     
     // Verificar que el email termine con uno de los dominios corporativos
@@ -77,7 +86,7 @@ const AuthPage = () => {
     e.preventDefault();
     
     if (!validateBusinessEmail(signupData.email)) {
-      toast.error('Por favor utiliza un email corporativo válido que termine en .com (ejemplo: usuario@empresa.com)');
+      toast.error('Por favor utiliza un email corporativo válido. Dominios permitidos: @grupoesvasa.com, @empresa.com, etc.');
       return;
     }
 
