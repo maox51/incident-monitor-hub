@@ -35,14 +35,17 @@ const AuthPage = () => {
     signup: false
   });
 
-  // Validar dominio empresarial
+  // Validar dominio empresarial - Solo dominios corporativos .com
   const validateBusinessEmail = (email: string) => {
+    // Dominios corporativos permitidos (todos terminan en .com)
     const businessDomains = [
       '@empresa.com', '@company.com', '@corp.com', '@organizacion.com',
-      '@gmail.com', '@outlook.com', '@hotmail.com', '@yahoo.com' // Permitir también dominios comunes para testing
+      '@corporativo.com', '@business.com', '@industria.com', '@casino.com',
+      '@monitoreo.com', '@seguridad.com', '@operaciones.com'
     ];
     
-    return businessDomains.some(domain => email.toLowerCase().includes(domain.toLowerCase()));
+    // Verificar que el email termine con uno de los dominios corporativos
+    return businessDomains.some(domain => email.toLowerCase().endsWith(domain.toLowerCase()));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -74,7 +77,7 @@ const AuthPage = () => {
     e.preventDefault();
     
     if (!validateBusinessEmail(signupData.email)) {
-      toast.error('Por favor utiliza un email corporativo válido.');
+      toast.error('Por favor utiliza un email corporativo válido que termine en .com (ejemplo: usuario@empresa.com)');
       return;
     }
 
@@ -247,7 +250,7 @@ const AuthPage = () => {
                       required
                     />
                     <p className="text-xs text-gray-500">
-                      Utiliza tu email corporativo oficial
+                      Utiliza tu email corporativo oficial terminado en .com
                     </p>
                   </div>
 

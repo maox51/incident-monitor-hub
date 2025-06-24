@@ -3,10 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Dashboard from "@/components/Dashboard";
 import IncidenciaForm from "@/components/IncidenciaForm";
 import ReportesView from "@/components/ReportesView";
+import UserManagement from "@/components/admin/UserManagement";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, FileText, BarChart3 } from "lucide-react";
+import { AlertTriangle, FileText, BarChart3, Users } from "lucide-react";
 
 const Index = () => {
   const { isAdmin, isMonitor } = useAuth();
@@ -51,7 +52,7 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Dashboard
@@ -63,6 +64,10 @@ const Index = () => {
             <TabsTrigger value="reportes" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Reportes
+            </TabsTrigger>
+            <TabsTrigger value="usuarios" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Usuarios
             </TabsTrigger>
           </TabsList>
 
@@ -81,6 +86,12 @@ const Index = () => {
           <TabsContent value="reportes">
             <ProtectedRoute requireAdmin>
               <ReportesView />
+            </ProtectedRoute>
+          </TabsContent>
+
+          <TabsContent value="usuarios">
+            <ProtectedRoute requireAdmin>
+              <UserManagement />
             </ProtectedRoute>
           </TabsContent>
         </Tabs>

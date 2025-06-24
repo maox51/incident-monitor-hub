@@ -38,15 +38,15 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   const margin = 20;
   const usableWidth = pageWidth - (margin * 2);
   
-  // Configuración de colores corporativos
+  // Configuración de colores corporativos (como tuplas de 3 elementos)
   const colors = {
-    primary: [20, 53, 147],      // Azul corporativo
-    secondary: [107, 114, 128],   // Gris
-    accent: [59, 130, 246],       // Azul claro
-    success: [16, 185, 129],      // Verde
-    warning: [245, 158, 11],      // Amarillo
-    danger: [239, 68, 68],        // Rojo
-    light: [248, 250, 252]        // Gris claro
+    primary: [20, 53, 147] as [number, number, number],
+    secondary: [107, 114, 128] as [number, number, number],
+    accent: [59, 130, 246] as [number, number, number],
+    success: [16, 185, 129] as [number, number, number],
+    warning: [245, 158, 11] as [number, number, number],
+    danger: [239, 68, 68] as [number, number, number],
+    light: [248, 250, 252] as [number, number, number]
   };
   
   // Función para agregar encabezado corporativo
@@ -205,16 +205,16 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   doc.text(`Incidencias con evidencia fotográfica: ${stats.conImagenes}`, margin + 5, yPosition);
   yPosition += 15;
   
-  // Tabla resumen optimizada
+  // Tabla resumen con ancho fijo para evitar desajustes
   yPosition = addSection('RESUMEN EJECUTIVO', yPosition);
   
   const tableData = incidencias.map(inc => [
     inc.id.slice(0, 8) + '...',
-    inc.titulo.length > 25 ? inc.titulo.substring(0, 25) + '...' : inc.titulo,
+    inc.titulo.length > 30 ? inc.titulo.substring(0, 27) + '...' : inc.titulo,
     inc.areas?.nombre || 'N/A',
     inc.prioridad.toUpperCase(),
     format(new Date(inc.fecha_incidencia), 'dd/MM/yy', { locale: es }),
-    inc.imagenes_incidencias?.length || 0
+    (inc.imagenes_incidencias?.length || 0).toString()
   ]);
   
   autoTable(doc, {
@@ -223,13 +223,13 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     startY: yPosition,
     styles: {
       fontSize: 8,
-      cellPadding: 2,
+      cellPadding: 3,
       overflow: 'linebreak',
       cellWidth: 'wrap'
     },
     headStyles: {
       fillColor: colors.primary,
-      textColor: [255, 255, 255],
+      textColor: [255, 255, 255] as [number, number, number],
       fontSize: 9,
       fontStyle: 'bold',
       halign: 'center'
@@ -240,7 +240,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
       1: { cellWidth: 45 },
-      2: { cellWidth: 30, halign: 'center' },
+      2: { cellWidth: 25, halign: 'center' },
       3: { cellWidth: 20, halign: 'center' },
       4: { cellWidth: 20, halign: 'center' },
       5: { cellWidth: 15, halign: 'center' }
@@ -253,8 +253,8 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     },
   });
   
-  // Páginas detalladas para cada incidencia (solo si hay pocas incidencias)
-  if (incidencias.length <= 10) {
+  // Páginas detalladas para cada incidencia
+  if (incidencias.length <= 15) {
     incidencias.forEach((inc, index) => {
       doc.addPage();
       addHeader();
@@ -265,10 +265,14 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
       doc.setFontSize(16);
       doc.setTextColor(...colors.primary);
       doc.setFont('helvetica', 'bold');
-      doc.text(`INCIDENCIA ${index + 1}: ${inc.titulo.toUpperCase()}`, margin, detailY);
-      detailY += 15;
+      const tituloLines = doc.splitTextToSize(`INCIDENCIA ${index + 1}: ${inc.titulo.toUpperCase()}`, usableWidth);
+      tituloLines.forEach((line: string) => {
+        doc.text(line, margin, detailY);
+        detailY += 8;
+      });
+      detailY += 10;
       
-      // Información principal en tabla
+      // Información principal en tabla estructurada
       const detallesInfo = [
         ['ID del Registro', inc.id],
         ['Área Afectada', inc.areas?.nombre || 'No especificada'],
@@ -285,7 +289,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
         startY: detailY,
         styles: {
           fontSize: 10,
-          cellPadding: 3
+          cellPadding: 4
         },
         columnStyles: {
           0: { 
@@ -354,7 +358,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     });
   }
   
-  // Página final con conclusiones
+  // Página final con conclusiones y recomendaciones
   doc.addPage();
   addHeader();
   
@@ -365,7 +369,8 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     `Se registraron un total de ${stats.total} incidencias en el período analizado.`,
     `Las incidencias de prioridad crítica representan ${((stats.porPrioridad.critica || 0) / stats.total * 100).toFixed(1)}% del total.`,
     `El ${(stats.conImagenes / stats.total * 100).toFixed(1)}% de las incidencias cuenta con evidencia fotográfica.`,
-    `Se recomienda revisar las áreas con mayor incidencia para implementar medidas preventivas.`
+    `Se recomienda implementar medidas preventivas en las áreas con mayor incidencia.`,
+    `Es crucial mantener la documentación fotográfica para mejorar la resolución de incidentes.`
   ];
   
   doc.setFontSize(10);
