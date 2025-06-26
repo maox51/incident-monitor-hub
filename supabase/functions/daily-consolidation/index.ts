@@ -19,11 +19,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Obtener la fecha objetivo (por defecto hoy)
-    const { fecha } = await req.json().catch(() => ({ fecha: null }))
+    // Obtener la fecha objetivo y verificar si es automático
+    const { fecha, automatico } = await req.json().catch(() => ({ 
+      fecha: null, 
+      automatico: false 
+    }))
+    
     const fechaObjetivo = fecha || new Date().toISOString().split('T')[0]
+    const esAutomatico = automatico || false
 
-    console.log(`Generando consolidado para la fecha: ${fechaObjetivo}`)
+    console.log(`Generando consolidado para la fecha: ${fechaObjetivo} (automático: ${esAutomatico})`)
 
     // Llamar a la función de base de datos para generar el consolidado
     const { data: reporteId, error: funcionError } = await supabaseClient
@@ -36,54 +41,77 @@ serve(async (req) => {
 
     console.log(`Consolidado generado con ID: ${reporteId}`)
 
-    // Obtener los datos del reporte generado
-    const { data: reporte, error: reporteError } = await supabaseClient
-      .from('reportes_consolidados')
-      .select('*')
-      .eq('id', reporteId)
-      .single()
+    // Obtener los datos del reporte generado usando la nueva función
+    const { data: consolidadoCompleto, error: consolidadoError } = await supabaseClient
+      .rpc('obtener_consolidado_con_medios', { fecha_consolidado: fechaObjetivo })
 
-    if (reporteError) {
-      console.error('Error fetching generated report:', reporteError)
-      throw reporteError
+    if (consolidadoError) {
+      console.error('Error fetching detailed consolidado:', consolidadoError)
+      throw consolidadoError
     }
 
-    // Si es hora automática (21:00), enviar notificación a administradores
-    const ahora = new Date()
-    const esHoraAutomatica = ahora.getHours() === 21 && ahora.getMinutes() < 5
+    // Si es ejecución automática a las 21:00, preparar notificaciones
+    if (esAutomatico) {
+      const ahora = new Date()
+      const esHoraAutomatica = ahora.getHours() === 21
 
-    if (esHoraAutomatica && reporte.total_incidencias > 0) {
-      // Obtener administradores para notificar
-      const { data: admins } = await supabaseClient
-        .from('profiles')
-        .select('email, full_name')
-        .eq('role', 'admin')
+      if (esHoraAutomatica && consolidadoCompleto?.total_incidencias > 0) {
+        // Obtener administradores para notificar
+        const { data: admins } = await supabaseClient
+          .from('profiles')
+          .select('email, full_name')
+          .eq('role', 'admin')
 
-      console.log(`Enviando notificaciones a ${admins?.length || 0} administradores`)
+        console.log(`Preparando notificaciones para ${admins?.length || 0} administradores`)
+        
+        // Log detallado del consolidado generado automáticamente
+        console.log('=== CONSOLIDADO DIARIO AUTOMÁTICO ===')
+        console.log('Fecha:', fechaObjetivo)
+        console.log('Total incidencias:', consolidadoCompleto.total_incidencias)
+        console.log('Incidencias críticas:', consolidadoCompleto.incidencias_criticas)
+        console.log('Áreas afectadas:', consolidadoCompleto.areas_afectadas)
+        console.log('Salas afectadas:', consolidadoCompleto.salas_afectadas)
+        
+        if (consolidadoCompleto.estadisticas_multimedia?.resumen_multimedia) {
+          const multimedia = consolidadoCompleto.estadisticas_multimedia.resumen_multimedia
+          console.log('Evidencias multimedia:')
+          console.log('- Imágenes:', multimedia.total_imagenes)
+          console.log('- Videos:', multimedia.total_videos)
+          console.log('- Incidencias con evidencia:', multimedia.incidencias_con_evidencia)
+        }
+        
+        console.log('=====================================')
 
-      // Aquí podrías integrar con un servicio de email para enviar notificaciones
-      // Por ahora solo registramos en logs
-      console.log('Reporte consolidado generado automáticamente:', {
-        fecha: fechaObjetivo,
-        total_incidencias: reporte.total_incidencias,
-        incidencias_criticas: reporte.incidencias_criticas,
-        areas_afectadas: reporte.areas_afectadas
-      })
+        // Aquí se podría integrar con servicio de email/notificaciones
+        // Por ahora registramos la información para futuras integraciones
+      }
+    }
+
+    // Respuesta con información completa del consolidado
+    const respuesta = {
+      success: true,
+      mensaje: `Consolidado generado exitosamente para ${fechaObjetivo}`,
+      reporte_id: reporteId,
+      es_automatico: esAutomatico,
+      estadisticas: {
+        total_incidencias: consolidadoCompleto?.total_incidencias || 0,
+        incidencias_criticas: consolidadoCompleto?.incidencias_criticas || 0,
+        incidencias_altas: consolidadoCompleto?.incidencias_altas || 0,
+        incidencias_medias: consolidadoCompleto?.incidencias_medias || 0,
+        incidencias_bajas: consolidadoCompleto?.incidencias_bajas || 0,
+        areas_afectadas: consolidadoCompleto?.areas_afectadas || 0,
+        salas_afectadas: consolidadoCompleto?.salas_afectadas || 0
+      },
+      multimedia: consolidadoCompleto?.estadisticas_multimedia?.resumen_multimedia || {
+        total_imagenes: 0,
+        total_videos: 0,
+        incidencias_con_evidencia: 0
+      },
+      detalle_disponible: (consolidadoCompleto?.incidencias_detalle?.length || 0) > 0
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        mensaje: `Consolidado generado exitosamente para ${fechaObjetivo}`,
-        reporte_id: reporteId,
-        estadisticas: {
-          total_incidencias: reporte.total_incidencias,
-          incidencias_criticas: reporte.incidencias_criticas,
-          incidencias_altas: reporte.incidencias_altas,
-          areas_afectadas: reporte.areas_afectadas,
-          salas_afectadas: reporte.salas_afectadas
-        }
-      }),
+      JSON.stringify(respuesta),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -96,7 +124,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Error interno del servidor'
+        error: error.message || 'Error interno del servidor',
+        details: error.toString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

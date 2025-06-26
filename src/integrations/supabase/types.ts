@@ -371,7 +371,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vista_consolidados_detallados: {
+        Row: {
+          archivo_pdf_url: string | null
+          areas_afectadas: number | null
+          created_at: string | null
+          fecha_reporte: string | null
+          id: string | null
+          incidencias_altas: number | null
+          incidencias_bajas: number | null
+          incidencias_criticas: number | null
+          incidencias_detalle: Json | null
+          incidencias_medias: number | null
+          salas_afectadas: number | null
+          total_incidencias: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generar_reporte_consolidado: {
@@ -388,6 +405,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      obtener_consolidado_con_medios: {
+        Args: { fecha_consolidado: string }
+        Returns: Json
       }
     }
     Enums: {
