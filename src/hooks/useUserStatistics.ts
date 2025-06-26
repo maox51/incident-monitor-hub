@@ -3,12 +3,25 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+interface UserStatistic {
+  nombre: string;
+  total: number;
+  criticas: number;
+  altas: number;
+  medias: number;
+  bajas: number;
+  ultimas_incidencias: Array<{
+    fecha: string;
+    prioridad: string;
+  }>;
+}
+
 export const useUserStatistics = () => {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ["user-statistics"],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserStatistic[]> => {
       if (!user) return [];
 
       // Obtener estadísticas por usuario (monitores y admins)
@@ -28,7 +41,7 @@ export const useUserStatistics = () => {
       }
 
       // Agrupar por usuario
-      const userStats = data.reduce((acc: any, incidencia: any) => {
+      const userStats = data.reduce((acc: Record<string, UserStatistic>, incidencia: any) => {
         const userName = incidencia.reportado_por || incidencia.profiles?.full_name || incidencia.profiles?.email || 'Usuario Desconocido';
         
         if (!acc[userName]) {
@@ -44,7 +57,22 @@ export const useUserStatistics = () => {
         }
 
         acc[userName].total += 1;
-        acc[userName][incidencia.prioridad + 's'] += 1;
+        
+        // Incrementar contador por prioridad
+        switch(incidencia.prioridad) {
+          case 'critica':
+            acc[userName].criticas += 1;
+            break;
+          case 'alta':
+            acc[userName].altas += 1;
+            break;
+          case 'media':
+            acc[userName].medias += 1;
+            break;
+          case 'baja':
+            acc[userName].bajas += 1;
+            break;
+        }
         
         if (acc[userName].ultimas_incidencias.length < 5) {
           acc[userName].ultimas_incidencias.push({
@@ -56,7 +84,7 @@ export const useUserStatistics = () => {
         return acc;
       }, {});
 
-      return Object.values(userStats).sort((a: any, b: any) => b.total - a.total);
+      return Object.values(userStats).sort((a, b) => b.total - a.total);
     },
     enabled: !!user,
   });

@@ -7,6 +7,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area 
 } from "recharts";
+import UserStatisticsChart from "@/components/dashboard/UserStatisticsChart";
+import PeriodComparisonChart from "@/components/dashboard/PeriodComparisonChart";
 
 const Dashboard = () => {
   const { data: estadisticas, isLoading } = useQuery({
@@ -208,6 +210,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Nuevos componentes de estadísticas */}
+      <UserStatisticsChart />
+      <PeriodComparisonChart />
 
       {/* Gráfico de tendencia */}
       <Card className="shadow-lg border-0">

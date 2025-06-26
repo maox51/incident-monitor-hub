@@ -50,7 +50,7 @@ const UserStatisticsChart = () => {
   }
 
   // Preparar datos para el gráfico de barras
-  const chartData = userStats.slice(0, 8).map((user: any) => ({
+  const chartData = userStats.slice(0, 8).map((user) => ({
     nombre: user.nombre.split(' ')[0], // Solo primer nombre para que quepa mejor
     total: user.total,
     criticas: user.criticas,
@@ -61,14 +61,14 @@ const UserStatisticsChart = () => {
 
   // Datos para el gráfico circular de distribución de prioridades
   const priorityData = [
-    { name: 'Críticas', value: userStats.reduce((sum: number, user: any) => sum + user.criticas, 0), color: COLORS.criticas },
-    { name: 'Altas', value: userStats.reduce((sum: number, user: any) => sum + user.altas, 0), color: COLORS.altas },
-    { name: 'Medias', value: userStats.reduce((sum: number, user: any) => sum + user.medias, 0), color: COLORS.medias },
-    { name: 'Bajas', value: userStats.reduce((sum: number, user: any) => sum + user.bajas, 0), color: COLORS.bajas }
+    { name: 'Críticas', value: userStats.reduce((sum, user) => sum + user.criticas, 0), color: COLORS.criticas },
+    { name: 'Altas', value: userStats.reduce((sum, user) => sum + user.altas, 0), color: COLORS.altas },
+    { name: 'Medias', value: userStats.reduce((sum, user) => sum + user.medias, 0), color: COLORS.medias },
+    { name: 'Bajas', value: userStats.reduce((sum, user) => sum + user.bajas, 0), color: COLORS.bajas }
   ].filter(item => item.value > 0);
 
   const topUser = userStats[0];
-  const totalIncidencias = userStats.reduce((sum: number, user: any) => sum + user.total, 0);
+  const totalIncidencias = userStats.reduce((sum, user) => sum + user.total, 0);
 
   return (
     <Card>
@@ -90,8 +90,8 @@ const UserStatisticsChart = () => {
                 <TrendingUp className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium text-blue-600">Monitor Más Activo</span>
               </div>
-              <p className="font-bold text-lg">{topUser?.nombre}</p>
-              <p className="text-sm text-gray-600">{topUser?.total} incidencias reportadas</p>
+              <p className="font-bold text-lg">{topUser.nombre}</p>
+              <p className="text-sm text-gray-600">{topUser.total} incidencias reportadas</p>
             </div>
 
             <div className="bg-orange-50 p-4 rounded-lg">
@@ -105,7 +105,7 @@ const UserStatisticsChart = () => {
 
             {/* Lista de monitores */}
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {userStats.slice(0, 10).map((user: any, index: number) => (
+              {userStats.slice(0, 10).map((user, index) => (
                 <div key={user.nombre} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <div className="flex items-center gap-2">
                     <span className="text-xs bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center">

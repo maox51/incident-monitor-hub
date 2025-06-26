@@ -77,11 +77,11 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         <div className="space-y-2">
           <Label htmlFor="sala" className="flex items-center gap-2">
             <Building className="w-4 h-4" />
-            Sala de Monitoreo *
+            Sucursal Casino *
           </Label>
           <Select value={formData.sala_id} onValueChange={(value) => onInputChange("sala_id", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona una sala" />
+              <SelectValue placeholder="Selecciona una sucursal" />
             </SelectTrigger>
             <SelectContent>
               {salas?.map((sala) => (
@@ -102,10 +102,10 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="clasificacion">Clasificación * (Selecciona primero)</Label>
+          <Label htmlFor="clasificacion">Tipo de Incidencia * (Selecciona primero)</Label>
           <Select value={formData.clasificacion_id} onValueChange={(value) => onInputChange("clasificacion_id", value)}>
             <SelectTrigger className="border-orange-200 bg-orange-50">
-              <SelectValue placeholder="Selecciona una clasificación" />
+              <SelectValue placeholder="Selecciona el tipo de incidencia" />
             </SelectTrigger>
             <SelectContent>
               {clasificaciones?.map((clasificacion) => (
@@ -140,7 +140,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-green-600">Seleccionada automáticamente según clasificación</p>
+          <p className="text-xs text-green-600">Seleccionada automáticamente según tipo de incidencia</p>
         </div>
 
         <div className="space-y-2">
@@ -176,7 +176,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
               </SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-xs text-purple-600">Sugerida automáticamente según clasificación</p>
+          <p className="text-xs text-purple-600">Sugerida automáticamente según tipo de incidencia</p>
         </div>
       </div>
 

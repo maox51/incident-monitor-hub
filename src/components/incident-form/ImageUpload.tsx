@@ -1,6 +1,6 @@
 
 import { Label } from "@/components/ui/label";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Video, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
@@ -13,17 +13,20 @@ interface ImageUploadProps {
 const ImageUpload = ({ imagenes, previewUrls, onImageUpload, onRemoveImage }: ImageUploadProps) => {
   const { toast } = useToast();
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      const nuevasImagenes = Array.from(files);
+      const nuevosArchivos = Array.from(files);
       
-      // Validar tamaño de archivos (max 10MB cada uno)
-      const archivosValidos = nuevasImagenes.filter(file => {
-        if (file.size > 10 * 1024 * 1024) {
+      // Validar tamaño de archivos (max 50MB para videos, 10MB para imágenes)
+      const archivosValidos = nuevosArchivos.filter(file => {
+        const isVideo = file.type.startsWith('video/');
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB para videos, 10MB para imágenes
+        
+        if (file.size > maxSize) {
           toast({
             title: "Archivo muy grande",
-            description: `El archivo ${file.name} excede el límite de 10MB.`,
+            description: `El archivo ${file.name} excede el límite de ${isVideo ? '50MB' : '10MB'}.`,
             variant: "destructive",
           });
           return false;
@@ -37,37 +40,62 @@ const ImageUpload = ({ imagenes, previewUrls, onImageUpload, onRemoveImage }: Im
     }
   };
 
+  const isVideoFile = (file: File) => {
+    return file.type.startsWith('video/');
+  };
+
   return (
     <div className="space-y-4">
-      <Label>Imágenes</Label>
+      <Label>Archivos Multimedia</Label>
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
         <input
           type="file"
           multiple
-          accept="image/*"
-          onChange={handleImageUpload}
+          accept="image/*,video/*"
+          onChange={handleFileUpload}
           className="hidden"
-          id="image-upload"
+          id="media-upload"
         />
-        <label htmlFor="image-upload" className="cursor-pointer">
+        <label htmlFor="media-upload" className="cursor-pointer">
           <Upload className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-2 text-sm text-gray-600">
-            Haz clic para subir imágenes o arrastra y suelta
+            Haz clic para subir imágenes o videos
           </p>
-          <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB cada una</p>
+          <p className="text-xs text-gray-500">
+            Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
+          </p>
         </label>
       </div>
 
-      {/* Preview de imágenes */}
+      {/* Preview de archivos */}
       {previewUrls.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {previewUrls.map((url, index) => (
             <div key={index} className="relative">
-              <img
-                src={url}
-                alt={`Preview ${index + 1}`}
-                className="w-full h-24 object-cover rounded-lg"
-              />
+              {isVideoFile(imagenes[index]) ? (
+                <div className="relative">
+                  <video
+                    src={url}
+                    className="w-full h-24 object-cover rounded-lg"
+                    controls
+                    preload="metadata"
+                  />
+                  <div className="absolute top-1 left-1 bg-black bg-opacity-50 rounded-full p-1">
+                    <Video className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <img
+                    src={url}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+                  <div className="absolute top-1 left-1 bg-black bg-opacity-50 rounded-full p-1">
+                    <Image className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => onRemoveImage(index)}
@@ -75,6 +103,9 @@ const ImageUpload = ({ imagenes, previewUrls, onImageUpload, onRemoveImage }: Im
               >
                 <X className="h-3 w-3" />
               </button>
+              <p className="text-xs text-gray-500 mt-1 truncate">
+                {imagenes[index]?.name}
+              </p>
             </div>
           ))}
         </div>
