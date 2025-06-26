@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ export interface FormData {
   clasificacion_id: string;
   prioridad: string;
   reportado_por: string;
+  sala_id: string;
 }
 
 export const useIncidenciaForm = () => {
@@ -27,14 +28,61 @@ export const useIncidenciaForm = () => {
     area_id: "",
     clasificacion_id: "",
     prioridad: "media",
-    reportado_por: ""
+    reportado_por: "",
+    sala_id: ""
   });
   
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
+  // Capturar automáticamente el nombre del usuario al cargar
+  useEffect(() => {
+    if (profile?.full_name) {
+      setFormData(prev => ({ ...prev, reportado_por: profile.full_name }));
+    } else if (profile?.email) {
+      // Si no hay full_name, usar el email como fallback
+      const emailName = profile.email.split('@')[0];
+      setFormData(prev => ({ ...prev, reportado_por: emailName }));
+    }
+  }, [profile]);
+
+  // Función para obtener área sugerida basada en clasificación
+  const getSuggestedAreaAndPriority = async (clasificacionId: string) => {
+    if (!clasificacionId) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from("clasificacion_area_mapping")
+        .select(`
+          area_id,
+          prioridad_sugerida,
+          areas (
+            id,
+            nombre
+          )
+        `)
+        .eq("clasificacion_id", clasificacionId)
+        .eq("activo", true)
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.log("No hay mapeo configurado para esta clasificación");
+        return null;
+      }
+
+      return {
+        area_id: data.area_id,
+        prioridad_sugerida: data.prioridad_sugerida
+      };
+    } catch (error) {
+      console.error("Error getting suggested area:", error);
+      return null;
+    }
+  };
+
   // Función para enviar notificación
-  const sendNotification = async (incidenciaData: any, areaData: any, clasificacionData: any) => {
+  const sendNotification = async (incidenciaData: any, areaData: any, clasificacionData: any, salaData: any) => {
     try {
       console.log("Attempting to send notification for priority:", incidenciaData.prioridad);
       
@@ -47,6 +95,7 @@ export const useIncidenciaForm = () => {
             prioridad: incidenciaData.prioridad,
             area_nombre: areaData?.nombre || 'Sin área',
             clasificacion_nombre: clasificacionData?.nombre || 'Sin clasificación',
+            sala_nombre: salaData?.nombre || 'Sin sala',
             reportado_por: incidenciaData.reportado_por
           }
         });
@@ -96,7 +145,8 @@ export const useIncidenciaForm = () => {
         .select(`
           *,
           areas(id, nombre),
-          clasificaciones(id, nombre)
+          clasificaciones(id, nombre),
+          salas(id, nombre)
         `)
         .single();
 
@@ -109,7 +159,7 @@ export const useIncidenciaForm = () => {
 
       // Enviar notificación si es prioridad alta o crítica
       if (incidencia.prioridad === 'alta' || incidencia.prioridad === 'critica') {
-        await sendNotification(incidencia, incidencia.areas, incidencia.clasificaciones);
+        await sendNotification(incidencia, incidencia.areas, incidencia.clasificaciones, incidencia.salas);
       }
 
       // Subir imágenes si las hay
@@ -176,7 +226,8 @@ export const useIncidenciaForm = () => {
         description: successMessage,
       });
       
-      // Limpiar formulario
+      // Limpiar formulario pero mantener el nombre del usuario
+      const nombreUsuario = formData.reportado_por;
       setFormData({
         titulo: "",
         descripcion: "",
@@ -184,7 +235,8 @@ export const useIncidenciaForm = () => {
         area_id: "",
         clasificacion_id: "",
         prioridad: "media",
-        reportado_por: ""
+        reportado_por: nombreUsuario,
+        sala_id: ""
       });
       setImagenes([]);
       setPreviewUrls([]);
@@ -192,6 +244,7 @@ export const useIncidenciaForm = () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ["dashboard-estadisticas"] });
       queryClient.invalidateQueries({ queryKey: ["incidencias"] });
+      queryClient.invalidateQueries({ queryKey: ["user-statistics"] });
     },
     onError: (error: any) => {
       console.error("Error creating incidencia:", error);
@@ -216,8 +269,25 @@ export const useIncidenciaForm = () => {
     },
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = async (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Si cambió la clasificación, obtener área y prioridad sugeridas
+    if (field === 'clasificacion_id' && value) {
+      const suggestion = await getSuggestedAreaAndPriority(value);
+      if (suggestion) {
+        setFormData(prev => ({ 
+          ...prev, 
+          area_id: suggestion.area_id,
+          prioridad: suggestion.prioridad_sugerida || prev.prioridad
+        }));
+        
+        toast({
+          title: "Sistema Inteligente",
+          description: "Se ha seleccionado automáticamente el área y prioridad sugerida para este tipo de incidencia.",
+        });
+      }
+    }
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

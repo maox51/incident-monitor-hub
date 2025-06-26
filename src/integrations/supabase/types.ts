@@ -36,6 +36,48 @@ export type Database = {
         }
         Relationships: []
       }
+      clasificacion_area_mapping: {
+        Row: {
+          activo: boolean
+          area_id: string
+          clasificacion_id: string
+          created_at: string
+          id: string
+          prioridad_sugerida: string | null
+        }
+        Insert: {
+          activo?: boolean
+          area_id: string
+          clasificacion_id: string
+          created_at?: string
+          id?: string
+          prioridad_sugerida?: string | null
+        }
+        Update: {
+          activo?: boolean
+          area_id?: string
+          clasificacion_id?: string
+          created_at?: string
+          id?: string
+          prioridad_sugerida?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clasificacion_area_mapping_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clasificacion_area_mapping_clasificacion_id_fkey"
+            columns: ["clasificacion_id"]
+            isOneToOne: false
+            referencedRelation: "clasificaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clasificaciones: {
         Row: {
           activo: boolean
@@ -118,6 +160,7 @@ export type Database = {
           observaciones: string | null
           prioridad: string
           reportado_por: string
+          sala_id: string | null
           titulo: string
           updated_at: string
         }
@@ -131,6 +174,7 @@ export type Database = {
           observaciones?: string | null
           prioridad?: string
           reportado_por: string
+          sala_id?: string | null
           titulo: string
           updated_at?: string
         }
@@ -144,6 +188,7 @@ export type Database = {
           observaciones?: string | null
           prioridad?: string
           reportado_por?: string
+          sala_id?: string | null
           titulo?: string
           updated_at?: string
         }
@@ -160,6 +205,13 @@ export type Database = {
             columns: ["clasificacion_id"]
             isOneToOne: false
             referencedRelation: "clasificaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidencias_sala_id_fkey"
+            columns: ["sala_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
             referencedColumns: ["id"]
           },
         ]
@@ -218,6 +270,84 @@ export type Database = {
         }
         Relationships: []
       }
+      reportes_consolidados: {
+        Row: {
+          archivo_pdf_url: string | null
+          areas_afectadas: number
+          created_at: string
+          fecha_reporte: string
+          id: string
+          incidencias_altas: number
+          incidencias_bajas: number
+          incidencias_criticas: number
+          incidencias_medias: number
+          salas_afectadas: number
+          total_incidencias: number
+          updated_at: string
+        }
+        Insert: {
+          archivo_pdf_url?: string | null
+          areas_afectadas?: number
+          created_at?: string
+          fecha_reporte: string
+          id?: string
+          incidencias_altas?: number
+          incidencias_bajas?: number
+          incidencias_criticas?: number
+          incidencias_medias?: number
+          salas_afectadas?: number
+          total_incidencias?: number
+          updated_at?: string
+        }
+        Update: {
+          archivo_pdf_url?: string | null
+          areas_afectadas?: number
+          created_at?: string
+          fecha_reporte?: string
+          id?: string
+          incidencias_altas?: number
+          incidencias_bajas?: number
+          incidencias_criticas?: number
+          incidencias_medias?: number
+          salas_afectadas?: number
+          total_incidencias?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      salas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          numero_camaras: number | null
+          ubicacion: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          numero_camaras?: number | null
+          ubicacion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          numero_camaras?: number | null
+          ubicacion?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -244,6 +374,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generar_reporte_consolidado: {
+        Args: { fecha_objetivo?: string }
+        Returns: string
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]

@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Camera, Building } from "lucide-react";
 
 interface Area {
   id: string;
@@ -15,6 +16,14 @@ interface Clasificacion {
   color: string;
 }
 
+interface Sala {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  ubicacion?: string;
+  numero_camaras?: number;
+}
+
 interface FormData {
   titulo: string;
   descripcion: string;
@@ -23,16 +32,18 @@ interface FormData {
   clasificacion_id: string;
   prioridad: string;
   reportado_por: string;
+  sala_id: string;
 }
 
 interface IncidentFormFieldsProps {
   formData: FormData;
   areas?: Area[];
   clasificaciones?: Clasificacion[];
+  salas?: Sala[];
   onInputChange: (field: string, value: string) => void;
 }
 
-const IncidentFormFields = ({ formData, areas, clasificaciones, onInputChange }: IncidentFormFieldsProps) => {
+const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputChange }: IncidentFormFieldsProps) => {
   return (
     <>
       <div className="grid md:grid-cols-2 gap-6">
@@ -55,21 +66,35 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, onInputChange }:
             onChange={(e) => onInputChange("reportado_por", e.target.value)}
             placeholder="Nombre del reportante"
             required
+            className="bg-blue-50 border-blue-200"
+            disabled
           />
+          <p className="text-xs text-blue-600">Capturado automáticamente del usuario logueado</p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="area">Área *</Label>
-          <Select value={formData.area_id} onValueChange={(value) => onInputChange("area_id", value)}>
+          <Label htmlFor="sala" className="flex items-center gap-2">
+            <Building className="w-4 h-4" />
+            Sala de Monitoreo *
+          </Label>
+          <Select value={formData.sala_id} onValueChange={(value) => onInputChange("sala_id", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona un área" />
+              <SelectValue placeholder="Selecciona una sala" />
             </SelectTrigger>
             <SelectContent>
-              {areas?.map((area) => (
-                <SelectItem key={area.id} value={area.id}>
-                  {area.nombre}
+              {salas?.map((sala) => (
+                <SelectItem key={sala.id} value={sala.id}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{sala.nombre}</span>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <MapPin className="w-3 h-3" />
+                      {sala.ubicacion}
+                      <Camera className="w-3 h-3 ml-2" />
+                      {sala.numero_camaras} cámaras
+                    </div>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -77,9 +102,9 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, onInputChange }:
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="clasificacion">Clasificación *</Label>
+          <Label htmlFor="clasificacion">Clasificación * (Selecciona primero)</Label>
           <Select value={formData.clasificacion_id} onValueChange={(value) => onInputChange("clasificacion_id", value)}>
-            <SelectTrigger>
+            <SelectTrigger className="border-orange-200 bg-orange-50">
               <SelectValue placeholder="Selecciona una clasificación" />
             </SelectTrigger>
             <SelectContent>
@@ -96,21 +121,62 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, onInputChange }:
               ))}
             </SelectContent>
           </Select>
+          <p className="text-xs text-orange-600">El sistema seleccionará automáticamente el área correspondiente</p>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="area">Área (Auto-seleccionada)</Label>
+          <Select value={formData.area_id} onValueChange={(value) => onInputChange("area_id", value)}>
+            <SelectTrigger className="bg-green-50 border-green-200">
+              <SelectValue placeholder="Se seleccionará automáticamente" />
+            </SelectTrigger>
+            <SelectContent>
+              {areas?.map((area) => (
+                <SelectItem key={area.id} value={area.id}>
+                  {area.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-green-600">Seleccionada automáticamente según clasificación</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="prioridad">Prioridad</Label>
+          <Label htmlFor="prioridad">Prioridad (Auto-sugerida)</Label>
           <Select value={formData.prioridad} onValueChange={(value) => onInputChange("prioridad", value)}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-purple-50 border-purple-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="baja">Baja</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
-              <SelectItem value="alta">Alta</SelectItem>
-              <SelectItem value="critica">Crítica</SelectItem>
+              <SelectItem value="baja">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  Baja
+                </div>
+              </SelectItem>
+              <SelectItem value="media">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  Media
+                </div>
+              </SelectItem>
+              <SelectItem value="alta">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                  Alta
+                </div>
+              </SelectItem>
+              <SelectItem value="critica">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  Crítica
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-purple-600">Sugerida automáticamente según clasificación</p>
         </div>
       </div>
 

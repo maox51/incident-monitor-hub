@@ -48,14 +48,27 @@ const IncidenciaForm = () => {
     },
   });
 
+  // Obtener salas
+  const { data: salas } = useQuery({
+    queryKey: ["salas"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("salas")
+        .select("*")
+        .eq("activo", true)
+        .order("nombre");
+      return data || [];
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id || 
-        !formData.clasificacion_id || !formData.reportado_por.trim()) {
+        !formData.clasificacion_id || !formData.reportado_por.trim() || !formData.sala_id) {
       toast({
         title: "Campos requeridos",
-        description: "Por favor completa todos los campos obligatorios.",
+        description: "Por favor completa todos los campos obligatorios incluyendo la sala de monitoreo.",
         variant: "destructive",
       });
       return;
@@ -113,9 +126,15 @@ const IncidenciaForm = () => {
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Registrar Nueva Incidencia</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Registrar Nueva Incidencia
+          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-normal">
+            Sistema Inteligente Activado
+          </span>
+        </CardTitle>
         <CardDescription>
-          Completa el formulario para registrar una nueva incidencia en el sistema de monitoreo
+          Completa el formulario para registrar una nueva incidencia. El sistema seleccionará automáticamente 
+          el área y prioridad según el tipo de incidencia seleccionado.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -124,6 +143,7 @@ const IncidenciaForm = () => {
             formData={formData}
             areas={areas}
             clasificaciones={clasificaciones}
+            salas={salas}
             onInputChange={handleInputChange}
           />
 
