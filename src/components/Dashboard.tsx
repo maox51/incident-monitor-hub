@@ -1,56 +1,130 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar, Users } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Users, Database } from "lucide-react";
 import UserStatisticsChart from "./dashboard/UserStatisticsChart";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#DC2626', '#EA580C', '#D97706', '#65A30D'];
 
 const Dashboard = () => {
-  // Datos de ejemplo para las tarjetas de resumen
-  const summaryData = [
-    { title: "Incidencias Totales", value: 1250, icon: TrendingUp, color: "text-blue-500" },
-    { title: "Alertas Críticas", value: 150, icon: AlertTriangle, color: "text-red-500" },
-    { title: "Eventos Hoy", value: 75, icon: Calendar, color: "text-green-500" },
-    { title: "Usuarios Activos", value: 320, icon: Users, color: "text-purple-500" },
-  ];
+  // Obtener estadísticas reales del sistema
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      const { data: incidencias, error } = await supabase
+        .from("incidencias")
+        .select("*");
+      
+      if (error) throw error;
 
-  // Estadísticas de ejemplo para el gráfico de barras
-  const barChartData = [
-    { name: 'Ene', uv: 4000, pv: 2400, amt: 2400 },
-    { name: 'Feb', uv: 3000, pv: 1398, amt: 2210 },
-    { name: 'Mar', uv: 2000, pv: 9800, amt: 2290 },
-    { name: 'Abr', uv: 2780, pv: 3908, amt: 2000 },
-    { name: 'May', uv: 1890, pv: 4800, amt: 2181 },
-    { name: 'Jun', uv: 2390, pv: 3800, amt: 2500 },
-    { name: 'Jul', uv: 3490, pv: 4300, amt: 2100 },
-  ];
+      const hoy = new Date().toISOString().split('T')[0];
+      const incidenciasHoy = incidencias?.filter(inc => 
+        inc.created_at.split('T')[0] === hoy
+      ) || [];
 
-  // Datos de ejemplo para el gráfico circular
-  const pieChartData = [
-    { name: 'Grupo A', value: 400 },
-    { name: 'Grupo B', value: 300 },
-    { name: 'Grupo C', value: 300 },
-    { name: 'Grupo D', value: 200 },
-    { name: 'Grupo E', value: 278 },
-    { name: 'Grupo F', value: 189 },
-  ];
+      const criticas = incidencias?.filter(inc => inc.prioridad === 'critica').length || 0;
+      
+      return {
+        totalIncidencias: incidencias?.length || 0,
+        incidenciasHoy: incidenciasHoy.length,
+        incidenciasCriticas: criticas,
+        usuariosActivos: new Set(incidencias?.map(inc => inc.reportado_por)).size || 0
+      };
+    },
+  });
 
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-    const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+  // Obtener datos para gráfico de tendencias por mes
+  const { data: monthlyData } = useQuery({
+    queryKey: ["monthly-trends"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incidencias")
+        .select("created_at, prioridad");
+      
+      if (error) throw error;
 
+      const monthlyStats: { [key: string]: { total: number; criticas: number; altas: number } } = {};
+      
+      data?.forEach(inc => {
+        const month = new Date(inc.created_at).toLocaleDateString('es-ES', { month: 'short' });
+        if (!monthlyStats[month]) {
+          monthlyStats[month] = { total: 0, criticas: 0, altas: 0 };
+        }
+        monthlyStats[month].total++;
+        if (inc.prioridad === 'critica') monthlyStats[month].criticas++;
+        if (inc.prioridad === 'alta') monthlyStats[month].altas++;
+      });
+
+      return Object.entries(monthlyStats).map(([month, stats]) => ({
+        name: month,
+        total: stats.total,
+        criticas: stats.criticas,
+        altas: stats.altas
+      }));
+    },
+  });
+
+  // Obtener distribución por prioridad
+  const { data: priorityData } = useQuery({
+    queryKey: ["priority-distribution"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incidencias")
+        .select("prioridad");
+      
+      if (error) throw error;
+
+      const distribution: { [key: string]: number } = {};
+      data?.forEach(inc => {
+        distribution[inc.prioridad] = (distribution[inc.prioridad] || 0) + 1;
+      });
+
+      return Object.entries(distribution).map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value
+      }));
+    },
+  });
+
+  if (statsLoading) {
     return (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
-  };
+  }
+
+  const summaryData = [
+    { 
+      title: "Incidencias Totales", 
+      value: stats?.totalIncidencias || 0, 
+      icon: Database, 
+      color: "text-blue-500" 
+    },
+    { 
+      title: "Alertas Críticas", 
+      value: stats?.incidenciasCriticas || 0, 
+      icon: AlertTriangle, 
+      color: "text-red-500" 
+    },
+    { 
+      title: "Eventos Hoy", 
+      value: stats?.incidenciasHoy || 0, 
+      icon: Calendar, 
+      color: "text-green-500" 
+    },
+    { 
+      title: "Monitores Activos", 
+      value: stats?.usuariosActivos || 0, 
+      icon: Users, 
+      color: "text-purple-500" 
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -84,54 +158,72 @@ const Dashboard = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendencia de Incidencias</CardTitle>
-                <CardDescription>Comparación mensual de incidencias reportadas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={barChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="pv" fill="#8884d8" />
-                    <Bar dataKey="uv" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          {(monthlyData && monthlyData.length > 0) || (priorityData && priorityData.length > 0) ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {monthlyData && monthlyData.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tendencia de Incidencias</CardTitle>
+                    <CardDescription>Comparación mensual de incidencias reportadas</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="total" fill="#3B82F6" name="Total" />
+                        <Bar dataKey="criticas" fill="#DC2626" name="Críticas" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
 
+              {priorityData && priorityData.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Distribución de Prioridades</CardTitle>
+                    <CardDescription>Porcentaje de incidencias por nivel de prioridad</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={priorityData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {priorityData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Distribución de Incidencias</CardTitle>
-                <CardDescription>Porcentaje de incidencias por categoría</CardDescription>
+                <CardTitle>Sin Datos Suficientes</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={pieChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <p className="text-gray-500">
+                  Aún no hay suficientes incidencias registradas para mostrar gráficos. 
+                  Comienza registrando algunas incidencias para ver las estadísticas.
+                </p>
               </CardContent>
             </Card>
-          </div>
+          )}
         </TabsContent>
 
         <TabsContent value="incidents">
@@ -141,7 +233,7 @@ const Dashboard = () => {
               <CardDescription>Lista detallada de todas las incidencias reportadas</CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Aquí iría la tabla de incidencias con opciones de filtrado y gestión.</p>
+              <p>Módulo de gestión de incidencias - En desarrollo</p>
             </CardContent>
           </Card>
         </TabsContent>

@@ -7,9 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useIncidenciaForm } from "@/hooks/useIncidenciaForm";
 import IncidentFormFields from "@/components/incident-form/IncidentFormFields";
 import ImageUpload from "@/components/incident-form/ImageUpload";
+import IncidenciaConfirmationDialog from "@/components/IncidenciaConfirmationDialog";
+import { useState } from "react";
 
 const IncidenciaForm = () => {
   const { toast } = useToast();
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  
   const {
     formData,
     imagenes,
@@ -74,7 +78,7 @@ const IncidenciaForm = () => {
       return;
     }
 
-    // Verificar autenticación antes de enviar
+    // Verificar autenticación antes de mostrar confirmación
     if (!user || !profile) {
       toast({
         title: "Error de autenticación",
@@ -93,6 +97,12 @@ const IncidenciaForm = () => {
       return;
     }
 
+    // Mostrar diálogo de confirmación
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(false);
     crearIncidencia.mutate(formData);
   };
 
@@ -124,46 +134,58 @@ const IncidenciaForm = () => {
   }
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Registrar Nueva Incidencia
-          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-normal">
-            Sistema Inteligente Activado
-          </span>
-        </CardTitle>
-        <CardDescription>
-          Completa el formulario para registrar una nueva incidencia. El sistema seleccionará automáticamente 
-          el área y prioridad según el tipo de incidencia seleccionado.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <IncidentFormFields
-            formData={formData}
-            areas={areas}
-            clasificaciones={clasificaciones}
-            salas={salas}
-            onInputChange={handleInputChange}
-          />
+    <>
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Registrar Nueva Incidencia
+            <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-normal">
+              Sistema Inteligente Activado
+            </span>
+          </CardTitle>
+          <CardDescription>
+            Completa el formulario para registrar una nueva incidencia. El sistema seleccionará automáticamente 
+            el área y prioridad según el tipo de incidencia seleccionado.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <IncidentFormFields
+              formData={formData}
+              areas={areas}
+              clasificaciones={clasificaciones}
+              salas={salas}
+              onInputChange={handleInputChange}
+            />
 
-          <ImageUpload
-            imagenes={imagenes}
-            previewUrls={previewUrls}
-            onImageUpload={handleImageUpload}
-            onRemoveImage={removeImage}
-          />
+            <ImageUpload
+              imagenes={imagenes}
+              previewUrls={previewUrls}
+              onImageUpload={handleImageUpload}
+              onRemoveImage={removeImage}
+            />
 
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={crearIncidencia.isPending}
-          >
-            {crearIncidencia.isPending ? "Creando..." : "Registrar Incidencia"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={crearIncidencia.isPending}
+            >
+              {crearIncidencia.isPending ? "Procesando..." : "Revisar y Registrar Incidencia"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <IncidenciaConfirmationDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={handleConfirmSubmit}
+        formData={formData}
+        areas={areas || []}
+        clasificaciones={clasificaciones || []}
+        salas={salas || []}
+      />
+    </>
   );
 };
 

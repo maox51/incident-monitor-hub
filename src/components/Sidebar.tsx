@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, X, BarChart3, AlertTriangle, FileText, Users, Calendar, Settings } from 'lucide-react';
+import { Menu, X, BarChart3, AlertTriangle, FileText, Users, Calendar, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -17,6 +17,7 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar },
     { id: 'reportes', label: 'Reportes', icon: FileText },
     { id: 'usuarios', label: 'Usuarios', icon: Users },
+    { id: 'importar', label: 'Importar Datos', icon: Upload },
   ];
 
   return (
@@ -24,7 +25,7 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg lg:hidden hover:bg-gray-50 transition-colors"
       >
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
@@ -39,18 +40,21 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40",
+        "fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-40 flex flex-col",
         isOpen ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0 lg:static lg:z-auto"
       )}>
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <AlertTriangle className="text-orange-500" />
+        {/* Header */}
+        <div className="p-6 border-b border-slate-700">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <AlertTriangle className="text-orange-400" />
             Casino Monitor
           </h2>
+          <p className="text-slate-300 text-sm mt-1">Sistema de Gestión</p>
         </div>
 
-        <nav className="mt-6">
+        {/* Navigation */}
+        <nav className="flex-1 pt-6 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -61,21 +65,34 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
                   setIsOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-6 py-3 text-left transition-colors",
+                  "w-full flex items-center gap-3 px-6 py-4 text-left transition-all duration-200 group relative",
                   activeTab === item.id
-                    ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg"
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
                 )}
               >
-                <Icon className="w-5 h-5" />
-                {item.label}
+                {activeTab === item.id && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400" />
+                )}
+                <Icon className={cn(
+                  "w-5 h-5 transition-colors",
+                  activeTab === item.id ? "text-white" : "group-hover:text-orange-400"
+                )} />
+                <span className="font-medium">{item.label}</span>
               </button>
             );
           })}
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4 text-xs text-gray-500 text-center">
-          Sistema de Monitoreo v1.0
+        {/* Footer */}
+        <div className="p-6 border-t border-slate-700">
+          <div className="text-xs text-slate-400 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Sistema Activo</span>
+            </div>
+            <p>v2.0 - Casino Monitor Pro</p>
+          </div>
         </div>
       </div>
     </>

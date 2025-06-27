@@ -5,6 +5,7 @@ import IncidenciaForm from "@/components/IncidenciaForm";
 import ReportesView from "@/components/ReportesView";
 import UserManagement from "@/components/admin/UserManagement";
 import ConsolidadoDiario from "@/components/ConsolidadoDiario";
+import ImportDataModule from "@/components/ImportDataModule";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -71,6 +72,12 @@ const Index = () => {
             <UserManagement />
           </ProtectedRoute>
         );
+      case "importar":
+        return (
+          <ProtectedRoute requireAdmin>
+            <ImportDataModule />
+          </ProtectedRoute>
+        );
       default:
         return (
           <ProtectedRoute requireAdmin>
@@ -81,13 +88,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex">
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <div className="flex">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="flex-1 lg:ml-64 flex flex-col">
+        <Header />
         
-        <div className="flex-1 lg:ml-64 p-4 lg:p-8">
+        <div className="flex-1 p-4 lg:p-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-3">
               <AlertTriangle className="text-orange-500" />
