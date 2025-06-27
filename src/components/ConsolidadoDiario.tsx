@@ -5,13 +5,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, FileText, Image as ImageIcon, Video, Eye, Download, Play, AlertTriangle, Users, Building } from "lucide-react";
+import { Calendar, FileText, Image as ImageIcon, Video, Eye, AlertTriangle, Users, Building } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
+
+// Definir interfaces más específicas
+interface IncidenciaImagen {
+  id: string;
+  url: string;
+  nombre: string;
+  tipo: string;
+  es_video: boolean;
+}
+
+interface IncidenciaDetalle {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  prioridad: string;
+  area: string;
+  sala: string;
+  reportado_por: string;
+  fecha_incidencia: string;
+  imagenes: IncidenciaImagen[];
+  total_archivos: number;
+}
+
+interface EstadisticasMultimedia {
+  resumen_multimedia: {
+    total_imagenes: number;
+    total_videos: number;
+    incidencias_con_evidencia: number;
+  };
+}
 
 interface ConsolidadoDetallado {
   id: string;
@@ -23,40 +52,16 @@ interface ConsolidadoDetallado {
   incidencias_bajas: number;
   areas_afectadas: number;
   salas_afectadas: number;
-  incidencias_detalle: Array<{
-    id: string;
-    titulo: string;
-    descripcion: string;
-    prioridad: string;
-    area: string;
-    sala: string;
-    reportado_por: string;
-    fecha_incidencia: string;
-    imagenes: Array<{
-      id: string;
-      url: string;
-      nombre: string;
-      tipo: string;
-      es_video: boolean;
-    }>;
-    total_archivos: number;
-  }>;
-  estadisticas_multimedia?: {
-    resumen_multimedia: {
-      total_imagenes: number;
-      total_videos: number;
-      incidencias_con_evidencia: number;
-    };
-  };
+  incidencias_detalle: IncidenciaDetalle[];
+  estadisticas_multimedia?: EstadisticasMultimedia;
 }
 
 const ConsolidadoDiario = () => {
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [expandedIncident, setExpandedIncident] = useState<string | null>(null);
 
-  // Obtener consolidado detallado
+  // Obtener consolidado detallado con tipo de retorno correcto
   const { data: consolidado, isLoading, refetch } = useQuery({
     queryKey: ["consolidado-detallado", fechaSeleccionada],
     queryFn: async (): Promise<ConsolidadoDetallado | null> => {
@@ -70,8 +75,37 @@ const ConsolidadoDiario = () => {
         throw error;
       }
 
-      console.log("Consolidado data:", data);
-      return data;
+      console.log("Raw consolidado data:", data);
+      
+      // Si no hay datos, retornar null
+      if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+        return null;
+      }
+
+      // Convertir el JSON a nuestro tipo esperado
+      const consolidadoData = typeof data === 'string' ? JSON.parse(data) : data;
+      
+      return {
+        id: consolidadoData.id || '',
+        fecha_reporte: consolidadoData.fecha_reporte || fechaSeleccionada,
+        total_incidencias: consolidadoData.total_incidencias || 0,
+        incidencias_criticas: consolidadoData.incidencias_criticas || 0,
+        incidencias_altas: consolidadoData.incidencias_altas || 0,
+        incidencias_medias: consolidadoData.incidencias_medias || 0,
+        incidencias_bajas: consolidadoData.incidencias_bajas || 0,
+        areas_afectadas: consolidadoData.areas_afectadas || 0,
+        salas_afectadas: consolidadoData.salas_afectadas || 0,
+        incidencias_detalle: Array.isArray(consolidadoData.incidencias_detalle) 
+          ? consolidadoData.incidencias_detalle 
+          : [],
+        estadisticas_multimedia: consolidadoData.estadisticas_multimedia || {
+          resumen_multimedia: {
+            total_imagenes: 0,
+            total_videos: 0,
+            incidencias_con_evidencia: 0
+          }
+        }
+      };
     },
   });
 
@@ -101,7 +135,7 @@ const ConsolidadoDiario = () => {
     }
   };
 
-  const MediaViewer = ({ archivo }: { archivo: any }) => {
+  const MediaViewer = ({ archivo }: { archivo: IncidenciaImagen }) => {
     if (archivo.es_video) {
       return (
         <div className="relative group">
@@ -110,14 +144,9 @@ const ConsolidadoDiario = () => {
             className="w-full h-32 object-cover rounded-lg"
             controls
             preload="metadata"
-            poster={archivo.url + "#t=0.1"}
           />
           <div className="absolute top-2 left-2 bg-black bg-opacity-70 rounded-full p-1">
             <Video className="w-4 h-4 text-white" />
-          </div>
-          <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-            <Play className="w-3 h-3 inline mr-1" />
-            Video
           </div>
         </div>
       );
@@ -164,7 +193,7 @@ const ConsolidadoDiario = () => {
             Consolidado Diario de Incidencias
           </CardTitle>
           <CardDescription>
-            Reporte automático generado para el monitoreo de incidencias del casino
+            Reporte automático generado diariamente a las 21:00 horas
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -269,7 +298,7 @@ const ConsolidadoDiario = () => {
             <CardHeader>
               <CardTitle>Detalle de Incidencias</CardTitle>
               <CardDescription>
-                Listado completo de incidencias con evidencia multimedia
+                Listado completo de incidencias del día con evidencia multimedia
               </CardDescription>
             </CardHeader>
             <CardContent>

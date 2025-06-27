@@ -65,7 +65,7 @@ serve(async (req) => {
         console.log(`Preparando notificaciones para ${admins?.length || 0} administradores`)
         
         // Log detallado del consolidado generado automáticamente
-        console.log('=== CONSOLIDADO DIARIO AUTOMÁTICO ===')
+        console.log('=== CONSOLIDADO DIARIO AUTOMÁTICO 21:00 ===')
         console.log('Fecha:', fechaObjetivo)
         console.log('Total incidencias:', consolidadoCompleto.total_incidencias)
         console.log('Incidencias críticas:', consolidadoCompleto.incidencias_criticas)
@@ -80,10 +80,7 @@ serve(async (req) => {
           console.log('- Incidencias con evidencia:', multimedia.incidencias_con_evidencia)
         }
         
-        console.log('=====================================')
-
-        // Aquí se podría integrar con servicio de email/notificaciones
-        // Por ahora registramos la información para futuras integraciones
+        console.log('=======================================')
       }
     }
 
@@ -93,6 +90,7 @@ serve(async (req) => {
       mensaje: `Consolidado generado exitosamente para ${fechaObjetivo}`,
       reporte_id: reporteId,
       es_automatico: esAutomatico,
+      hora_programada: "21:00",
       estadisticas: {
         total_incidencias: consolidadoCompleto?.total_incidencias || 0,
         incidencias_criticas: consolidadoCompleto?.incidencias_criticas || 0,
