@@ -40,7 +40,6 @@ export const useIncidenciaForm = () => {
     if (profile?.full_name) {
       setFormData(prev => ({ ...prev, reportado_por: profile.full_name }));
     } else if (profile?.email) {
-      // Si no hay full_name, usar el email como fallback
       const emailName = profile.email.split('@')[0];
       setFormData(prev => ({ ...prev, reportado_por: emailName }));
     }
@@ -81,6 +80,38 @@ export const useIncidenciaForm = () => {
     }
   };
 
+  // Función optimizada para subir archivos a Supabase Storage
+  const uploadFileToStorage = async (file: File, incidenciaId: string, index: number) => {
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${incidenciaId}_${Date.now()}_${index}.${fileExtension}`;
+    
+    console.log(`Uploading file to storage: ${fileName}`);
+    
+    const { data, error } = await supabase.storage
+      .from("incidencias-multimedia")
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error("Error uploading file:", error);
+      throw error;
+    }
+
+    // Obtener URL pública
+    const { data: urlData } = supabase.storage
+      .from("incidencias-multimedia")
+      .getPublicUrl(fileName);
+
+    return {
+      fileName,
+      publicUrl: urlData.publicUrl,
+      size: file.size,
+      type: file.type
+    };
+  };
+
   // Función para enviar notificación
   const sendNotification = async (incidenciaData: any, areaData: any, clasificacionData: any, salaData: any) => {
     try {
@@ -111,14 +142,12 @@ export const useIncidenciaForm = () => {
     }
   };
 
-  // Mutación para crear incidencia
+  // Mutación optimizada para crear incidencia
   const crearIncidencia = useMutation({
     mutationFn: async (datos: FormData) => {
       console.log("Creating incidencia with data:", datos);
-      console.log("Current user:", user?.id);
-      console.log("User profile:", profile);
       
-      // Verificar autenticación y permisos antes de intentar crear
+      // Verificar autenticación y permisos
       if (!user) {
         throw new Error("Debes iniciar sesión para crear incidencias");
       }
@@ -131,7 +160,7 @@ export const useIncidenciaForm = () => {
         throw new Error("No tienes permisos para crear incidencias. Solo monitores y administradores pueden crear incidencias.");
       }
       
-      // Crear la incidencia con fecha actual y verificación de permisos
+      // Crear la incidencia
       const incidenciaData = {
         ...datos,
         fecha_incidencia: new Date().toISOString()
@@ -162,54 +191,43 @@ export const useIncidenciaForm = () => {
         await sendNotification(incidencia, incidencia.areas, incidencia.clasificaciones, incidencia.salas);
       }
 
-      // Subir imágenes si las hay
+      // Subir archivos multimedia de forma optimizada
       if (imagenes.length > 0) {
-        console.log("Uploading images...");
+        console.log("Uploading multimedia files...");
         
-        for (let i = 0; i < imagenes.length; i++) {
-          const archivo = imagenes[i];
-          const nombreArchivo = `${incidencia.id}_${Date.now()}_${i}_${archivo.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-          
-          console.log(`Uploading image ${i + 1}/${imagenes.length}:`, nombreArchivo);
-          
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from("incidencias-images")
-            .upload(nombreArchivo, archivo, {
-              cacheControl: '3600',
-              upsert: false
-            });
+        const uploadPromises = imagenes.map(async (archivo, index) => {
+          try {
+            const uploadResult = await uploadFileToStorage(archivo, incidencia.id, index);
+            
+            // Guardar solo la referencia URL en la base de datos
+            const { error: dbError } = await supabase
+              .from("imagenes_incidencias")
+              .insert({
+                incidencia_id: incidencia.id,
+                nombre_archivo: uploadResult.fileName,
+                url_imagen: uploadResult.publicUrl,
+                tipo_archivo: uploadResult.type,
+                tamaño_bytes: uploadResult.size
+              });
 
-          if (uploadError) {
-            console.error("Error uploading image:", uploadError);
-            continue;
+            if (dbError) {
+              console.error("Error saving image reference:", dbError);
+            } else {
+              console.log("Image reference saved successfully");
+            }
+            
+            return uploadResult;
+          } catch (error) {
+            console.error(`Error uploading file ${index}:`, error);
+            return null;
           }
+        });
 
-          console.log("Image uploaded successfully:", uploadData);
-
-          // Obtener URL pública
-          const { data: urlData } = supabase.storage
-            .from("incidencias-images")
-            .getPublicUrl(nombreArchivo);
-
-          console.log("Public URL:", urlData.publicUrl);
-
-          // Guardar referencia en la base de datos
-          const { error: dbError } = await supabase
-            .from("imagenes_incidencias")
-            .insert({
-              incidencia_id: incidencia.id,
-              nombre_archivo: nombreArchivo,
-              url_imagen: urlData.publicUrl,
-              tipo_archivo: archivo.type,
-              tamaño_bytes: archivo.size
-            });
-
-          if (dbError) {
-            console.error("Error saving image reference:", dbError);
-          } else {
-            console.log("Image reference saved successfully");
-          }
-        }
+        // Esperar a que todos los archivos se suban
+        const uploadResults = await Promise.allSettled(uploadPromises);
+        const successfulUploads = uploadResults.filter(result => result.status === 'fulfilled').length;
+        
+        console.log(`Successfully uploaded ${successfulUploads}/${imagenes.length} files`);
       }
 
       return incidencia;
@@ -219,6 +237,10 @@ export const useIncidenciaForm = () => {
       
       if (incidencia.prioridad === 'alta' || incidencia.prioridad === 'critica') {
         successMessage += " Se ha enviado una notificación a los administradores debido a la prioridad " + incidencia.prioridad + ".";
+      }
+      
+      if (imagenes.length > 0) {
+        successMessage += ` Se han adjuntado ${imagenes.length} archivo(s) multimedia.`;
       }
       
       toast({
@@ -297,7 +319,7 @@ export const useIncidenciaForm = () => {
       
       setImagenes(prev => [...prev, ...nuevasImagenes]);
       
-      // Crear URLs de preview
+      // Crear URLs de preview optimizadas
       nuevasImagenes.forEach(file => {
         const url = URL.createObjectURL(file);
         setPreviewUrls(prev => [...prev, url]);
@@ -306,10 +328,18 @@ export const useIncidenciaForm = () => {
   };
 
   const removeImage = (index: number) => {
+    // Limpiar URL de preview para evitar memory leaks
     URL.revokeObjectURL(previewUrls[index]);
     setImagenes(prev => prev.filter((_, i) => i !== index));
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
+
+  // Limpiar URLs de preview al desmontar el componente
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   return {
     formData,

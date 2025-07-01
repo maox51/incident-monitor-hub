@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TrendingUp, AlertTriangle, Calendar, Users, Database } from "lucide-react";
 import UserStatisticsChart from "./dashboard/UserStatisticsChart";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
+import MonitorKPIs from "./dashboard/MonitorKPIs";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 
 const COLORS = ['#DC2626', '#EA580C', '#D97706', '#65A30D'];
@@ -133,10 +134,11 @@ const Dashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="incidents">Incidencias</TabsTrigger>
-          <TabsTrigger value="monitors">Monitores</TabsTrigger>
+          <TabsTrigger value="kpis">KPIs Monitores</TabsTrigger>
+          <TabsTrigger value="monitors">Estadísticas</TabsTrigger>
           <TabsTrigger value="consolidado">Consolidado</TabsTrigger>
           <TabsTrigger value="analysis">Análisis</TabsTrigger>
         </TabsList>
@@ -236,6 +238,10 @@ const Dashboard = () => {
               <p>Módulo de gestión de incidencias - En desarrollo</p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="kpis" className="space-y-4">
+          <MonitorKPIs />
         </TabsContent>
 
         <TabsContent value="monitors" className="space-y-4">

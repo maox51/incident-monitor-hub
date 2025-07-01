@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building } from "lucide-react";
+import { Building, Lock } from "lucide-react";
 
 interface Area {
   id: string;
@@ -42,6 +42,8 @@ interface IncidentFormFieldsProps {
 }
 
 const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputChange }: IncidentFormFieldsProps) => {
+  const selectedArea = areas?.find(area => area.id === formData.area_id);
+  
   return (
     <>
       <div className="grid md:grid-cols-2 gap-6">
@@ -122,20 +124,21 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="area">Área (Auto-seleccionada)</Label>
-          <Select value={formData.area_id} onValueChange={(value) => onInputChange("area_id", value)}>
-            <SelectTrigger className="bg-green-50 border-green-200">
-              <SelectValue placeholder="Se seleccionará automáticamente" />
-            </SelectTrigger>
-            <SelectContent>
-              {areas?.map((area) => (
-                <SelectItem key={area.id} value={area.id}>
-                  {area.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-green-600">Seleccionada automáticamente según tipo de incidencia</p>
+          <Label htmlFor="area" className="flex items-center gap-2">
+            <Lock className="w-4 h-4" />
+            Área (Auto-seleccionada)
+          </Label>
+          <div className="relative">
+            <Input
+              id="area"
+              value={selectedArea?.nombre || "Selecciona tipo de incidencia primero"}
+              className="bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed"
+              disabled
+              readOnly
+            />
+            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-xs text-gray-500">Campo de solo lectura - Se asigna automáticamente según tipo de incidencia</p>
         </div>
 
         <div className="space-y-2">

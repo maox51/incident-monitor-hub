@@ -44,10 +44,18 @@ const ImageUpload = ({ imagenes, previewUrls, onImageUpload, onRemoveImage }: Im
     return file.type.startsWith('video/');
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <div className="space-y-4">
       <Label>Archivos Multimedia</Label>
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
         <input
           type="file"
           multiple
@@ -62,52 +70,72 @@ const ImageUpload = ({ imagenes, previewUrls, onImageUpload, onRemoveImage }: Im
             Haz clic para subir imágenes o videos
           </p>
           <p className="text-xs text-gray-500">
-            Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
+            Imágenes: PNG, JPG, GIF, WEBP hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            Los archivos se almacenan optimizados en la nube
           </p>
         </label>
       </div>
 
-      {/* Preview de archivos */}
+      {/* Preview de archivos optimizado */}
       {previewUrls.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {previewUrls.map((url, index) => (
-            <div key={index} className="relative">
-              {isVideoFile(imagenes[index]) ? (
-                <div className="relative">
-                  <video
-                    src={url}
-                    className="w-full h-24 object-cover rounded-lg"
-                    controls
-                    preload="metadata"
-                  />
-                  <div className="absolute top-1 left-1 bg-black bg-opacity-50 rounded-full p-1">
-                    <Video className="w-3 h-3 text-white" />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700">
+              Archivos adjuntos ({previewUrls.length})
+            </h4>
+            <span className="text-xs text-gray-500">
+              Total: {formatFileSize(imagenes.reduce((sum, file) => sum + file.size, 0))}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {previewUrls.map((url, index) => (
+              <div key={index} className="relative group">
+                {isVideoFile(imagenes[index]) ? (
+                  <div className="relative">
+                    <video
+                      src={url}
+                      className="w-full h-24 object-cover rounded-lg"
+                      controls
+                      preload="metadata"
+                    />
+                    <div className="absolute top-1 left-1 bg-black bg-opacity-70 rounded-full p-1">
+                      <Video className="w-3 h-3 text-white" />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="relative">
-                  <img
-                    src={url}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg"
-                  />
-                  <div className="absolute top-1 left-1 bg-black bg-opacity-50 rounded-full p-1">
-                    <Image className="w-3 h-3 text-white" />
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-1 left-1 bg-black bg-opacity-70 rounded-full p-1">
+                      <Image className="w-3 h-3 text-white" />
+                    </div>
                   </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onRemoveImage(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <div className="mt-1">
+                  <p className="text-xs text-gray-500 truncate" title={imagenes[index]?.name}>
+                    {imagenes[index]?.name}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatFileSize(imagenes[index]?.size || 0)}
+                  </p>
                 </div>
-              )}
-              <button
-                type="button"
-                onClick={() => onRemoveImage(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-              >
-                <X className="h-3 w-3" />
-              </button>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                {imagenes[index]?.name}
-              </p>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
