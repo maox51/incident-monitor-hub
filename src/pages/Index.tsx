@@ -22,13 +22,13 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <Header />
         
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-3">
-              <AlertTriangle className="text-orange-500" />
-              Sistema de Monitoreo - Casino
+        <div className="container mx-auto px-4 py-6 md:py-8">
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
+              <AlertTriangle className="text-orange-500 h-6 w-6 md:h-8 md:w-8" />
+              <span className="text-lg md:text-4xl">Sistema de Monitoreo - Casino</span>
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-base md:text-lg text-gray-600 px-4">
               Registro de incidencias de monitoreo por cámaras
             </p>
           </div>
@@ -95,12 +95,12 @@ const Index = () => {
         <Header />
         
         <div className="flex-1 p-4 lg:p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-3">
-              <AlertTriangle className="text-orange-500" />
-              Sistema de Monitoreo - Casino
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
+              <AlertTriangle className="text-orange-500 h-6 w-6 md:h-8 md:w-8" />
+              <span className="text-lg md:text-4xl">Sistema de Monitoreo - Casino</span>
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-base md:text-lg text-gray-600 px-4">
               Gestión integral de incidencias de monitoreo por cámaras
             </p>
           </div>

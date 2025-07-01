@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, LogIn, UserPlus, Eye, EyeOff, Mail } from 'lucide-react';
+import { AlertTriangle, LogIn, UserPlus, Eye, EyeOff, Mail, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -141,47 +140,64 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1541855244-513b7c15023c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+        }}
+      />
+      
+      {/* Overlay para mejorar legibilidad */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-blue-900/85 to-slate-800/90" />
+      
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        <div className="text-center mb-6 md:mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="bg-orange-500 p-3 rounded-full shadow-lg">
-              <AlertTriangle className="text-white h-8 w-8" />
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-full shadow-2xl">
+              <Shield className="text-white h-6 w-6 md:h-8 md:w-8" />
             </div>
-            <h1 className="text-3xl font-bold text-white">
-              Sistema de Incidencias
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
+              Sistema de Monitoreo
             </h1>
           </div>
-          <p className="text-blue-100">
-            Plataforma Corporativa de Gestión de Incidencias
+          <p className="text-blue-100 text-sm md:text-base">
+            Plataforma Corporativa de Gestión de Incidencias - Casino
           </p>
         </div>
 
-        <Card className="backdrop-blur-sm bg-white/95 border-0 shadow-2xl">
+        <Card className="backdrop-blur-lg bg-white/95 border-0 shadow-2xl">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-2xl text-gray-800">Acceso al Sistema</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-xl md:text-2xl text-gray-800 flex items-center justify-center gap-2">
+              <AlertTriangle className="text-orange-500 h-5 w-5 md:h-6 md:w-6" />
+              Acceso Seguro
+            </CardTitle>
+            <CardDescription className="text-gray-600 text-sm md:text-base">
               Inicia sesión con tu cuenta corporativa
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 md:px-6">
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Iniciar Sesión
+                <TabsTrigger value="login" className="flex items-center gap-2 text-xs md:text-sm">
+                  <LogIn className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Iniciar Sesión</span>
+                  <span className="sm:hidden">Login</span>
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  Registrarse
+                <TabsTrigger value="signup" className="flex items-center gap-2 text-xs md:text-sm">
+                  <UserPlus className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Registrarse</span>
+                  <span className="sm:hidden">Registro</span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-gray-700 font-medium">
-                      <Mail className="inline h-4 w-4 mr-2" />
+                    <Label htmlFor="login-email" className="text-gray-700 font-medium text-sm md:text-base">
+                      <Mail className="inline h-3 w-3 md:h-4 md:w-4 mr-2" />
                       Email Corporativo
                     </Label>
                     <Input
@@ -190,13 +206,15 @@ const AuthPage = () => {
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       placeholder="usuario@empresa.com"
-                      className="h-11"
+                      className="h-10 md:h-11 text-sm md:text-base"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-gray-700 font-medium">Contraseña</Label>
+                    <Label htmlFor="login-password" className="text-gray-700 font-medium text-sm md:text-base">
+                      Contraseña
+                    </Label>
                     <div className="relative">
                       <Input
                         id="login-password"
@@ -204,7 +222,7 @@ const AuthPage = () => {
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                         placeholder="Tu contraseña"
-                        className="h-11 pr-10"
+                        className="h-10 md:h-11 pr-10 text-sm md:text-base"
                         required
                       />
                       <Button
@@ -214,14 +232,14 @@ const AuthPage = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword({ ...showPassword, login: !showPassword.login })}
                       >
-                        {showPassword.login ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword.login ? <EyeOff className="h-3 w-3 md:h-4 md:w-4" /> : <Eye className="h-3 w-3 md:h-4 md:w-4" />}
                       </Button>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                    className="w-full h-10 md:h-11 bg-blue-600 hover:bg-blue-700 text-sm md:text-base"
                     disabled={loading.login}
                   >
                     {loading.login ? 'Iniciando sesión...' : 'Iniciar Sesión'}
@@ -230,23 +248,25 @@ const AuthPage = () => {
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-5">
+                <form onSubmit={handleSignup} className="space-y-4 md:space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name" className="text-gray-700 font-medium">Nombre Completo</Label>
+                    <Label htmlFor="signup-name" className="text-gray-700 font-medium text-sm md:text-base">
+                      Nombre Completo
+                    </Label>
                     <Input
                       id="signup-name"
                       type="text"
                       value={signupData.fullName}
                       onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
                       placeholder="Tu nombre completo"
-                      className="h-11"
+                      className="h-10 md:h-11 text-sm md:text-base"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-gray-700 font-medium">
-                      <Mail className="inline h-4 w-4 mr-2" />
+                    <Label htmlFor="signup-email" className="text-gray-700 font-medium text-sm md:text-base">
+                      <Mail className="inline h-3 w-3 md:h-4 md:w-4 mr-2" />
                       Email Corporativo
                     </Label>
                     <Input
@@ -255,7 +275,7 @@ const AuthPage = () => {
                       value={signupData.email}
                       onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                       placeholder="usuario@empresa.com"
-                      className="h-11"
+                      className="h-10 md:h-11 text-sm md:text-base"
                       required
                     />
                     <p className="text-xs text-gray-500">
@@ -264,7 +284,9 @@ const AuthPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-gray-700 font-medium">Contraseña</Label>
+                    <Label htmlFor="signup-password" className="text-gray-700 font-medium text-sm md:text-base">
+                      Contraseña
+                    </Label>
                     <div className="relative">
                       <Input
                         id="signup-password"
@@ -272,7 +294,7 @@ const AuthPage = () => {
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                         placeholder="Mínimo 8 caracteres"
-                        className="h-11 pr-10"
+                        className="h-10 md:h-11 pr-10 text-sm md:text-base"
                         required
                       />
                       <Button
@@ -282,7 +304,7 @@ const AuthPage = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword({ ...showPassword, signup: !showPassword.signup })}
                       >
-                        {showPassword.signup ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword.signup ? <EyeOff className="h-3 w-3 md:h-4 md:w-4" /> : <Eye className="h-3 w-3 md:h-4 md:w-4" />}
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500">
@@ -291,7 +313,9 @@ const AuthPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-gray-700 font-medium">Confirmar Contraseña</Label>
+                    <Label htmlFor="confirm-password" className="text-gray-700 font-medium text-sm md:text-base">
+                      Confirmar Contraseña
+                    </Label>
                     <div className="relative">
                       <Input
                         id="confirm-password"
@@ -299,7 +323,7 @@ const AuthPage = () => {
                         value={signupData.confirmPassword}
                         onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                         placeholder="Repite tu contraseña"
-                        className="h-11 pr-10"
+                        className="h-10 md:h-11 pr-10 text-sm md:text-base"
                         required
                       />
                       <Button
@@ -309,14 +333,14 @@ const AuthPage = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword({ ...showPassword, confirm: !showPassword.confirm })}
                       >
-                        {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword.confirm ? <EyeOff className="h-3 w-3 md:h-4 md:w-4" /> : <Eye className="h-3 w-3 md:h-4 md:w-4" />}
                       </Button>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-11 bg-green-600 hover:bg-green-700"
+                    className="w-full h-10 md:h-11 bg-green-600 hover:bg-green-700 text-sm md:text-base"
                     disabled={loading.signup}
                   >
                     {loading.signup ? 'Registrando...' : 'Crear Cuenta'}
@@ -327,8 +351,8 @@ const AuthPage = () => {
           </CardContent>
         </Card>
 
-        <div className="mt-6 text-center text-sm text-blue-100">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+        <div className="mt-4 md:mt-6 text-center text-xs md:text-sm text-blue-100">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 md:p-4">
             <p className="font-medium">Información del Sistema</p>
             <p>Rol por defecto: Monitor</p>
             <p>Contacta al administrador para cambios de rol</p>

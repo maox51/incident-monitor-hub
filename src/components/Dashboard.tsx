@@ -1,14 +1,12 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, AlertTriangle, Calendar, Users, Database } from "lucide-react";
-import UserStatisticsChart from "./dashboard/UserStatisticsChart";
-import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
 import MonitorKPIs from "./dashboard/MonitorKPIs";
 import ConsolidadoDiario from "./ConsolidadoDiario";
+import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
 
 const COLORS = ['#DC2626', '#EA580C', '#D97706', '#65A30D'];
 
@@ -130,46 +128,44 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard - Monitoreo Casino</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard - Monitoreo Casino</h1>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="incidents">Incidencias</TabsTrigger>
           <TabsTrigger value="kpis">KPIs Monitores</TabsTrigger>
-          <TabsTrigger value="monitors">Estadísticas</TabsTrigger>
           <TabsTrigger value="consolidado">Consolidado</TabsTrigger>
           <TabsTrigger value="analysis">Análisis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {summaryData.map((item, index) => (
               <Card key={index}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <item.icon className={`w-5 h-5 ${item.color}`} />
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                    <item.icon className={`w-4 h-4 md:w-5 md:h-5 ${item.color}`} />
                     {item.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{item.value}</div>
+                  <div className="text-xl md:text-2xl font-bold">{item.value}</div>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           {(monthlyData && monthlyData.length > 0) || (priorityData && priorityData.length > 0) ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {monthlyData && monthlyData.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Tendencia de Incidencias</CardTitle>
+                    <CardTitle className="text-lg md:text-xl">Tendencia de Incidencias</CardTitle>
                     <CardDescription>Comparación mensual de incidencias reportadas</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
                       <BarChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
@@ -186,11 +182,11 @@ const Dashboard = () => {
               {priorityData && priorityData.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Distribución de Prioridades</CardTitle>
+                    <CardTitle className="text-lg md:text-xl">Distribución de Prioridades</CardTitle>
                     <CardDescription>Porcentaje de incidencias por nivel de prioridad</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
                       <PieChart>
                         <Pie
                           data={priorityData}
@@ -228,24 +224,8 @@ const Dashboard = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="incidents">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Incidencias</CardTitle>
-              <CardDescription>Lista detallada de todas las incidencias reportadas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Módulo de gestión de incidencias - En desarrollo</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="kpis" className="space-y-4">
           <MonitorKPIs />
-        </TabsContent>
-
-        <TabsContent value="monitors" className="space-y-4">
-          <UserStatisticsChart />
         </TabsContent>
 
         <TabsContent value="consolidado" className="space-y-4">
@@ -255,7 +235,7 @@ const Dashboard = () => {
         <TabsContent value="analysis">
           <Card>
             <CardHeader>
-              <CardTitle>Análisis Comparativo</CardTitle>
+              <CardTitle className="text-lg md:text-xl">Análisis Comparativo</CardTitle>
               <CardDescription>Comparación del rendimiento del sistema en diferentes periodos</CardDescription>
             </CardHeader>
             <CardContent>
