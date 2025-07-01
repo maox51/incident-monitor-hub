@@ -16,14 +16,14 @@ const ImportDataModule = () => {
   const [salasFile, setSalasFile] = useState<File | null>(null);
   const [incidenciasFile, setIncidenciasFile] = useState<File | null>(null);
 
-  // Mutación para importar salas
+  // Mutación para importar salas (simplificada)
   const importSalas = useMutation({
     mutationFn: async (file: File) => {
       const text = await file.text();
       const lines = text.split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
       
-      const expectedHeaders = ['nombre', 'descripcion', 'ubicacion', 'numero_camaras'];
+      const expectedHeaders = ['nombre', 'descripcion'];
       const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
       
       if (missingHeaders.length > 0) {
@@ -35,11 +35,7 @@ const ImportDataModule = () => {
         const sala: any = {};
         
         headers.forEach((header, index) => {
-          if (header === 'numero_camaras') {
-            sala[header] = parseInt(values[index]) || 0;
-          } else {
-            sala[header] = values[index] || null;
-          }
+          sala[header] = values[index] || null;
         });
         
         return sala;
@@ -191,12 +187,12 @@ const ImportDataModule = () => {
     let csvContent = '';
     
     if (type === 'salas') {
-      csvContent = 'nombre,descripcion,ubicacion,numero_camaras\n';
-      csvContent += 'Sala Principal,Sala de monitoreo principal,Planta Baja,12\n';
-      csvContent += 'Sala Secundaria,Sala de respaldo,Primer Piso,8\n';
+      csvContent = 'nombre,descripcion\n';
+      csvContent += 'Casino Principal,Sala principal del casino\n';
+      csvContent += 'Casino Norte,Sucursal zona norte\n';
     } else {
       csvContent = 'titulo,descripcion,reportado_por,prioridad,area_nombre,clasificacion_nombre,sala_nombre\n';
-      csvContent += 'Incidencia de prueba,Descripción detallada,Monitor 1,media,Area Casino,Seguridad,Sala Principal\n';
+      csvContent += 'Incidencia de prueba,Descripción detallada,Monitor 1,media,Finanzas,Hurtos,Casino Principal\n';
     }
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -236,7 +232,7 @@ const ImportDataModule = () => {
                 Importar Salas de Casino
               </CardTitle>
               <CardDescription>
-                Importa información de salas desde un archivo CSV. Las columnas requeridas son: nombre, descripcion, ubicacion, numero_camaras.
+                Importa información de salas desde un archivo CSV. Las columnas requeridas son: nombre, descripción.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -244,7 +240,10 @@ const ImportDataModule = () => {
                 <AlertCircle className="w-5 h-5 text-blue-600" />
                 <div className="flex-1">
                   <p className="text-sm text-blue-800">
-                    <strong>Formato requerido:</strong> CSV con columnas: nombre, descripcion, ubicacion, numero_camaras
+                    <strong>Formato actualizado:</strong> CSV con columnas: nombre, descripcion
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Se eliminaron los campos ubicacion y numero_camaras para simplificar la estructura.
                   </p>
                 </div>
                 <Button 
@@ -303,7 +302,7 @@ const ImportDataModule = () => {
                     <strong>Columnas requeridas:</strong> titulo, descripcion, reportado_por, prioridad, area_nombre, clasificacion_nombre, sala_nombre
                   </p>
                   <p className="text-xs text-amber-700 mt-1">
-                    Las áreas, clasificaciones y salas deben existir previamente en el sistema.
+                    Las áreas, clasificaciones y salas deben existir previamente en el sistema. El sistema cuenta con mapeo automático de áreas según tipo de incidencia.
                   </p>
                 </div>
                 <Button 

@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Camera, Building } from "lucide-react";
+import { Building } from "lucide-react";
 
 interface Area {
   id: string;
@@ -20,8 +20,6 @@ interface Sala {
   id: string;
   nombre: string;
   descripcion?: string;
-  ubicacion?: string;
-  numero_camaras?: number;
 }
 
 interface FormData {
@@ -88,12 +86,9 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
                 <SelectItem key={sala.id} value={sala.id}>
                   <div className="flex flex-col">
                     <span className="font-medium">{sala.nombre}</span>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <MapPin className="w-3 h-3" />
-                      {sala.ubicacion}
-                      <Camera className="w-3 h-3 ml-2" />
-                      {sala.numero_camaras} cámaras
-                    </div>
+                    {sala.descripcion && (
+                      <span className="text-xs text-gray-500">{sala.descripcion}</span>
+                    )}
                   </div>
                 </SelectItem>
               ))}

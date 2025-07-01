@@ -36,6 +36,51 @@ export type Database = {
         }
         Relationships: []
       }
+      clasificacion_area: {
+        Row: {
+          activo: boolean
+          area_id: string
+          clasificacion_id: string
+          created_at: string
+          id: string
+          prioridad_sugerida: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          area_id: string
+          clasificacion_id: string
+          created_at?: string
+          id?: string
+          prioridad_sugerida?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          area_id?: string
+          clasificacion_id?: string
+          created_at?: string
+          id?: string
+          prioridad_sugerida?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clasificacion_area_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clasificacion_area_clasificacion_id_fkey"
+            columns: ["clasificacion_id"]
+            isOneToOne: true
+            referencedRelation: "clasificaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clasificacion_area_mapping: {
         Row: {
           activo: boolean
@@ -322,8 +367,6 @@ export type Database = {
           descripcion: string | null
           id: string
           nombre: string
-          numero_camaras: number | null
-          ubicacion: string | null
           updated_at: string
         }
         Insert: {
@@ -332,8 +375,6 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre: string
-          numero_camaras?: number | null
-          ubicacion?: string | null
           updated_at?: string
         }
         Update: {
@@ -342,8 +383,6 @@ export type Database = {
           descripcion?: string | null
           id?: string
           nombre?: string
-          numero_camaras?: number | null
-          ubicacion?: string | null
           updated_at?: string
         }
         Relationships: []
