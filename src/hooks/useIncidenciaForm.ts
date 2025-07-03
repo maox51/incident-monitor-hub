@@ -1,9 +1,11 @@
 
 import { useState, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
+import { useSmartAreaSelection } from "./useSmartAreaSelection";
 
 export interface IncidenciaData {
   titulo: string;
@@ -13,21 +15,91 @@ export interface IncidenciaData {
   clasificacion_id: string;
   prioridad: "baja" | "media" | "alta" | "critica";
   fecha_incidencia: string;
-  observaciones?: string;
+  observaciones: string;
+  reportado_por: string;
 }
 
 export const useIncidenciaForm = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { logAction } = useAuditLog();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { getSmartSelection } = useSmartAreaSelection();
+  
+  const [formData, setFormData] = useState<IncidenciaData>({
+    titulo: "",
+    descripcion: "",
+    area_id: "",
+    sala_id: "",
+    clasificacion_id: "",
+    prioridad: "media",
+    fecha_incidencia: new Date().toISOString(),
+    observaciones: "",
+    reportado_por: profile?.full_name || user?.email || "",
+  });
+
+  const [imagenes, setImagenes] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  const handleInputChange = useCallback((field: string, value: string) => {
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Si se cambia la clasificación, aplicar selección inteligente
+      if (field === "clasificacion_id" && value) {
+        const smartSelection = getSmartSelection(value);
+        if (smartSelection) {
+          newData.area_id = smartSelection.area_id;
+          newData.prioridad = smartSelection.prioridad_sugerida as any;
+        }
+      }
+      
+      return newData;
+    });
+  }, [getSmartSelection]);
+
+  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const nuevosArchivos = Array.from(files);
+      
+      // Validar tamaño de archivos
+      const archivosValidos = nuevosArchivos.filter(file => {
+        const isVideo = file.type.startsWith('video/');
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+        
+        if (file.size > maxSize) {
+          toast.error(`El archivo ${file.name} excede el límite de ${isVideo ? '50MB' : '10MB'}.`);
+          return false;
+        }
+        return true;
+      });
+
+      if (archivosValidos.length > 0) {
+        setImagenes(prev => [...prev, ...archivosValidos]);
+        
+        // Crear URLs de preview
+        archivosValidos.forEach(file => {
+          const url = URL.createObjectURL(file);
+          setPreviewUrls(prev => [...prev, url]);
+        });
+      }
+    }
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setImagenes(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => {
+      const newUrls = prev.filter((_, i) => i !== index);
+      // Revocar la URL del objeto eliminado
+      URL.revokeObjectURL(prev[index]);
+      return newUrls;
+    });
+  }, []);
 
   const submitIncidencia = useCallback(async (data: IncidenciaData, images: File[] = []) => {
     if (!user) {
       toast.error("Debes estar autenticado para crear una incidencia");
       return { success: false };
     }
-
-    setIsSubmitting(true);
 
     try {
       // Crear la incidencia
@@ -105,6 +177,25 @@ export const useIncidenciaForm = () => {
       }
 
       toast.success("Incidencia creada exitosamente");
+      
+      // Limpiar formulario
+      setFormData({
+        titulo: "",
+        descripcion: "",
+        area_id: "",
+        sala_id: "",
+        clasificacion_id: "",
+        prioridad: "media",
+        fecha_incidencia: new Date().toISOString(),
+        observaciones: "",
+        reportado_por: profile?.full_name || user?.email || "",
+      });
+      setImagenes([]);
+      setPreviewUrls(prev => {
+        prev.forEach(url => URL.revokeObjectURL(url));
+        return [];
+      });
+
       return { success: true, data: incidencia };
 
     } catch (error) {
@@ -119,13 +210,32 @@ export const useIncidenciaForm = () => {
       });
       
       return { success: false };
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [user, logAction]);
+  }, [user, profile, logAction]);
+
+  const crearIncidencia = useMutation({
+    mutationFn: () => submitIncidencia(formData, imagenes),
+    onSuccess: (result) => {
+      if (result.success) {
+        console.log('Incidencia creada exitosamente');
+      }
+    },
+    onError: (error) => {
+      console.error('Error en mutación:', error);
+    }
+  });
 
   return {
+    formData,
+    imagenes,
+    previewUrls,
+    handleInputChange,
+    handleImageUpload,
+    removeImage,
     submitIncidencia,
-    isSubmitting
+    crearIncidencia,
+    user,
+    profile,
+    isSubmitting: crearIncidencia.isPending
   };
 };

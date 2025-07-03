@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,10 +17,10 @@ const IncidenciaForm = () => {
     formData,
     imagenes,
     previewUrls,
-    crearIncidencia,
     handleInputChange,
     handleImageUpload,
     removeImage,
+    crearIncidencia,
     user,
     profile
   } = useIncidenciaForm();
@@ -103,7 +102,7 @@ const IncidenciaForm = () => {
 
   const handleConfirmSubmit = () => {
     setShowConfirmDialog(false);
-    crearIncidencia.mutate(formData);
+    crearIncidencia.mutate();
   };
 
   // Mostrar mensaje si el usuario no tiene permisos
