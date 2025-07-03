@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,6 +124,61 @@ const ConsolidadoDiario = () => {
     }
   };
 
+  const generarPDF = async () => {
+    try {
+      toast.loading("Generando PDF del consolidado...");
+      
+      const { data, error } = await supabase.functions.invoke('generate-daily-pdf', {
+        body: { fecha: fechaSeleccionada }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(`PDF generado y enviado a ${data.destinatario}`);
+        
+        // Abrir PDF en nueva ventana
+        if (data.pdf_url) {
+          window.open(data.pdf_url, '_blank');
+        }
+      } else {
+        toast.error(data.message || "Error al generar PDF");
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Error al generar el PDF");
+    }
+  };
+
+  const exportarPDFLocal = async () => {
+    if (!consolidado) {
+      toast.error("No hay datos para exportar");
+      return;
+    }
+
+    try {
+      toast.loading("Generando PDF local...");
+      
+      const { generarConsolidadoPDF } = await import('@/utils/consolidadoPdfGenerator');
+      const pdfBlob = await generarConsolidadoPDF(consolidado);
+      
+      // Descargar PDF
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `consolidado_${fechaSeleccionada}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("PDF descargado exitosamente");
+    } catch (error) {
+      console.error("Error generating local PDF:", error);
+      toast.error("Error al generar el PDF local");
+    }
+  };
+
   const getPrioridadColor = (prioridad: string) => {
     switch (prioridad) {
       case "critica": return "bg-red-500 text-white";
@@ -193,11 +247,11 @@ const ConsolidadoDiario = () => {
             Consolidado Diario de Incidencias
           </CardTitle>
           <CardDescription>
-            Reporte automático generado diariamente a las 21:00 horas
+            Reporte automático generado diariamente a las 21:00 horas con envío automático por correo
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end">
+          <div className="flex gap-4 items-end flex-wrap">
             <div className="space-y-2">
               <Label htmlFor="fecha">Fecha del consolidado</Label>
               <Input
@@ -212,6 +266,36 @@ const ConsolidadoDiario = () => {
               <FileText className="w-4 h-4" />
               Generar Consolidado
             </Button>
+            <Button 
+              onClick={generarPDF} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={!consolidado}
+            >
+              <FileText className="w-4 h-4" />
+              Generar PDF y Enviar
+            </Button>
+            <Button 
+              onClick={exportarPDFLocal} 
+              variant="secondary" 
+              className="flex items-center gap-2"
+              disabled={!consolidado}
+            >
+              <FileText className="w-4 h-4" />
+              Descargar PDF
+            </Button>
+          </div>
+          
+          {/* Información de configuración de correo */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-800 text-sm">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="font-medium">Configuración de Envío Automático:</span>
+            </div>
+            <p className="text-blue-700 text-sm mt-1">
+              El PDF se enviará automáticamente al correo configurado en el sistema. 
+              Para cambiar el destinatario, contacta al administrador del sistema.
+            </p>
           </div>
         </CardContent>
       </Card>
