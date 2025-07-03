@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +21,7 @@ export interface IncidenciaData {
 export const useIncidenciaForm = () => {
   const { user, profile } = useAuth();
   const { logAction } = useAuditLog();
-  const { getSmartSelection } = useSmartAreaSelection();
+  const { getSuggestedArea } = useSmartAreaSelection();
   
   const [formData, setFormData] = useState<IncidenciaData>({
     titulo: "",
@@ -45,16 +44,16 @@ export const useIncidenciaForm = () => {
       
       // Si se cambia la clasificación, aplicar selección inteligente
       if (field === "clasificacion_id" && value) {
-        const smartSelection = getSmartSelection(value);
+        const smartSelection = getSuggestedArea(value);
         if (smartSelection) {
-          newData.area_id = smartSelection.area_id;
-          newData.prioridad = smartSelection.prioridad_sugerida as any;
+          newData.area_id = smartSelection.areaId;
+          newData.prioridad = smartSelection.prioridad as any;
         }
       }
       
       return newData;
     });
-  }, [getSmartSelection]);
+  }, [getSuggestedArea]);
 
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
