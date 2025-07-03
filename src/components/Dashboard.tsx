@@ -1,16 +1,29 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, AlertTriangle, Calendar, Users, Database } from "lucide-react";
-import MonitorKPIs from "./dashboard/MonitorKPIs";
+import MonitorPerformance from "./dashboard/MonitorPerformance";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { useEffect } from "react";
 
 const COLORS = ['#DC2626', '#EA580C', '#D97706', '#65A30D'];
 
 const Dashboard = () => {
+  const { logAction } = useAuditLog();
+
+  // Registrar acceso al dashboard
+  useEffect(() => {
+    logAction('view_dashboard', 'dashboard', null, { 
+      page: 'dashboard',
+      timestamp: new Date().toISOString()
+    });
+  }, []);
+
   // Obtener estadísticas reales del sistema
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -134,7 +147,7 @@ const Dashboard = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="kpis">KPIs Monitores</TabsTrigger>
+          <TabsTrigger value="monitors">Rendimiento Monitores</TabsTrigger>
           <TabsTrigger value="consolidado">Consolidado</TabsTrigger>
           <TabsTrigger value="analysis">Análisis</TabsTrigger>
         </TabsList>
@@ -224,8 +237,8 @@ const Dashboard = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="kpis" className="space-y-4">
-          <MonitorKPIs />
+        <TabsContent value="monitors" className="space-y-4">
+          <MonitorPerformance />
         </TabsContent>
 
         <TabsContent value="consolidado" className="space-y-4">

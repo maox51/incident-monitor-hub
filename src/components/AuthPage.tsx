@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, LogIn, UserPlus, Eye, EyeOff, Mail, Shield, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
+  const { logAction } = useAuditLog();
   
   const [loginData, setLoginData] = useState({
     email: '',
@@ -35,7 +37,6 @@ const AuthPage = () => {
   });
 
   const validateBusinessEmail = (email: string) => {
-    // Dominios corporativos permitidos
     const businessDomains = [
       '@grupoesvasa.com',
       '@empresa.com', 
@@ -51,7 +52,6 @@ const AuthPage = () => {
       '@operaciones.com'
     ];
     
-    // Verificar que el email termine con uno de los dominios corporativos
     return businessDomains.some(domain => email.toLowerCase().endsWith(domain.toLowerCase()));
   };
 
@@ -63,6 +63,12 @@ const AuthPage = () => {
       const { error } = await signIn(loginData.email, loginData.password);
       
       if (error) {
+        await logAction('login_failed', 'auth', null, { 
+          email: loginData.email,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Credenciales incorrectas. Verifica tu email y contraseña.');
         } else if (error.message.includes('Email not confirmed')) {
@@ -71,6 +77,11 @@ const AuthPage = () => {
           toast.error('Error al iniciar sesión: ' + error.message);
         }
       } else {
+        await logAction('login_success', 'auth', null, { 
+          email: loginData.email,
+          timestamp: new Date().toISOString()
+        });
+        
         toast.success('¡Bienvenido! Sesión iniciada correctamente.');
       }
     } catch (error) {
@@ -98,7 +109,6 @@ const AuthPage = () => {
       return;
     }
 
-    // Validar complejidad de contraseña
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(signupData.password)) {
       toast.error('La contraseña debe contener al menos una mayúscula, una minúscula y un número.');
@@ -115,6 +125,12 @@ const AuthPage = () => {
       );
       
       if (error) {
+        await logAction('signup_failed', 'auth', null, { 
+          email: signupData.email,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+
         if (error.message.includes('User already registered')) {
           toast.error('Este email ya está registrado. Intenta iniciar sesión.');
         } else if (error.message.includes('Password should be at least 6 characters')) {
@@ -123,6 +139,12 @@ const AuthPage = () => {
           toast.error('Error al registrarse: ' + error.message);
         }
       } else {
+        await logAction('signup_success', 'auth', null, { 
+          email: signupData.email,
+          fullName: signupData.fullName,
+          timestamp: new Date().toISOString()
+        });
+
         toast.success('¡Registro exitoso! Revisa tu email corporativo para confirmar tu cuenta.');
         setSignupData({
           email: '',
@@ -150,7 +172,6 @@ const AuthPage = () => {
             background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 20%, #06b6d4 40%, #10b981 60%, #84cc16 80%, #eab308 100%)'
           }}
         >
-          {/* Geometric shapes pattern */}
           <defs>
             <pattern id="geometric" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
               <polygon points="20,10 40,30 20,50 0,30" fill="rgba(255,255,255,0.05)" />
@@ -161,7 +182,6 @@ const AuthPage = () => {
           </defs>
           <rect width="100%" height="100%" fill="url(#geometric)" />
           
-          {/* Additional geometric overlays */}
           <polygon points="0,0 200,100 0,200" fill="rgba(30,58,138,0.3)" />
           <polygon points="800,0 600,150 800,300" fill="rgba(59,130,246,0.2)" />
           <polygon points="200,600 400,450 600,600" fill="rgba(6,182,212,0.25)" />
@@ -170,9 +190,7 @@ const AuthPage = () => {
         </svg>
       </div>
       
-      {/* Content */}
       <div className="relative z-10 w-full max-w-md mx-auto">
-        {/* Header with Icon and Title */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
             <div className="bg-white/20 backdrop-blur-sm p-4 rounded-full border border-white/30">
