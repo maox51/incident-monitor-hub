@@ -201,7 +201,7 @@ const AuthPage = () => {
             Member Login
           </h1>
           <p className="text-white/80 text-base">
-            Sistema de Monitoreo - Casino
+            Sistema de Monitoreo - Grupo Esvasa
           </p>
         </div>
 
@@ -265,9 +265,9 @@ const AuthPage = () => {
                       <input type="checkbox" className="mr-2" />
                       Remember me
                     </label>
-                    <a href="#" className="text-blue-600 hover:underline">
+                   {/*<a href="#" className="text-blue-600 hover:underline">
                       Forgot password?
-                    </a>
+                    </a>*/}
                   </div>
 
                   <Button
