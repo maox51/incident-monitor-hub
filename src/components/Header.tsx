@@ -56,12 +56,12 @@ const Header = () => {
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {isAdmin && (
+              {/*{isAdmin && (
                 <DropdownMenuItem>
                   <Settings className="h-4 w-4 mr-2" />
                   Administración
                 </DropdownMenuItem>
-              )}
+              )}*/}
               <DropdownMenuItem onClick={signOut} className="text-red-600">
                 <LogOut className="h-4 w-4 mr-2" />
                 Cerrar Sesión
