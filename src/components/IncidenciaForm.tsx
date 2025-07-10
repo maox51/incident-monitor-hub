@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -67,11 +68,26 @@ const IncidenciaForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar campos obligatorios básicos
     if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id || 
         !formData.clasificacion_id || !formData.reportado_por.trim() || !formData.sala_id) {
       toast({
         title: "Campos requeridos",
         description: "Por favor completa todos los campos obligatorios incluyendo la sala de monitoreo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar campo de tiempo si es requerido
+    const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
+    const requiresTimeField = selectedClasificacion?.nombre?.toLowerCase().includes('ingresos tardios') || 
+                             selectedClasificacion?.nombre?.toLowerCase().includes('cierre prematuros');
+    
+    if (requiresTimeField && (!formData.tiempo_minutos || formData.tiempo_minutos <= 0)) {
+      toast({
+        title: "Campo de tiempo requerido",
+        description: "Por favor ingresa el tiempo en minutos para este tipo de incidencia.",
         variant: "destructive",
       });
       return;
@@ -134,46 +150,48 @@ const IncidenciaForm = () => {
 
   return (
     <>
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Registrar Nueva Incidencia
-            <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-normal">
-              Sistema Inteligente Activado
-            </span>
-          </CardTitle>
-          <CardDescription>
-            Completa el formulario para registrar una nueva incidencia. El sistema seleccionará automáticamente 
-            el área y prioridad según el tipo de incidencia seleccionado.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <IncidentFormFields
-              formData={formData}
-              areas={areas}
-              clasificaciones={clasificaciones}
-              salas={salas}
-              onInputChange={handleInputChange}
-            />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 lg:p-6">
+        <Card className="max-w-5xl mx-auto">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-lg sm:text-xl">
+              <span>Registrar Nueva Incidencia</span>
+              <span className="text-xs sm:text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-normal">
+                Sistema Inteligente Activado
+              </span>
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Completa el formulario para registrar una nueva incidencia. El sistema seleccionará automáticamente 
+              el área y prioridad según el tipo de incidencia seleccionado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <IncidentFormFields
+                formData={formData}
+                areas={areas}
+                clasificaciones={clasificaciones}
+                salas={salas}
+                onInputChange={handleInputChange}
+              />
 
-            <ImageUpload
-              imagenes={imagenes}
-              previewUrls={previewUrls}
-              onImageUpload={handleImageUpload}
-              onRemoveImage={removeImage}
-            />
+              <ImageUpload
+                imagenes={imagenes}
+                previewUrls={previewUrls}
+                onImageUpload={handleImageUpload}
+                onRemoveImage={removeImage}
+              />
 
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={crearIncidencia.isPending}
-            >
-              {crearIncidencia.isPending ? "Procesando..." : "Revisar y Registrar Incidencia"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-sm sm:text-base"
+                disabled={crearIncidencia.isPending}
+              >
+                {crearIncidencia.isPending ? "Procesando..." : "Revisar y Registrar Incidencia"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
 
       <IncidenciaConfirmationDialog
         isOpen={showConfirmDialog}

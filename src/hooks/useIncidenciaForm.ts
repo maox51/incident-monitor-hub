@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,7 @@ export interface IncidenciaData {
   fecha_incidencia: string;
   observaciones: string;
   reportado_por: string;
+  tiempo_minutos?: number;
 }
 
 export const useIncidenciaForm = () => {
@@ -33,18 +35,19 @@ export const useIncidenciaForm = () => {
     fecha_incidencia: new Date().toISOString(),
     observaciones: "",
     reportado_por: profile?.full_name || user?.email || "",
+    tiempo_minutos: undefined,
   });
 
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
-  const handleInputChange = useCallback((field: string, value: string) => {
+  const handleInputChange = useCallback((field: string, value: string | number) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       
       // Si se cambia la clasificación, aplicar selección inteligente
       if (field === "clasificacion_id" && value) {
-        const smartSelection = getSuggestedArea(value);
+        const smartSelection = getSuggestedArea(value as string);
         if (smartSelection) {
           newData.area_id = smartSelection.areaId;
           newData.prioridad = smartSelection.prioridad as any;
@@ -125,6 +128,7 @@ export const useIncidenciaForm = () => {
         prioridad: data.prioridad,
         area_id: data.area_id,
         clasificacion_id: data.clasificacion_id,
+        tiempo_minutos: data.tiempo_minutos,
         timestamp: new Date().toISOString()
       });
 
@@ -188,6 +192,7 @@ export const useIncidenciaForm = () => {
         fecha_incidencia: new Date().toISOString(),
         observaciones: "",
         reportado_por: profile?.full_name || user?.email || "",
+        tiempo_minutos: undefined,
       });
       setImagenes([]);
       setPreviewUrls(prev => {

@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building, Lock } from "lucide-react";
+import { Building, Lock, Clock } from "lucide-react";
 
 interface Area {
   id: string;
@@ -31,6 +31,7 @@ interface FormData {
   prioridad: string;
   reportado_por: string;
   sala_id: string;
+  tiempo_minutos?: number;
 }
 
 interface IncidentFormFieldsProps {
@@ -38,15 +39,20 @@ interface IncidentFormFieldsProps {
   areas?: Area[];
   clasificaciones?: Clasificacion[];
   salas?: Sala[];
-  onInputChange: (field: string, value: string) => void;
+  onInputChange: (field: string, value: string | number) => void;
 }
 
 const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputChange }: IncidentFormFieldsProps) => {
   const selectedArea = areas?.find(area => area.id === formData.area_id);
+  const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
+  
+  // Verificar si la clasificación requiere campo de tiempo
+  const requiresTimeField = selectedClasificacion?.nombre?.toLowerCase().includes('ingresos tardios') || 
+                           selectedClasificacion?.nombre?.toLowerCase().includes('cierre prematuros');
   
   return (
     <>
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-2">
           <Label htmlFor="titulo">Título *</Label>
           <Input
@@ -55,6 +61,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
             onChange={(e) => onInputChange("titulo", e.target.value)}
             placeholder="Título descriptivo de la incidencia"
             required
+            className="w-full"
           />
         </div>
         
@@ -66,21 +73,21 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
             onChange={(e) => onInputChange("reportado_por", e.target.value)}
             placeholder="Nombre del reportante"
             required
-            className="bg-blue-50 border-blue-200"
+            className="bg-blue-50 border-blue-200 w-full"
             disabled
           />
           <p className="text-xs text-blue-600">Capturado automáticamente del usuario logueado</p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-2">
           <Label htmlFor="sala" className="flex items-center gap-2">
             <Building className="w-4 h-4" />
             Sucursal Casino *
           </Label>
           <Select value={formData.sala_id} onValueChange={(value) => onInputChange("sala_id", value)}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecciona una sucursal" />
             </SelectTrigger>
             <SelectContent>
@@ -101,7 +108,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         <div className="space-y-2">
           <Label htmlFor="clasificacion">Tipo de Incidencia * (Selecciona primero)</Label>
           <Select value={formData.clasificacion_id} onValueChange={(value) => onInputChange("clasificacion_id", value)}>
-            <SelectTrigger className="border-orange-200 bg-orange-50">
+            <SelectTrigger className="border-orange-200 bg-orange-50 w-full">
               <SelectValue placeholder="Selecciona el tipo de incidencia" />
             </SelectTrigger>
             <SelectContent>
@@ -122,7 +129,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-2">
           <Label htmlFor="area" className="flex items-center gap-2">
             <Lock className="w-4 h-4" />
@@ -132,7 +139,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
             <Input
               id="area"
               value={selectedArea?.nombre || "Selecciona tipo de incidencia primero"}
-              className="bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed"
+              className="bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed w-full"
               disabled
               readOnly
             />
@@ -144,7 +151,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         <div className="space-y-2">
           <Label htmlFor="prioridad">Prioridad (Auto-sugerida)</Label>
           <Select value={formData.prioridad} onValueChange={(value) => onInputChange("prioridad", value)}>
-            <SelectTrigger className="bg-purple-50 border-purple-200">
+            <SelectTrigger className="bg-purple-50 border-purple-200 w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -178,6 +185,29 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         </div>
       </div>
 
+      {/* Campo de tiempo condicional */}
+      {requiresTimeField && (
+        <div className="space-y-2 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+          <Label htmlFor="tiempo_minutos" className="flex items-center gap-2 text-orange-700">
+            <Clock className="w-4 h-4" />
+            Tiempo en Minutos *
+          </Label>
+          <Input
+            id="tiempo_minutos"
+            type="number"
+            min="1"
+            value={formData.tiempo_minutos || ''}
+            onChange={(e) => onInputChange("tiempo_minutos", parseInt(e.target.value) || 0)}
+            placeholder="Ingresa el tiempo en minutos"
+            className="bg-white border-yellow-300 w-full max-w-xs"
+            required={requiresTimeField}
+          />
+          <p className="text-xs text-orange-600">
+            Este campo es requerido para incidencias de ingresos tardíos o cierres prematuros
+          </p>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="descripcion">Descripción *</Label>
         <Textarea
@@ -187,6 +217,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
           placeholder="Describe detalladamente la incidencia"
           rows={4}
           required
+          className="w-full resize-none"
         />
       </div>
 
@@ -198,6 +229,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
           onChange={(e) => onInputChange("observaciones", e.target.value)}
           placeholder="Observaciones adicionales (opcional)"
           rows={3}
+          className="w-full resize-none"
         />
       </div>
     </>
