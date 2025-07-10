@@ -46,11 +46,18 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
   const selectedArea = areas?.find(area => area.id === formData.area_id);
   const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
   
-  // Verificar si la clasificación requiere campo de tiempo (corregido)
+  // Verificar si la clasificación requiere campo de tiempo - Lógica mejorada
   const requiresTimeField = selectedClasificacion ? (
-    selectedClasificacion.nombre.toLowerCase().includes('ingreso tardio') || 
-    selectedClasificacion.nombre.toLowerCase().includes('cierre prematuro')
+    selectedClasificacion.nombre.toLowerCase().includes('tardio') ||
+    selectedClasificacion.nombre.toLowerCase().includes('tardío') ||
+    selectedClasificacion.nombre.toLowerCase().includes('prematuro') ||
+    selectedClasificacion.nombre.toLowerCase().includes('ingreso') ||
+    selectedClasificacion.nombre.toLowerCase().includes('cierre')
   ) : false;
+
+  console.log('Selected clasificacion:', selectedClasificacion);
+  console.log('Requires time field:', requiresTimeField);
+  console.log('All clasificaciones:', clasificaciones?.map(c => ({ id: c.id, nombre: c.nombre })));
   
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -187,7 +194,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         </div>
       </div>
 
-      {/* Campo de tiempo condicional - CORREGIDO */}
+      {/* Campo de tiempo condicional - MEJORADO CON LOGS */}
       {requiresTimeField && (
         <div className="space-y-2 bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
           <Label htmlFor="tiempo_minutos" className="flex items-center gap-2 text-orange-700">
@@ -207,6 +214,13 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
           <p className="text-xs text-orange-600">
             Este campo es requerido para incidencias de ingresos tardíos o cierres prematuros
           </p>
+        </div>
+      )}
+
+      {/* Mostrar info de debug */}
+      {formData.clasificacion_id && (
+        <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+          Debug: Clasificación seleccionada: "{selectedClasificacion?.nombre}" - Requiere tiempo: {requiresTimeField ? 'SÍ' : 'NO'}
         </div>
       )}
 
