@@ -81,8 +81,12 @@ const IncidenciaForm = () => {
 
     // Validar campo de tiempo si es requerido
     const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
-    const requiresTimeField = selectedClasificacion?.nombre?.toLowerCase().includes('ingresos tardios') || 
-                             selectedClasificacion?.nombre?.toLowerCase().includes('cierre prematuros');
+    const requiresTimeField = selectedClasificacion?.nombre && (
+      (selectedClasificacion.nombre.toLowerCase().includes('ingreso') && 
+       selectedClasificacion.nombre.toLowerCase().includes('tardio')) ||
+      (selectedClasificacion.nombre.toLowerCase().includes('cierre') && 
+       selectedClasificacion.nombre.toLowerCase().includes('prematuro'))
+    );
     
     if (requiresTimeField && (!formData.tiempo_minutos || formData.tiempo_minutos <= 0)) {
       toast({
@@ -124,34 +128,38 @@ const IncidenciaForm = () => {
   // Mostrar mensaje si el usuario no tiene permisos
   if (!user || !profile) {
     return (
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>Acceso Restringido</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Debes iniciar sesión para crear incidencias.</p>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Acceso Restringido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Debes iniciar sesión para crear incidencias.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (profile.role !== 'monitor' && profile.role !== 'admin') {
     return (
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>Acceso Restringido</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>No tienes permisos para crear incidencias. Solo los monitores y administradores pueden crear incidencias.</p>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Acceso Restringido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>No tienes permisos para crear incidencias. Solo los monitores y administradores pueden crear incidencias.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 lg:p-6">
-        <Card className="max-w-5xl mx-auto">
+      <div className="w-full max-w-6xl mx-auto px-2 sm:px-4">
+        <Card className="w-full">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-lg sm:text-xl">
               <span>Registrar Nueva Incidencia</span>
