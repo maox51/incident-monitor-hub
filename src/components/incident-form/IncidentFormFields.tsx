@@ -46,14 +46,11 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
   const selectedArea = areas?.find(area => area.id === formData.area_id);
   const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
   
-  // Verificar si la clasificación requiere campo de tiempo (mejorado)
-  const requiresTimeField = selectedClasificacion?.nombre && (
-    selectedClasificacion.nombre.toLowerCase().includes('ingreso') && 
-    selectedClasificacion.nombre.toLowerCase().includes('tardio')
-  ) || (
-    selectedClasificacion.nombre.toLowerCase().includes('cierre') && 
-    selectedClasificacion.nombre.toLowerCase().includes('prematuro')
-  );
+  // Verificar si la clasificación requiere campo de tiempo (corregido)
+  const requiresTimeField = selectedClasificacion ? (
+    selectedClasificacion.nombre.toLowerCase().includes('ingreso tardio') || 
+    selectedClasificacion.nombre.toLowerCase().includes('cierre prematuro')
+  ) : false;
   
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -190,7 +187,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         </div>
       </div>
 
-      {/* Campo de tiempo condicional - MEJORADO */}
+      {/* Campo de tiempo condicional - CORREGIDO */}
       {requiresTimeField && (
         <div className="space-y-2 bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
           <Label htmlFor="tiempo_minutos" className="flex items-center gap-2 text-orange-700">
