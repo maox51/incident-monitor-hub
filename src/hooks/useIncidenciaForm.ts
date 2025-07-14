@@ -6,6 +6,8 @@ import { useAuth } from "./useAuth";
 import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
 import { useSmartAreaSelection } from "./useSmartAreaSelection";
+import { compressImageToWebP, getFullFilePath } from "@/utils/imageCompression";
+import { uploadImageToStorage, deleteImageFromStorage, saveImageRecord, deleteImageRecord, UploadedImage } from "@/utils/supabaseStorage";
 
 export interface IncidenciaData {
   titulo: string;
@@ -38,8 +40,8 @@ export const useIncidenciaForm = () => {
     tiempo_minutos: undefined,
   });
 
-  const [imagenes, setImagenes] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleInputChange = useCallback((field: string, value: string | number) => {
     setFormData(prev => {
@@ -58,46 +60,84 @@ export const useIncidenciaForm = () => {
     });
   }, [getSuggestedArea]);
 
-  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const nuevosArchivos = Array.from(files);
-      
-      // Validar tamaño de archivos
-      const archivosValidos = nuevosArchivos.filter(file => {
-        const isVideo = file.type.startsWith('video/');
-        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
-        
-        if (file.size > maxSize) {
-          toast.error(`El archivo ${file.name} excede el límite de ${isVideo ? '50MB' : '10MB'}.`);
-          return false;
+  const handleImageUpload = useCallback(async (files: FileList) => {
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+          // Comprimir imagen a WebP
+          const compressedFile = await compressImageToWebP(file);
+          
+          // Generar ruta del archivo
+          const filePath = getFullFilePath(formData.titulo || 'sin_titulo', compressedFile.name);
+          
+          // Subir a Supabase Storage
+          const uploadedImage = await uploadImageToStorage(compressedFile, filePath);
+          
+          // Log de auditoría
+          await logAction('compress_and_upload_image', 'incident_image', null, {
+            originalSize: file.size,
+            compressedSize: compressedFile.size,
+            originalName: file.name,
+            compressedName: compressedFile.name,
+            filePath,
+            timestamp: new Date().toISOString()
+          });
+          
+          return uploadedImage;
+        } catch (error) {
+          console.error(`Error procesando ${file.name}:`, error);
+          toast.error(`Error procesando ${file.name}: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+          return null;
         }
-        return true;
       });
-
-      if (archivosValidos.length > 0) {
-        setImagenes(prev => [...prev, ...archivosValidos]);
-        
-        // Crear URLs de preview
-        archivosValidos.forEach(file => {
-          const url = URL.createObjectURL(file);
-          setPreviewUrls(prev => [...prev, url]);
-        });
+      
+      const results = await Promise.all(uploadPromises);
+      const successfulUploads = results.filter((result): result is UploadedImage => result !== null);
+      
+      if (successfulUploads.length > 0) {
+        setUploadedImages(prev => [...prev, ...successfulUploads]);
+        toast.success(`${successfulUploads.length} imagen(es) subida(s) exitosamente`);
       }
+      
+    } catch (error) {
+      console.error('Error en handleImageUpload:', error);
+      toast.error('Error procesando las imágenes');
+    } finally {
+      setIsUploading(false);
     }
-  }, []);
+  }, [formData.titulo, logAction]);
 
-  const removeImage = useCallback((index: number) => {
-    setImagenes(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => {
-      const newUrls = prev.filter((_, i) => i !== index);
-      // Revocar la URL del objeto eliminado
-      URL.revokeObjectURL(prev[index]);
-      return newUrls;
-    });
-  }, []);
+  const removeImage = useCallback(async (imageId: string) => {
+    const imageToRemove = uploadedImages.find(img => img.id === imageId);
+    if (!imageToRemove) return;
+    
+    try {
+      // Eliminar del storage
+      await deleteImageFromStorage(imageToRemove.path);
+      
+      // Actualizar estado
+      setUploadedImages(prev => prev.filter(img => img.id !== imageId));
+      
+      // Log de auditoría
+      await logAction('delete_uploaded_image', 'incident_image', null, {
+        imageId,
+        fileName: imageToRemove.fileName,
+        path: imageToRemove.path,
+        timestamp: new Date().toISOString()
+      });
+      
+      toast.success('Imagen eliminada exitosamente');
+    } catch (error) {
+      console.error('Error eliminando imagen:', error);
+      toast.error('Error eliminando la imagen');
+    }
+  }, [uploadedImages, logAction]);
 
-  const submitIncidencia = useCallback(async (data: IncidenciaData, images: File[] = []) => {
+  const submitIncidencia = useCallback(async (data: IncidenciaData) => {
     if (!user) {
       toast.error("Debes estar autenticado para crear una incidencia");
       return { success: false };
@@ -129,54 +169,25 @@ export const useIncidenciaForm = () => {
         area_id: data.area_id,
         clasificacion_id: data.clasificacion_id,
         tiempo_minutos: data.tiempo_minutos,
+        images_count: uploadedImages.length,
         timestamp: new Date().toISOString()
       });
 
-      // Subir imágenes si las hay
-      if (images.length > 0) {
-        const uploadPromises = images.map(async (file) => {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${incidencia.id}/${Date.now()}.${fileExt}`;
+      // Guardar registros de imágenes en la base de datos
+      if (uploadedImages.length > 0) {
+        const imageRecordPromises = uploadedImages.map(async (image) => {
+          await saveImageRecord(incidencia.id, image);
           
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('incidencias-multimedia')
-            .upload(fileName, file);
-
-          if (uploadError) {
-            console.error("Error uploading image:", uploadError);
-            return null;
-          }
-
-          const { data: urlData } = supabase.storage
-            .from('incidencias-multimedia')
-            .getPublicUrl(fileName);
-
-          const { error: imageRecordError } = await supabase
-            .from('imagenes_incidencias')
-            .insert({
-              incidencia_id: incidencia.id,
-              url_imagen: urlData.publicUrl,
-              nombre_archivo: file.name,
-              tipo_archivo: file.type,
-              tamaño_bytes: file.size
-            });
-
-          if (imageRecordError) {
-            console.error("Error saving image record:", imageRecordError);
-          }
-
-          // Registrar subida de imagen
-          await logAction('upload_image', 'incident_image', incidencia.id, {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
+          // Log individual por imagen
+          await logAction('link_image_to_incident', 'incident_image', incidencia.id, {
+            imageId: image.id,
+            fileName: image.fileName,
+            fileSize: image.size,
             timestamp: new Date().toISOString()
           });
-
-          return uploadData;
         });
 
-        await Promise.all(uploadPromises);
+        await Promise.all(imageRecordPromises);
       }
 
       toast.success("Incidencia creada exitosamente");
@@ -194,11 +205,7 @@ export const useIncidenciaForm = () => {
         reportado_por: profile?.full_name || user?.email || "",
         tiempo_minutos: undefined,
       });
-      setImagenes([]);
-      setPreviewUrls(prev => {
-        prev.forEach(url => URL.revokeObjectURL(url));
-        return [];
-      });
+      setUploadedImages([]);
 
       return { success: true, data: incidencia };
 
@@ -215,10 +222,10 @@ export const useIncidenciaForm = () => {
       
       return { success: false };
     }
-  }, [user, profile, logAction]);
+  }, [user, profile, uploadedImages, logAction]);
 
   const crearIncidencia = useMutation({
-    mutationFn: () => submitIncidencia(formData, imagenes),
+    mutationFn: () => submitIncidencia(formData),
     onSuccess: (result) => {
       if (result.success) {
         console.log('Incidencia creada exitosamente');
@@ -231,8 +238,8 @@ export const useIncidenciaForm = () => {
 
   return {
     formData,
-    imagenes,
-    previewUrls,
+    uploadedImages,
+    isUploading,
     handleInputChange,
     handleImageUpload,
     removeImage,

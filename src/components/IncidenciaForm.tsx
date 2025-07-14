@@ -16,8 +16,8 @@ const IncidenciaForm = () => {
   
   const {
     formData,
-    imagenes,
-    previewUrls,
+    uploadedImages,
+    isUploading,
     handleInputChange,
     handleImageUpload,
     removeImage,
@@ -182,19 +182,24 @@ const IncidenciaForm = () => {
                 onInputChange={handleInputChange}
               />
 
-              <ImageUpload
-                imagenes={imagenes}
-                previewUrls={previewUrls}
-                onImageUpload={handleImageUpload}
-                onRemoveImage={removeImage}
-              />
+            <ImageUpload
+              uploadedImages={uploadedImages}
+              onImageUpload={handleImageUpload}
+              onRemoveImage={removeImage}
+              isUploading={isUploading}
+            />
 
               <Button 
                 type="submit" 
                 className="w-full h-12 text-sm sm:text-base"
-                disabled={crearIncidencia.isPending}
+                disabled={crearIncidencia.isPending || isUploading}
               >
-                {crearIncidencia.isPending ? "Procesando..." : "Revisar y Registrar Incidencia"}
+                {crearIncidencia.isPending 
+                  ? "Procesando..." 
+                  : isUploading 
+                  ? "Subiendo imágenes..." 
+                  : "Revisar y Registrar Incidencia"
+                }
               </Button>
             </form>
           </CardContent>
