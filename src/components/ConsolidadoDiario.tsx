@@ -266,7 +266,7 @@ const ConsolidadoDiario = () => {
               <FileText className="w-4 h-4" />
               Generar Consolidado
             </Button>
-            <Button 
+            {/*<Button 
               onClick={generarPDF} 
               variant="outline" 
               className="flex items-center gap-2"
@@ -274,7 +274,7 @@ const ConsolidadoDiario = () => {
             >
               <FileText className="w-4 h-4" />
               Generar PDF y Enviar
-            </Button>
+            </Button>*/}
             <Button 
               onClick={exportarPDFLocal} 
               variant="secondary" 

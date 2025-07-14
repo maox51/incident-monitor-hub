@@ -38,18 +38,7 @@ const AuthPage = () => {
 
   const validateBusinessEmail = (email: string) => {
     const businessDomains = [
-      '@grupoesvasa.com',
-      '@empresa.com', 
-      '@company.com', 
-      '@corp.com', 
-      '@organizacion.com',
-      '@corporativo.com', 
-      '@business.com', 
-      '@industria.com', 
-      '@casino.com',
-      '@monitoreo.com', 
-      '@seguridad.com', 
-      '@operaciones.com'
+      '@grupoesvasa.com'
     ];
     
     return businessDomains.some(domain => email.toLowerCase().endsWith(domain.toLowerCase()));
@@ -366,7 +355,7 @@ const AuthPage = () => {
 
         <div className="mt-6 text-center text-sm text-white/80">
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-            <p className="font-medium mb-1">Sistema de Monitoreo Casino</p>
+            <p className="font-medium mb-1">Sistema de Monitoreo Grupo ESVASA</p>
             <p>Rol por defecto: Monitor</p>
             <p>Contacta al administrador para cambios de rol</p>
           </div>

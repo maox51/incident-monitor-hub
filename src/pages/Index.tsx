@@ -37,7 +37,7 @@ const Index = () => {
           <div className="text-center mb-4 sm:mb-6 md:mb-8">
             <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
               <AlertTriangle className="text-orange-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              <span>Sistema de Monitoreo - Casino</span>
+              <span>Sistema de Monitoreo - Grupo ESVASA</span>
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
               Registro de incidencias de monitoreo por cámaras
@@ -174,7 +174,7 @@ const Index = () => {
         <div className="text-center mb-4 sm:mb-6 md:mb-8">
           <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
             <AlertTriangle className="text-orange-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-            <span>Sistema de Monitoreo - Casino</span>
+            <span>Sistema de Monitoreo - Grupo ESVASA</span>
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
             Gestión integral de incidencias de monitoreo por cámaras
