@@ -107,10 +107,10 @@ const IncidenciaForm = () => {
       return;
     }
 
-    if (profile.role !== 'monitor' && profile.role !== 'admin') {
+    if (profile.role !== 'monitor' && profile.role !== 'admin' && profile.role !== 'supervisor_monitoreo') {
       toast({
         title: "Sin permisos",
-        description: "Solo monitores y administradores pueden crear incidencias.",
+        description: "Solo monitores, supervisores y administradores pueden crear incidencias.",
         variant: "destructive",
       });
       return;
@@ -141,7 +141,7 @@ const IncidenciaForm = () => {
     );
   }
 
-  if (profile.role !== 'monitor' && profile.role !== 'admin') {
+  if (profile.role !== 'monitor' && profile.role !== 'admin' && profile.role !== 'supervisor_monitoreo') {
     return (
       <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
         <Card>
@@ -149,7 +149,7 @@ const IncidenciaForm = () => {
             <CardTitle>Acceso Restringido</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>No tienes permisos para crear incidencias. Solo los monitores y administradores pueden crear incidencias.</p>
+            <p>No tienes permisos para crear incidencias. Solo los monitores, supervisores y administradores pueden crear incidencias.</p>
           </CardContent>
         </Card>
       </div>

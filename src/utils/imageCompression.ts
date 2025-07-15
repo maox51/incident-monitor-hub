@@ -38,6 +38,31 @@ export const compressImageToWebP = async (file: File): Promise<File> => {
 };
 
 /**
+ * Procesa archivos multimedia (imágenes y videos) antes de la subida
+ * @param file - Archivo multimedia original
+ * @returns Archivo procesado (comprimido si es imagen, sin cambios si es video)
+ */
+export const processMediaFile = async (file: File): Promise<File> => {
+  const isVideo = file.type.startsWith('video/');
+  const isImage = file.type.startsWith('image/');
+  
+  if (isVideo) {
+    // Para videos, solo verificar tamaño y retornar sin cambios
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit for videos
+      throw new Error(`El video es demasiado grande. Máximo permitido: 2MB`);
+    }
+    
+    console.log(`Video procesado: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    return file;
+  } else if (isImage) {
+    // Para imágenes, comprimir a WebP
+    return compressImageToWebP(file);
+  } else {
+    throw new Error('Tipo de archivo no soportado. Solo se permiten imágenes y videos.');
+  }
+};
+
+/**
  * Genera el nombre del archivo basado en la incidencia y fecha
  */
 export const generateFileName = (incidenciaTitulo: string, originalName: string): string => {

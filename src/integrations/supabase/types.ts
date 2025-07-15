@@ -201,10 +201,13 @@ export type Database = {
       }
       incidencias: {
         Row: {
+          aprobado_por: string | null
           area_id: string
           clasificacion_id: string
           created_at: string
           descripcion: string
+          estado: string
+          fecha_aprobacion: string | null
           fecha_incidencia: string
           id: string
           observaciones: string | null
@@ -216,10 +219,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aprobado_por?: string | null
           area_id: string
           clasificacion_id: string
           created_at?: string
           descripcion: string
+          estado?: string
+          fecha_aprobacion?: string | null
           fecha_incidencia?: string
           id?: string
           observaciones?: string | null
@@ -231,10 +237,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aprobado_por?: string | null
           area_id?: string
           clasificacion_id?: string
           created_at?: string
           descripcion?: string
+          estado?: string
+          fecha_aprobacion?: string | null
           fecha_incidencia?: string
           id?: string
           observaciones?: string | null
@@ -477,6 +486,10 @@ export type Database = {
       }
     }
     Functions: {
+      aprobar_incidencia: {
+        Args: { incidencia_id: string; nuevo_estado: string }
+        Returns: boolean
+      }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string

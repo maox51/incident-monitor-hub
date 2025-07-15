@@ -6,7 +6,7 @@ import { useAuth } from "./useAuth";
 import { useAuditLog } from "./useAuditLog";
 import { toast } from "sonner";
 import { useSmartAreaSelection } from "./useSmartAreaSelection";
-import { compressImageToWebP, getFullFilePath } from "@/utils/imageCompression";
+import { processMediaFile, getFullFilePath } from "@/utils/imageCompression";
 import { uploadImageToStorage, deleteImageFromStorage, saveImageRecord, deleteImageRecord, UploadedImage } from "@/utils/supabaseStorage";
 
 export interface IncidenciaData {
@@ -68,21 +68,22 @@ export const useIncidenciaForm = () => {
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         try {
-          // Comprimir imagen a WebP
-          const compressedFile = await compressImageToWebP(file);
+          // Procesar archivo multimedia (comprimir imagen o validar video)
+          const processedFile = await processMediaFile(file);
           
           // Generar ruta del archivo
-          const filePath = getFullFilePath(formData.titulo || 'sin_titulo', compressedFile.name);
+          const filePath = getFullFilePath(formData.titulo || 'sin_titulo', processedFile.name);
           
           // Subir a Supabase Storage
-          const uploadedImage = await uploadImageToStorage(compressedFile, filePath);
+          const uploadedImage = await uploadImageToStorage(processedFile, filePath);
           
           // Log de auditoría
-          await logAction('compress_and_upload_image', 'incident_image', null, {
+          await logAction('compress_and_upload_media', 'incident_media', null, {
             originalSize: file.size,
-            compressedSize: compressedFile.size,
+            processedSize: processedFile.size,
             originalName: file.name,
-            compressedName: compressedFile.name,
+            processedName: processedFile.name,
+            fileType: file.type,
             filePath,
             timestamp: new Date().toISOString()
           });
@@ -144,10 +145,11 @@ export const useIncidenciaForm = () => {
     }
 
     try {
-      // Crear la incidencia
+      // Crear la incidencia en estado borrador
       const incidenciaData = {
         ...data,
         reportado_por: user.id,
+        estado: 'borrador' // Las incidencias inician como borrador
       };
 
       const { data: incidencia, error: incidenciaError } = await supabase

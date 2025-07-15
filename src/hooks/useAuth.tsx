@@ -22,6 +22,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isMonitor: boolean;
+  isSupervisorMonitoreo: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -161,6 +162,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const isAdmin = profile?.role === 'admin';
   const isMonitor = profile?.role === 'monitor';
+  const isSupervisorMonitoreo = profile?.role === 'supervisor_monitoreo';
 
   const value = {
     user,
@@ -169,6 +171,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     loading,
     isAdmin,
     isMonitor,
+    isSupervisorMonitoreo,
     signIn,
     signUp,
     signOut,

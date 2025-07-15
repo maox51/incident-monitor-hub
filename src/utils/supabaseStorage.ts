@@ -31,23 +31,19 @@ export const uploadImageToStorage = async (
       throw new Error(`Error subiendo archivo: ${uploadError.message}`);
     }
 
-    // Generar URL firmada con expiración de 1 hora
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .createSignedUrl(filePath, 3600); // 1 hora en segundos
+  // Generar URL pública permanente (el bucket ya es público)
+  const { data: urlData } = supabase.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(filePath);
 
-    if (urlError) {
-      throw new Error(`Error generando URL: ${urlError.message}`);
-    }
-
-    return {
-      id: crypto.randomUUID(),
-      url: urlData.signedUrl,
-      path: filePath,
-      fileName: file.name,
-      size: file.size,
-      type: file.type
-    };
+  return {
+    id: crypto.randomUUID(),
+    url: urlData.publicUrl,
+    path: filePath,
+    fileName: file.name,
+    size: file.size,
+    type: file.type
+  };
   } catch (error) {
     console.error('Error en uploadImageToStorage:', error);
     throw error;
