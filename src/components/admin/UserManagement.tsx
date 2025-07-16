@@ -190,7 +190,7 @@ const UserManagement = () => {
                   <SelectItem value="all">Todos los roles</SelectItem>
                   <SelectItem value="admin">Administradores</SelectItem>
                   <SelectItem value="monitor">Monitores</SelectItem>
-                  <SelectItem value="supervisor">Supervisores</SelectItem>
+                  <SelectItem value="supervisor_monitoreo">Supervisor de Monitoreo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -323,7 +323,7 @@ const UserManagement = () => {
                   <SelectContent>
                     <SelectItem value="monitor">Monitor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="supervisor">Supervisor</SelectItem>
+                    <SelectItem value="supervisor_monitoreo">Supervisor de Monitoreo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
