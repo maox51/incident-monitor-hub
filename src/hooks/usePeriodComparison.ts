@@ -18,7 +18,7 @@ export const usePeriodComparison = () => {
         fin: endOfMonth(subMonths(ahora, 1))
       };
 
-      // Obtener datos del mes actual
+      // Obtener datos del mes actual - SOLO INCIDENCIAS APROBADAS
       const { data: datosActuales, error: errorActual } = await supabase
         .from("incidencias")
         .select(`
@@ -26,10 +26,14 @@ export const usePeriodComparison = () => {
           prioridad,
           area_id,
           clasificacion_id,
+          sala_id,
+          tiempo_minutos,
           created_at,
           areas(nombre),
-          clasificaciones(nombre)
+          clasificaciones(nombre),
+          salas(nombre)
         `)
+        .eq("estado", "aprobado")
         .gte("created_at", mesActual.inicio.toISOString())
         .lte("created_at", mesActual.fin.toISOString());
 
@@ -38,7 +42,7 @@ export const usePeriodComparison = () => {
         return null;
       }
 
-      // Obtener datos del mes anterior
+      // Obtener datos del mes anterior - SOLO INCIDENCIAS APROBADAS
       const { data: datosAnteriores, error: errorAnterior } = await supabase
         .from("incidencias")
         .select(`
@@ -46,10 +50,14 @@ export const usePeriodComparison = () => {
           prioridad,
           area_id,
           clasificacion_id,
+          sala_id,
+          tiempo_minutos,
           created_at,
           areas(nombre),
-          clasificaciones(nombre)
+          clasificaciones(nombre),
+          salas(nombre)
         `)
+        .eq("estado", "aprobado")
         .gte("created_at", mesAnterior.inicio.toISOString())
         .lte("created_at", mesAnterior.fin.toISOString());
 
@@ -71,9 +79,9 @@ export const usePeriodComparison = () => {
         bajas: calcularTendencia(statsActuales.bajas, statsAnteriores.bajas)
       };
 
-      // Análisis de reincidencias por área
-      const reincidenciasActuales = analizarReincidencias(datosActuales || []);
-      const reincidenciasAnteriores = analizarReincidencias(datosAnteriores || []);
+      // Análisis de reincidencias por SALA (no por área)
+      const reincidenciasActuales = analizarReincidenciasPorSala(datosActuales || []);
+      const reincidenciasAnteriores = analizarReincidenciasPorSala(datosAnteriores || []);
 
       return {
         mesActual: {
@@ -88,8 +96,8 @@ export const usePeriodComparison = () => {
         },
         tendencias,
         comparacion: {
-          mejorArea: encontrarMejorArea(reincidenciasActuales, reincidenciasAnteriores),
-          peorArea: encontrarPeorArea(reincidenciasActuales, reincidenciasAnteriores)
+          mejorSala: encontrarMejorSala(reincidenciasActuales, reincidenciasAnteriores),
+          peorSala: encontrarPeorSala(reincidenciasActuales, reincidenciasAnteriores)
         }
       };
     },
@@ -108,6 +116,11 @@ const procesarEstadisticas = (datos: any[]) => {
       acc[area] = (acc[area] || 0) + 1;
       return acc;
     }, {}),
+    porSala: datos.reduce((acc: any, item: any) => {
+      const sala = item.salas?.nombre || 'Sin sala';
+      acc[sala] = (acc[sala] || 0) + 1;
+      return acc;
+    }, {}),
     porClasificacion: datos.reduce((acc: any, item: any) => {
       const clasificacion = item.clasificaciones?.nombre || 'Sin clasificación';
       acc[clasificacion] = (acc[clasificacion] || 0) + 1;
@@ -121,24 +134,27 @@ const calcularTendencia = (actual: number, anterior: number) => {
   return Math.round(((actual - anterior) / anterior) * 100);
 };
 
-const analizarReincidencias = (datos: any[]) => {
+// Nueva función para analizar reincidencias por SALA
+const analizarReincidenciasPorSala = (datos: any[]) => {
   const reincidencias: any = {};
   
   datos.forEach(item => {
-    const area = item.areas?.nombre || 'Sin área';
+    const sala = item.salas?.nombre || 'Sin sala';
     const clasificacion = item.clasificaciones?.nombre || 'Sin clasificación';
-    const key = `${area}-${clasificacion}`;
+    const key = `${sala}-${clasificacion}`;
     
     if (!reincidencias[key]) {
       reincidencias[key] = {
-        area,
+        sala,
         clasificacion,
         count: 0,
+        tiempoTotal: 0,
         incidencias: []
       };
     }
     
     reincidencias[key].count += 1;
+    reincidencias[key].tiempoTotal += item.tiempo_minutos || 0;
     reincidencias[key].incidencias.push(item);
   });
 
@@ -147,15 +163,15 @@ const analizarReincidencias = (datos: any[]) => {
     .sort((a: any, b: any) => b.count - a.count);
 };
 
-const encontrarMejorArea = (actuales: any[], anteriores: any[]) => {
-  // Encontrar el área con mayor reducción de incidencias
+const encontrarMejorSala = (actuales: any[], anteriores: any[]) => {
+  // Encontrar la sala con mayor reducción de incidencias
   const mejoras = actuales.map(actual => {
-    const anterior = anteriores.find(a => a.area === actual.area);
+    const anterior = anteriores.find(a => a.sala === actual.sala);
     if (!anterior) return null;
     
     const reduccion = anterior.count - actual.count;
     return {
-      area: actual.area,
+      sala: actual.sala,
       reduccion,
       porcentaje: anterior.count > 0 ? Math.round((reduccion / anterior.count) * 100) : 0
     };
@@ -164,14 +180,14 @@ const encontrarMejorArea = (actuales: any[], anteriores: any[]) => {
   return mejoras[0] || null;
 };
 
-const encontrarPeorArea = (actuales: any[], anteriores: any[]) => {
-  // Encontrar el área con mayor aumento de incidencias
+const encontrarPeorSala = (actuales: any[], anteriores: any[]) => {
+  // Encontrar la sala con mayor aumento de incidencias
   const empeoramientos = actuales.map(actual => {
-    const anterior = anteriores.find(a => a.area === actual.area) || { count: 0 };
+    const anterior = anteriores.find(a => a.sala === actual.sala) || { count: 0 };
     const aumento = actual.count - anterior.count;
     
     return {
-      area: actual.area,
+      sala: actual.sala,
       aumento,
       porcentaje: anterior.count > 0 ? Math.round((aumento / anterior.count) * 100) : 100
     };

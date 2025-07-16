@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { usePeriodComparison } from "@/hooks/usePeriodComparison";
-import { TrendingUp, TrendingDown, Calendar, AlertCircle, Award } from "lucide-react";
+import { TrendingUp, TrendingDown, Calendar, AlertCircle, Award, Clock } from "lucide-react";
 
 const PeriodComparisonChart = () => {
   const { data: comparison, isLoading } = usePeriodComparison();
@@ -121,30 +120,30 @@ const PeriodComparisonChart = () => {
               </div>
             ))}
 
-            {/* Highlights de mejores y peores áreas */}
+            {/* Highlights de mejores y peores salas */}
             <div className="space-y-3 mt-6">
-              {comparison.comparacion.mejorArea && (
+              {comparison.comparacion.mejorSala && (
                 <div className="bg-green-50 p-3 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <Award className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-800">Mejor Mejora</span>
+                    <span className="text-sm font-medium text-green-800">Mejor Sala</span>
                   </div>
-                  <p className="text-sm text-green-700">{comparison.comparacion.mejorArea.area}</p>
+                  <p className="text-sm text-green-700">{comparison.comparacion.mejorSala.sala}</p>
                   <p className="text-xs text-green-600">
-                    Reducción del {Math.abs(comparison.comparacion.mejorArea.porcentaje)}%
+                    Reducción del {Math.abs(comparison.comparacion.mejorSala.porcentaje)}%
                   </p>
                 </div>
               )}
 
-              {comparison.comparacion.peorArea && (
+              {comparison.comparacion.peorSala && (
                 <div className="bg-red-50 p-3 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <AlertCircle className="w-4 h-4 text-red-600" />
-                    <span className="text-sm font-medium text-red-800">Requiere Atención</span>
+                    <span className="text-sm font-medium text-red-800">Sala Crítica</span>
                   </div>
-                  <p className="text-sm text-red-700">{comparison.comparacion.peorArea.area}</p>
+                  <p className="text-sm text-red-700">{comparison.comparacion.peorSala.sala}</p>
                   <p className="text-xs text-red-600">
-                    Aumento del {comparison.comparacion.peorArea.porcentaje}%
+                    Aumento del {comparison.comparacion.peorSala.porcentaje)}%
                   </p>
                 </div>
               )}
@@ -170,15 +169,23 @@ const PeriodComparisonChart = () => {
               </BarChart>
             </ResponsiveContainer>
 
-            {/* Análisis de reincidencias */}
+            {/* Análisis de reincidencias por SALA */}
             <div className="mt-6">
-              <h4 className="font-medium mb-3">Reincidencias por Área (Mes Actual)</h4>
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Reincidencias por Sala (Mes Actual)
+              </h4>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {comparison.mesActual.reincidencias.slice(0, 5).map((reincidencia: any, index: number) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-yellow-50 border border-yellow-200 rounded">
                     <div>
-                      <span className="text-sm font-medium">{reincidencia.area}</span>
+                      <span className="text-sm font-medium">{reincidencia.sala}</span>
                       <p className="text-xs text-gray-600">{reincidencia.clasificacion}</p>
+                      {reincidencia.tiempoTotal > 0 && (
+                        <p className="text-xs text-orange-600">
+                          {reincidencia.tiempoTotal} min total ({Math.round(reincidencia.tiempoTotal / reincidencia.count)} min promedio)
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
@@ -189,7 +196,7 @@ const PeriodComparisonChart = () => {
                 ))}
                 {comparison.mesActual.reincidencias.length === 0 && (
                   <p className="text-sm text-gray-500 text-center py-4">
-                    No se detectaron reincidencias significativas este mes
+                    No se detectaron reincidencias significativas por sala este mes
                   </p>
                 )}
               </div>

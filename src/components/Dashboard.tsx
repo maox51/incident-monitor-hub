@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar, Users, Database } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Users, Database, Clock } from "lucide-react";
 import MonitorPerformance from "./dashboard/MonitorPerformance";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
@@ -30,7 +30,7 @@ const Dashboard = () => {
       const { data: incidencias, error } = await supabase
         .from("incidencias")
         .select("*")
-        .eq("estado", "aprobado"); // Solo incidencias aprobadas
+        .eq("estado", "aprobado");
       
       if (error) throw error;
 
@@ -47,6 +47,61 @@ const Dashboard = () => {
         incidenciasCriticas: criticas,
         usuariosActivos: new Set(incidencias?.map(inc => inc.reportado_por)).size || 0
       };
+    },
+  });
+
+  // Obtener datos por sala con minutos de retraso - SOLO INCIDENCIAS APROBADAS
+  const { data: salaData } = useQuery({
+    queryKey: ["sala-analysis"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incidencias")
+        .select(`
+          sala_id,
+          tiempo_minutos,
+          prioridad,
+          salas(nombre)
+        `)
+        .eq("estado", "aprobado")
+        .not("sala_id", "is", null);
+      
+      if (error) throw error;
+
+      const salaStats: { [key: string]: { 
+        nombre: string;
+        totalIncidencias: number; 
+        tiempoTotal: number; 
+        criticas: number; 
+        altas: number;
+        promedioMinutos: number;
+      } } = {};
+      
+      data?.forEach(inc => {
+        const salaNombre = inc.salas?.nombre || 'Sin sala';
+        if (!salaStats[salaNombre]) {
+          salaStats[salaNombre] = { 
+            nombre: salaNombre,
+            totalIncidencias: 0, 
+            tiempoTotal: 0, 
+            criticas: 0,
+            altas: 0,
+            promedioMinutos: 0
+          };
+        }
+        salaStats[salaNombre].totalIncidencias++;
+        salaStats[salaNombre].tiempoTotal += inc.tiempo_minutos || 0;
+        if (inc.prioridad === 'critica') salaStats[salaNombre].criticas++;
+        if (inc.prioridad === 'alta') salaStats[salaNombre].altas++;
+      });
+
+      // Calcular promedios
+      Object.values(salaStats).forEach(sala => {
+        sala.promedioMinutos = sala.totalIncidencias > 0 
+          ? Math.round(sala.tiempoTotal / sala.totalIncidencias) 
+          : 0;
+      });
+
+      return Object.values(salaStats).sort((a, b) => b.tiempoTotal - a.tiempoTotal);
     },
   });
 
@@ -147,8 +202,9 @@ const Dashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="salas">Por Salas</TabsTrigger>
           <TabsTrigger value="monitors">Rendimiento Monitores</TabsTrigger>
           <TabsTrigger value="consolidado">Consolidado</TabsTrigger>
           <TabsTrigger value="analysis">Análisis</TabsTrigger>
@@ -237,6 +293,94 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="salas" className="space-y-4">
+          <div className="grid grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Análisis por Salas - Tiempo de Retraso
+                </CardTitle>
+                <CardDescription>
+                  Minutos de retraso acumulados y promedio por sala
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {salaData && salaData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={salaData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="nombre" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                      />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          if (name === 'tiempoTotal') return [`${value} min`, 'Tiempo Total'];
+                          if (name === 'promedioMinutos') return [`${value} min`, 'Promedio'];
+                          if (name === 'totalIncidencias') return [value, 'Incidencias'];
+                          if (name === 'criticas') return [value, 'Críticas'];
+                          return [value, name];
+                        }}
+                        labelFormatter={(label) => `Sala: ${label}`}
+                      />
+                      <Bar dataKey="tiempoTotal" fill="#DC2626" name="Tiempo Total (min)" />
+                      <Bar dataKey="promedioMinutos" fill="#3B82F6" name="Promedio (min)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">
+                    No hay datos de salas disponibles
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {salaData && salaData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detalle por Salas</CardTitle>
+                  <CardDescription>Resumen detallado de incidencias por sala</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {salaData.slice(0, 9).map((sala, index) => (
+                      <div key={index} className="p-4 border rounded-lg">
+                        <h4 className="font-semibold text-lg mb-2">{sala.nombre}</h4>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Total incidencias:</span>
+                            <span className="font-medium">{sala.totalIncidencias}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Tiempo total:</span>
+                            <span className="font-medium text-red-600">{sala.tiempoTotal} min</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Promedio:</span>
+                            <span className="font-medium text-blue-600">{sala.promedioMinutos} min</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Críticas:</span>
+                            <span className="font-medium text-red-500">{sala.criticas}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Altas:</span>
+                            <span className="font-medium text-orange-500">{sala.altas}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="monitors" className="space-y-4">

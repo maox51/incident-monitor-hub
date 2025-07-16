@@ -1,14 +1,13 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, Search, RotateCcw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface ReportFiltersProps {
   areas: any[];
@@ -81,6 +80,25 @@ const ReportFilters = ({ areas, clasificaciones, onFiltersChange }: ReportFilter
     setFiltros(filtrosLimpios);
     onFiltersChange({});
   };
+
+  // Preparar datos para los selects con búsqueda
+  const areasItems = areas?.map(area => ({
+    value: area.id,
+    label: area.nombre
+  })) || [];
+
+  const clasificacionesItems = clasificaciones?.map(clasificacion => ({
+    value: clasificacion.id,
+    label: clasificacion.nombre,
+    color: clasificacion.color
+  })) || [];
+
+  const prioridadItems = [
+    { value: "baja", label: "Baja" },
+    { value: "media", label: "Media" },
+    { value: "alta", label: "Alta" },
+    { value: "critica", label: "Crítica" }
+  ];
 
   return (
     <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -165,62 +183,39 @@ const ReportFilters = ({ areas, clasificaciones, onFiltersChange }: ReportFilter
         </div>
       </div>
 
-      {/* Filtros de selección */}
+      {/* Filtros de selección con búsqueda */}
       <div className="grid md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Área</Label>
-          <Select value={filtros.area_id} onValueChange={(value) => handleFiltroChange("area_id", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todas las áreas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todas las áreas</SelectItem>
-              {areas?.map((area) => (
-                <SelectItem key={area.id} value={area.id}>
-                  {area.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={filtros.area_id}
+            onValueChange={(value) => handleFiltroChange("area_id", value)}
+            placeholder="Todas las áreas"
+            emptyText="No se encontraron áreas"
+            items={areasItems}
+          />
         </div>
 
         <div className="space-y-2">
           <Label>Clasificación</Label>
-          <Select value={filtros.clasificacion_id} onValueChange={(value) => handleFiltroChange("clasificacion_id", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todas las clasificaciones" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todas las clasificaciones</SelectItem>
-              {clasificaciones?.map((clasificacion) => (
-                <SelectItem key={clasificacion.id} value={clasificacion.id}>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: clasificacion.color || '#6B7280' }}
-                    />
-                    {clasificacion.nombre}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={filtros.clasificacion_id}
+            onValueChange={(value) => handleFiltroChange("clasificacion_id", value)}
+            placeholder="Todas las clasificaciones"
+            emptyText="No se encontraron clasificaciones"
+            items={clasificacionesItems}
+          />
         </div>
 
         <div className="space-y-2">
           <Label>Prioridad</Label>
-          <Select value={filtros.prioridad} onValueChange={(value) => handleFiltroChange("prioridad", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todas las prioridades" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todas las prioridades</SelectItem>
-              <SelectItem value="baja">Baja</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
-              <SelectItem value="alta">Alta</SelectItem>
-              <SelectItem value="critica">Crítica</SelectItem>
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={filtros.prioridad}
+            onValueChange={(value) => handleFiltroChange("prioridad", value)}
+            placeholder="Todas las prioridades"
+            emptyText="No se encontraron prioridades"
+            items={prioridadItems}
+          />
         </div>
       </div>
 
