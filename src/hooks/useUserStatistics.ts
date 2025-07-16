@@ -24,7 +24,7 @@ export const useUserStatistics = () => {
     queryFn: async (): Promise<UserStatistic[]> => {
       if (!user) return [];
 
-      // Obtener estadísticas por usuario (monitores y admins)
+      // Obtener estadísticas por usuario - SOLO INCIDENCIAS APROBADAS
       const { data, error } = await supabase
         .from("incidencias")
         .select(`
@@ -33,6 +33,7 @@ export const useUserStatistics = () => {
           created_at,
           profiles!inner(email, full_name)
         `)
+        .eq("estado", "aprobado") // Solo incidencias aprobadas
         .order("created_at", { ascending: false });
 
       if (error) {

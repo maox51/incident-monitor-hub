@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +48,7 @@ const ReportesView = () => {
     },
   });
 
-  // Obtener incidencias filtradas
+  // Obtener incidencias filtradas - SOLO APROBADAS
   const { data: incidencias, isLoading, refetch } = useQuery({
     queryKey: ["incidencias-filtradas", filtros],
     queryFn: async () => {
@@ -63,6 +62,7 @@ const ReportesView = () => {
           clasificaciones(nombre, color),
           imagenes_incidencias(id, url_imagen, nombre_archivo)
         `)
+        .eq("estado", "aprobado") // Solo incidencias aprobadas
         .order("created_at", { ascending: false });
 
       // Aplicar filtros
@@ -175,7 +175,7 @@ const ReportesView = () => {
             Filtros de Búsqueda
           </CardTitle>
           <CardDescription>
-            Utiliza los filtros para generar reportes específicos de incidencias del sistema de monitoreo
+            Utiliza los filtros para generar reportes específicos de incidencias aprobadas del sistema de monitoreo
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -277,7 +277,7 @@ const ReportesView = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Reporte de Incidencias - Monitoreo de Casino</span>
+            <span>Reporte de Incidencias Aprobadas - Monitoreo de Casino</span>
             <Badge variant="secondary">
               {incidencias?.length || 0} incidencias encontradas
             </Badge>
@@ -346,7 +346,7 @@ const ReportesView = () => {
           ) : (
             <div className="text-center py-8">
               <Eye className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-gray-600">No se encontraron incidencias con los filtros aplicados</p>
+              <p className="mt-2 text-gray-600">No se encontraron incidencias aprobadas con los filtros aplicados</p>
             </div>
           )}
         </CardContent>

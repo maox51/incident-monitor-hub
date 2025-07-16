@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -24,13 +23,14 @@ const Dashboard = () => {
     });
   }, []);
 
-  // Obtener estadísticas reales del sistema
+  // Obtener estadísticas reales del sistema - SOLO INCIDENCIAS APROBADAS
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const { data: incidencias, error } = await supabase
         .from("incidencias")
-        .select("*");
+        .select("*")
+        .eq("estado", "aprobado"); // Solo incidencias aprobadas
       
       if (error) throw error;
 
@@ -50,13 +50,14 @@ const Dashboard = () => {
     },
   });
 
-  // Obtener datos para gráfico de tendencias por mes
+  // Obtener datos para gráfico de tendencias por mes - SOLO INCIDENCIAS APROBADAS
   const { data: monthlyData } = useQuery({
     queryKey: ["monthly-trends"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("incidencias")
-        .select("created_at, prioridad");
+        .select("created_at, prioridad")
+        .eq("estado", "aprobado"); // Solo incidencias aprobadas
       
       if (error) throw error;
 
@@ -81,13 +82,14 @@ const Dashboard = () => {
     },
   });
 
-  // Obtener distribución por prioridad
+  // Obtener distribución por prioridad - SOLO INCIDENCIAS APROBADAS
   const { data: priorityData } = useQuery({
     queryKey: ["priority-distribution"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("incidencias")
-        .select("prioridad");
+        .select("prioridad")
+        .eq("estado", "aprobado"); // Solo incidencias aprobadas
       
       if (error) throw error;
 
