@@ -19,7 +19,7 @@ interface Profile {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'monitor';
+  role: 'admin' | 'monitor' | 'supervisor_monitoreo';
   created_at: string;
   updated_at: string;
 }
@@ -188,6 +188,7 @@ const UserManagement = () => {
                   <SelectItem value="all">Todos los roles</SelectItem>
                   <SelectItem value="admin">Administradores</SelectItem>
                   <SelectItem value="monitor">Monitores</SelectItem>
+                  <SelectItem value="supervisor">Supervisores</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,6 +321,7 @@ const UserManagement = () => {
                   <SelectContent>
                     <SelectItem value="monitor">Monitor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="supervisor">Supervisor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

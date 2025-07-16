@@ -93,7 +93,7 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         <div className="space-y-2">
           <Label htmlFor="sala" className="flex items-center gap-2">
             <Building className="w-4 h-4" />
-            Sucursal Casino *
+            Sucursal Salas *
           </Label>
           <Select value={formData.sala_id} onValueChange={(value) => onInputChange("sala_id", value)}>
             <SelectTrigger className="w-full">

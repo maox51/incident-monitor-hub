@@ -277,7 +277,7 @@ const ReportesView = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Reporte de Incidencias Aprobadas - Monitoreo de Casino</span>
+            <span>Reporte de Incidencias Aprobadas - Monitoreo de Salas</span>
             <Badge variant="secondary">
               {incidencias?.length || 0} incidencias encontradas
             </Badge>
