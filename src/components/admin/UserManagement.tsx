@@ -114,7 +114,7 @@ const UserManagement = () => {
     const formData = new FormData(e.target as HTMLFormElement);
     const updates = {
       full_name: formData.get('fullName') as string,
-      role: formData.get('role') as 'admin' | 'monitor',
+      role: formData.get('role') as 'admin' | 'monitor' | 'supervisor_monitoreo',
     };
 
     updateUserMutation.mutate({ userId: selectedUser.id, updates });
@@ -134,6 +134,8 @@ const UserManagement = () => {
         return <Badge variant="destructive" className="gap-1"><Shield className="h-3 w-3" />Administrador</Badge>;
       case 'monitor':
         return <Badge variant="secondary" className="gap-1"><Users className="h-3 w-3" />Monitor</Badge>;
+      case 'supervisor_monitoreo':
+        return <Badge variant="outline" className="gap-1"><Users className="h-3 w-3" />Supervisor de Monitoreo</Badge>;
       default:
         return <Badge variant="outline">Sin rol</Badge>;
     }
