@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { usePeriodComparison } from "@/hooks/usePeriodComparison";
@@ -143,7 +144,7 @@ const PeriodComparisonChart = () => {
                   </div>
                   <p className="text-sm text-red-700">{comparison.comparacion.peorSala.sala}</p>
                   <p className="text-xs text-red-600">
-                    Aumento del {comparison.comparacion.peorSala.porcentaje)}%
+                    Aumento del {comparison.comparacion.peorSala.porcentaje}%
                   </p>
                 </div>
               )}
