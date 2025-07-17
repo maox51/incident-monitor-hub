@@ -8,6 +8,8 @@ import { AlertTriangle, LogIn, UserPlus, Eye, EyeOff, Mail, Shield, Users } from
 import { useAuth } from '@/hooks/useAuth';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
+import mountainBackground from '@/assets/mountain-background.jpg';
+import logoEsva from '@/assets/logo-esva.png';
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
@@ -151,90 +153,54 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
-      {/* Geometric Background Pattern */}
+      {/* Mountain Background */}
       <div className="absolute inset-0">
-        <svg 
-          className="w-full h-full object-cover" 
-          viewBox="0 0 800 600" 
-          preserveAspectRatio="xMidYMid slice"
-          style={{
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 20%, #06b6d4 40%, #10b981 60%, #84cc16 80%, #eab308 100%)'
-          }}
-        >
-          <defs>
-            <pattern id="geometric" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <polygon points="20,10 40,30 20,50 0,30" fill="rgba(255,255,255,0.05)" />
-              <polygon points="60,10 80,30 60,50 40,30" fill="rgba(255,255,255,0.08)" />
-              <polygon points="40,40 60,60 40,80 20,60" fill="rgba(255,255,255,0.03)" />
-              <polygon points="80,40 100,60 80,80 60,60" fill="rgba(255,255,255,0.06)" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#geometric)" />
-          
-          <polygon points="0,0 200,100 0,200" fill="rgba(30,58,138,0.3)" />
-          <polygon points="800,0 600,150 800,300" fill="rgba(59,130,246,0.2)" />
-          <polygon points="200,600 400,450 600,600" fill="rgba(6,182,212,0.25)" />
-          <polygon points="800,400 650,500 800,600" fill="rgba(16,185,129,0.2)" />
-          <polygon points="0,400 150,500 0,600" fill="rgba(132,204,22,0.15)" />
-        </svg>
+        <img 
+          src={mountainBackground}
+          alt="Mountain landscape"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-blue-800/30 to-purple-900/50"></div>
       </div>
       
       <div className="relative z-10 w-full max-w-md mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-full border border-white/30">
-              <Users className="text-white h-12 w-12" />
-            </div>
+            <img 
+              src={logoEsva}
+              alt="GRUPO ESVA"
+              className="h-20 w-20 filter invert brightness-0 contrast-100"
+            />
           </div>
-          <h1 className="text-3xl md:text-4xl font-light text-white mb-2">
-            Member Login
+          <h1 className="text-2xl md:text-3xl font-medium text-white mb-2">
+            Iniciar Sesión
           </h1>
-          <p className="text-white/80 text-base">
-            Sistema de Monitoreo - Grupo Esvasa
-          </p>
         </div>
 
-        <Card className="backdrop-blur-lg bg-white/95 border-0 shadow-2xl rounded-lg">
-          <CardContent className="p-6">
+        <Card className="backdrop-blur-xl bg-white/20 border border-white/30 shadow-2xl rounded-lg">
+          <CardContent className="p-8">
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
-                <TabsTrigger value="login" className="text-sm">
-                  Iniciar Sesión
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="text-sm">
-                  Registrarse
-                </TabsTrigger>
-              </TabsList>
-
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <div className="relative">
-                      <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        type="email"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        placeholder="Username"
-                        className="pl-12 h-12 text-base border border-gray-300 rounded-md bg-white"
-                        required
-                      />
-                    </div>
+                    <Input
+                      type="email"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                      placeholder="Ingresa tu email"
+                      className="h-12 text-base border-0 bg-white/80 backdrop-blur-sm rounded-md placeholder:text-gray-500 text-gray-700"
+                      required
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <div className="relative">
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
                       <Input
                         type={showPassword.login ? "text" : "password"}
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        placeholder="Password"
-                        className="pl-12 pr-12 h-12 text-base border border-gray-300 rounded-md bg-white"
+                        placeholder="Ingresa tu contraseña"
+                        className="h-12 text-base border-0 bg-white/80 backdrop-blur-sm rounded-md placeholder:text-gray-500 text-gray-700 pr-12"
                         required
                       />
                       <Button
@@ -244,32 +210,48 @@ const AuthPage = () => {
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
                         onClick={() => setShowPassword({ ...showPassword, login: !showPassword.login })}
                       >
-                        {showPassword.login ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                        {showPassword.login ? <EyeOff className="h-4 w-4 text-gray-600" /> : <Eye className="h-4 w-4 text-gray-600" />}
                       </Button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <label className="flex items-center text-gray-600">
-                      <input type="checkbox" className="mr-2" />
-                      Remember me
+                    <label className="flex items-center text-white">
+                      <input type="checkbox" className="mr-2 rounded bg-white/20 border-white/30" />
+                      Recordarme
                     </label>
-                   {/*<a href="#" className="text-blue-600 hover:underline">
-                      Forgot password?
-                    </a>*/}
+                    <a href="#" className="text-white hover:text-white/80 underline">
+                      ¿Olvidaste tu contraseña?
+                    </a>
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium text-base rounded-md shadow-lg"
+                    className="w-full h-12 bg-white text-gray-800 hover:bg-white/90 font-medium text-base rounded-md shadow-lg mt-6"
                     disabled={loading.login}
                   >
-                    {loading.login ? 'Iniciando sesión...' : 'LOGIN'}
+                    {loading.login ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                   </Button>
+
+                  <div className="text-center mt-6">
+                    <span className="text-white text-sm">
+                      ¿No tienes una cuenta?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const signupTab = document.querySelector('[data-value="signup"]') as HTMLButtonElement;
+                          signupTab?.click();
+                        }}
+                        className="text-white underline hover:text-white/80 font-medium"
+                      >
+                        Regístrate
+                      </button>
+                    </span>
+                  </div>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup">
+              <TabsContent value="signup" data-value="signup">
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
                     <Input
@@ -277,7 +259,7 @@ const AuthPage = () => {
                       value={signupData.fullName}
                       onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
                       placeholder="Nombre Completo"
-                      className="h-12 text-base border border-gray-300 rounded-md bg-white"
+                      className="h-12 text-base border-0 bg-white/80 backdrop-blur-sm rounded-md placeholder:text-gray-500 text-gray-700"
                       required
                     />
                   </div>
@@ -288,10 +270,10 @@ const AuthPage = () => {
                       value={signupData.email}
                       onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                       placeholder="Email Corporativo"
-                      className="h-12 text-base border border-gray-300 rounded-md bg-white"
+                      className="h-12 text-base border-0 bg-white/80 backdrop-blur-sm rounded-md placeholder:text-gray-500 text-gray-700"
                       required
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-white/80">
                       Utiliza tu email corporativo oficial
                     </p>
                   </div>
@@ -303,7 +285,7 @@ const AuthPage = () => {
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                         placeholder="Contraseña (mínimo 8 caracteres)"
-                        className="pr-12 h-12 text-base border border-gray-300 rounded-md bg-white"
+                        className="pr-12 h-12 text-base border-0 bg-white/80 backdrop-blur-sm rounded-md placeholder:text-gray-500 text-gray-700"
                         required
                       />
                       <Button
@@ -313,7 +295,7 @@ const AuthPage = () => {
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
                         onClick={() => setShowPassword({ ...showPassword, signup: !showPassword.signup })}
                       >
-                        {showPassword.signup ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                        {showPassword.signup ? <EyeOff className="h-4 w-4 text-gray-600" /> : <Eye className="h-4 w-4 text-gray-600" />}
                       </Button>
                     </div>
                   </div>
@@ -325,7 +307,7 @@ const AuthPage = () => {
                         value={signupData.confirmPassword}
                         onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                         placeholder="Confirmar Contraseña"
-                        className="pr-12 h-12 text-base border border-gray-300 rounded-md bg-white"
+                        className="pr-12 h-12 text-base border-0 bg-white/80 backdrop-blur-sm rounded-md placeholder:text-gray-500 text-gray-700"
                         required
                       />
                       <Button
@@ -335,31 +317,40 @@ const AuthPage = () => {
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
                         onClick={() => setShowPassword({ ...showPassword, confirm: !showPassword.confirm })}
                       >
-                        {showPassword.confirm ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                        {showPassword.confirm ? <EyeOff className="h-4 w-4 text-gray-600" /> : <Eye className="h-4 w-4 text-gray-600" />}
                       </Button>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium text-base rounded-md shadow-lg"
+                    className="w-full h-12 bg-white text-gray-800 hover:bg-white/90 font-medium text-base rounded-md shadow-lg mt-6"
                     disabled={loading.signup}
                   >
-                    {loading.signup ? 'Registrando...' : 'CREAR CUENTA'}
+                    {loading.signup ? 'Registrando...' : 'Crear Cuenta'}
                   </Button>
+
+                  <div className="text-center mt-4">
+                    <span className="text-white text-sm">
+                      ¿Ya tienes una cuenta?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const loginTab = document.querySelector('[data-value="login"]') as HTMLButtonElement;
+                          loginTab?.click();
+                        }}
+                        className="text-white underline hover:text-white/80 font-medium"
+                      >
+                        Iniciar Sesión
+                      </button>
+                    </span>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
-        <div className="mt-6 text-center text-sm text-white/80">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-            <p className="font-medium mb-1">Sistema de Monitoreo Grupo ESVASA</p>
-            <p>Rol por defecto: Monitor</p>
-            <p>Contacta al administrador para cambios de rol</p>
-          </div>
-        </div>
       </div>
     </div>
   );

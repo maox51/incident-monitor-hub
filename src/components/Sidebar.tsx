@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, X, BarChart3, AlertTriangle, FileText, Users, Calendar, Upload } from 'lucide-react';
+import { Menu, X, BarChart3, AlertTriangle, FileText, Users, Calendar, Upload, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar },
     { id: 'reportes', label: 'Reportes', icon: FileText },
+    { id: 'chat', label: 'Mensajes', icon: MessageSquare },
     { id: 'usuarios', label: 'Usuarios', icon: Users },
     { id: 'importar', label: 'Importar Datos', icon: Upload },
   ];
