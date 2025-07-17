@@ -20,7 +20,7 @@ interface IncidenciaConfirmationDialogProps {
     titulo: string;
     descripcion: string;
     area_id: string;
-    clasificacion_id: string;
+    clasificacion_ids: string[];
     prioridad: string;
     sala_id: string;
   };
@@ -39,7 +39,11 @@ const IncidenciaConfirmationDialog = ({
   salas
 }: IncidenciaConfirmationDialogProps) => {
   const getAreaName = () => areas?.find(a => a.id === formData.area_id)?.nombre || 'No seleccionada';
-  const getClasificacionName = () => clasificaciones?.find(c => c.id === formData.clasificacion_id)?.nombre || 'No seleccionada';
+  const getClasificacionNames = () => {
+    if (!formData.clasificacion_ids.length) return 'No seleccionadas';
+    return clasificaciones?.filter(c => formData.clasificacion_ids.includes(c.id))
+      .map(c => c.nombre).join(', ') || 'No seleccionadas';
+  };
   const getSalaName = () => salas?.find(s => s.id === formData.sala_id)?.nombre || 'No seleccionada';
 
   const getPrioridadColor = () => {
@@ -94,8 +98,8 @@ const IncidenciaConfirmationDialog = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <span className="text-sm font-medium text-gray-600">Clasificación:</span>
-                <p className="text-sm text-gray-900">{getClasificacionName()}</p>
+                <span className="text-sm font-medium text-gray-600">Tipos de Incidencia:</span>
+                <p className="text-sm text-gray-900">{getClasificacionNames()}</p>
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-600">Prioridad:</span>
