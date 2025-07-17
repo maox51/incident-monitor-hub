@@ -199,6 +199,42 @@ export type Database = {
           },
         ]
       }
+      incidencia_clasificaciones: {
+        Row: {
+          clasificacion_id: string
+          created_at: string
+          id: string
+          incidencia_id: string
+        }
+        Insert: {
+          clasificacion_id: string
+          created_at?: string
+          id?: string
+          incidencia_id: string
+        }
+        Update: {
+          clasificacion_id?: string
+          created_at?: string
+          id?: string
+          incidencia_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidencia_clasificaciones_clasificacion_id_fkey"
+            columns: ["clasificacion_id"]
+            isOneToOne: false
+            referencedRelation: "clasificaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidencia_clasificaciones_incidencia_id_fkey"
+            columns: ["incidencia_id"]
+            isOneToOne: false
+            referencedRelation: "incidencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidencias: {
         Row: {
           aprobado_por: string | null
@@ -442,6 +478,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_area_access: {
+        Row: {
+          area_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_area_access_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
