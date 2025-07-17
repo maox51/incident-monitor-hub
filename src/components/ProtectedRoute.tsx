@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requireAdmin = false, requireSupervisor = false }: ProtectedRouteProps) => {
-  const { user, profile, loading, isAdmin, isSupervisorMonitoreo } = useAuth();
+  const { user, profile, loading, isAdmin, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMonitor } = useAuth();
 
   if (loading) {
     return (
@@ -24,6 +24,20 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireSupervisor = fa
 
   if (!user || !profile) {
     return null; // AuthProvider will redirect to AuthPage
+  }
+
+  // Verificar si el usuario tiene algún rol válido
+  const hasValidRole = isAdmin || isSupervisorMonitoreo || isRRHH || isSupervisorSalas || isFinanzas || isMonitor;
+  
+  if (!hasValidRole) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
+          <p className="text-gray-600">No tienes un rol válido asignado para acceder al sistema.</p>
+        </div>
+      </div>
+    );
   }
 
   if (requireAdmin && !isAdmin) {

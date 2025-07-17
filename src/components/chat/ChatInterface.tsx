@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ interface ChatMessage {
   content: string;
   created_at: string;
   user_id: string;
-  user?: {
+  profiles?: {
     full_name: string;
     email: string;
   };
@@ -73,32 +74,23 @@ const ChatInterface = () => {
 
   const loadChatRooms = async () => {
     try {
+      console.log('Loading chat rooms for user:', user?.id);
       const { data, error } = await supabase
         .from('chat_rooms')
         .select(`
           *,
-          chat_participants!inner(user_id),
-          chat_messages(
-            content,
-            created_at,
-            profiles(full_name)
-          )
+          chat_participants!inner(user_id)
         `)
         .eq('chat_participants.user_id', user?.id)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading chat rooms:', error);
+        throw error;
+      }
 
-      const roomsWithLastMessage = data?.map(room => ({
-        ...room,
-        last_message: room.chat_messages?.[0] ? {
-          content: room.chat_messages[0].content,
-          created_at: room.chat_messages[0].created_at,
-          user_name: 'Usuario'
-        } : undefined
-      })) || [];
-
-      setRooms(roomsWithLastMessage);
+      console.log('Chat rooms loaded:', data);
+      setRooms(data || []);
     } catch (error) {
       console.error('Error loading chat rooms:', error);
       toast.error('Error al cargar las salas de chat');
@@ -121,6 +113,7 @@ const ChatInterface = () => {
 
   const loadMessages = async (roomId: string) => {
     try {
+      console.log('Loading messages for room:', roomId);
       const { data, error } = await supabase
         .from('chat_messages')
         .select(`
@@ -130,7 +123,12 @@ const ChatInterface = () => {
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading messages:', error);
+        throw error;
+      }
+
+      console.log('Messages loaded:', data);
       setMessages(data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -139,6 +137,7 @@ const ChatInterface = () => {
   };
 
   const subscribeToMessages = (roomId: string) => {
+    console.log('Subscribing to messages for room:', roomId);
     const channel = supabase
       .channel(`room-${roomId}`)
       .on(
@@ -150,6 +149,7 @@ const ChatInterface = () => {
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
+          console.log('New message received:', payload);
           const newMessage = payload.new as ChatMessage;
           setMessages(prev => [...prev, newMessage]);
         }
@@ -157,6 +157,7 @@ const ChatInterface = () => {
       .subscribe();
 
     return () => {
+      console.log('Unsubscribing from room:', roomId);
       supabase.removeChannel(channel);
     };
   };
@@ -165,6 +166,7 @@ const ChatInterface = () => {
     if (!newMessage.trim() || !selectedRoom || !user) return;
 
     try {
+      console.log('Sending message:', newMessage, 'to room:', selectedRoom);
       const { error } = await supabase
         .from('chat_messages')
         .insert({
@@ -174,7 +176,11 @@ const ChatInterface = () => {
           message_type: 'text'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+      
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -186,14 +192,19 @@ const ChatInterface = () => {
     if (!user) return;
 
     try {
+      console.log('Creating private chat with user:', otherUserId);
       const { data, error } = await supabase
         .rpc('create_private_chat', {
           _user1_id: user.id,
           _user2_id: otherUserId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating private chat:', error);
+        throw error;
+      }
 
+      console.log('Private chat created:', data);
       setSelectedRoom(data);
       setShowNewChat(false);
       loadChatRooms();
@@ -212,7 +223,7 @@ const ChatInterface = () => {
   };
 
   const filteredUsers = users.filter(u => 
-    u.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -258,11 +269,11 @@ const ChatInterface = () => {
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs">
-                          {u.full_name.split(' ').map(n => n[0]).join('')}
+                          {u.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{u.full_name}</p>
+                        <p className="text-sm font-medium truncate">{u.full_name || 'Usuario'}</p>
                         <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                       </div>
                     </div>
@@ -345,7 +356,7 @@ const ChatInterface = () => {
                     {message.user_id !== user?.id && (
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs">
-                          {message.user?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                          {message.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                         </AvatarFallback>
                       </Avatar>
                     )}
@@ -366,7 +377,7 @@ const ChatInterface = () => {
                     {message.user_id === user?.id && (
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs">
-                          {user?.user_metadata?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'Tú'}
+                          Tú
                         </AvatarFallback>
                       </Avatar>
                     )}
