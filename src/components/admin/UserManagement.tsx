@@ -46,6 +46,7 @@ const UserManagement = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
@@ -151,20 +152,25 @@ const UserManagement = () => {
     },
   });
 
-  // Mutation para reset de contraseña
+  // Mutation para reset de contraseña admin
   const resetPasswordMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const { error } = await resetPassword(email);
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { email, newPassword: password }
+      });
+      
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      toast.success('Email de recuperación enviado correctamente');
+      toast.success('Contraseña actualizada correctamente');
       setIsResetPasswordDialogOpen(false);
       setSelectedUser(null);
+      setNewPassword('');
     },
     onError: (error) => {
       console.error('Error resetting password:', error);
-      toast.error('Error al enviar email de recuperación');
+      toast.error('Error al actualizar la contraseña');
     },
   });
 
@@ -522,18 +528,24 @@ const UserManagement = () => {
       <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Restaurar Contraseña</DialogTitle>
+            <DialogTitle>Cambiar Contraseña</DialogTitle>
             <DialogDescription>
-              Se enviará un email de recuperación al usuario para que pueda restablecer su contraseña.
+              Establece una nueva contraseña para el usuario {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Usuario:</strong> {selectedUser?.email}
-              </p>
-              <p className="text-sm text-blue-600 mt-2">
-                El usuario recibirá un email con las instrucciones para restablecer su contraseña.
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nueva Contraseña</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Ingresa la nueva contraseña"
+                minLength={6}
+              />
+              <p className="text-xs text-gray-500">
+                La contraseña debe tener al menos 6 caracteres
               </p>
             </div>
           </div>
@@ -547,10 +559,13 @@ const UserManagement = () => {
             </Button>
             <Button
               type="button"
-              onClick={() => resetPasswordMutation.mutate(selectedUser!.email)}
-              disabled={resetPasswordMutation.isPending}
+              onClick={() => resetPasswordMutation.mutate({ 
+                email: selectedUser!.email, 
+                password: newPassword 
+              })}
+              disabled={resetPasswordMutation.isPending || !newPassword}
             >
-              {resetPasswordMutation.isPending ? 'Enviando...' : 'Enviar Email de Recuperación'}
+              {resetPasswordMutation.isPending ? 'Actualizando...' : 'Actualizar Contraseña'}
             </Button>
           </DialogFooter>
         </DialogContent>
