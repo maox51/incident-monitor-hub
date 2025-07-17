@@ -57,10 +57,19 @@ const ChatInterface = () => {
   }, [user]);
 
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    
     if (selectedRoom) {
       loadMessages(selectedRoom);
-      subscribeToMessages(selectedRoom);
+      cleanup = subscribeToMessages(selectedRoom);
     }
+    
+    // Cleanup function
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   }, [selectedRoom]);
 
   useEffect(() => {
@@ -179,8 +188,11 @@ const ChatInterface = () => {
   };
 
   const subscribeToMessages = (roomId: string) => {
+    // Create unique channel name to avoid conflicts
+    const channelName = `messages-${roomId}-${Date.now()}`;
+    
     const channel = supabase
-      .channel(`messages-${roomId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -213,7 +225,9 @@ const ChatInterface = () => {
       )
       .subscribe();
 
+    // Return cleanup function
     return () => {
+      console.log('Cleaning up channel:', channelName);
       supabase.removeChannel(channel);
     };
   };
