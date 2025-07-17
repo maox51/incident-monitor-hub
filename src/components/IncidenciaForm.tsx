@@ -70,22 +70,23 @@ const IncidenciaForm = () => {
     
     // Validar campos obligatorios básicos
     if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id || 
-        !formData.clasificacion_id || !formData.reportado_por.trim() || !formData.sala_id) {
+        formData.clasificacion_ids.length === 0 || !formData.reportado_por.trim() || !formData.sala_id) {
       toast({
         title: "Campos requeridos",
-        description: "Por favor completa todos los campos obligatorios incluyendo la sala de monitoreo.",
+        description: "Por favor completa todos los campos obligatorios incluyendo al menos un tipo de incidencia.",
         variant: "destructive",
       });
       return;
     }
 
     // Validar campo de tiempo si es requerido
-    const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
-    const requiresTimeField = selectedClasificacion?.nombre && (
-      (selectedClasificacion.nombre.toLowerCase().includes('ingreso') && 
-       selectedClasificacion.nombre.toLowerCase().includes('tardio')) ||
-      (selectedClasificacion.nombre.toLowerCase().includes('cierre') && 
-       selectedClasificacion.nombre.toLowerCase().includes('prematuro'))
+    const selectedClasificaciones = clasificaciones?.filter(c => formData.clasificacion_ids.includes(c.id)) || [];
+    const requiresTimeField = selectedClasificaciones.some(clasificacion =>
+      clasificacion.nombre.toLowerCase().includes('tardio') ||
+      clasificacion.nombre.toLowerCase().includes('tardío') ||
+      clasificacion.nombre.toLowerCase().includes('prematuro') ||
+      clasificacion.nombre.toLowerCase().includes('ingreso') ||
+      clasificacion.nombre.toLowerCase().includes('cierre')
     );
     
     if (requiresTimeField && (!formData.tiempo_minutos || formData.tiempo_minutos <= 0)) {

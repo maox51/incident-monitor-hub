@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,27 +9,46 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, UserPlus, Edit, Trash2, Shield, Mail } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, UserPlus, Edit, Trash2, Shield, Mail, Key, Building } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Database } from '@/integrations/supabase/types';
+
+type AppRole = Database['public']['Enums']['app_role'];
 
 interface Profile {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'monitor' | 'supervisor_monitoreo';
+  role: AppRole;
   created_at: string;
   updated_at: string;
 }
 
+interface Area {
+  id: string;
+  nombre: string;
+}
+
+interface UserAreaAccess {
+  id: string;
+  user_id: string;
+  area_id: string;
+  area?: Area;
+}
+
 const UserManagement = () => {
+  const { resetPassword } = useAuth();
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   
   const queryClient = useQueryClient();
 
@@ -37,36 +56,94 @@ const UserManagement = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['users-management'],
     queryFn: async () => {
-      console.log('Fetching users for management...');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
-      }
-
+      if (error) throw error;
       return data as Profile[];
     },
   });
 
-  // Mutation para actualizar rol de usuario
+  // Obtener áreas
+  const { data: areas } = useQuery({
+    queryKey: ['areas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('areas')
+        .select('*')
+        .eq('activo', true)
+        .order('nombre');
+
+      if (error) throw error;
+      return data as Area[];
+    },
+  });
+
+  // Obtener accesos por área del usuario seleccionado
+  const { data: userAreaAccess } = useQuery({
+    queryKey: ['user-area-access', selectedUser?.id],
+    queryFn: async () => {
+      if (!selectedUser) return [];
+      
+      const { data, error } = await supabase
+        .from('user_area_access')
+        .select(`
+          *,
+          area:areas(*)
+        `)
+        .eq('user_id', selectedUser.id);
+
+      if (error) throw error;
+      return data as UserAreaAccess[];
+    },
+    enabled: !!selectedUser,
+  });
+
+  // Mutation para actualizar usuario
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: Partial<Profile> }) => {
-      const { error } = await supabase
+    mutationFn: async ({ userId, updates, areaIds }: { userId: string; updates: Partial<Profile>; areaIds?: string[] }) => {
+      // Actualizar perfil
+      const { error: profileError } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', userId);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Si se proporcionan áreas, actualizar accesos
+      if (areaIds !== undefined) {
+        // Eliminar accesos existentes
+        const { error: deleteError } = await supabase
+          .from('user_area_access')
+          .delete()
+          .eq('user_id', userId);
+
+        if (deleteError) throw deleteError;
+
+        // Insertar nuevos accesos
+        if (areaIds.length > 0) {
+          const accesses = areaIds.map(areaId => ({
+            user_id: userId,
+            area_id: areaId
+          }));
+
+          const { error: insertError } = await supabase
+            .from('user_area_access')
+            .insert(accesses);
+
+          if (insertError) throw insertError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-management'] });
+      queryClient.invalidateQueries({ queryKey: ['user-area-access'] });
       toast.success('Usuario actualizado correctamente');
       setIsEditDialogOpen(false);
       setSelectedUser(null);
+      setSelectedAreas([]);
     },
     onError: (error) => {
       console.error('Error updating user:', error);
@@ -74,10 +151,26 @@ const UserManagement = () => {
     },
   });
 
+  // Mutation para reset de contraseña
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await resetPassword(email);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Email de recuperación enviado correctamente');
+      setIsResetPasswordDialogOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (error) => {
+      console.error('Error resetting password:', error);
+      toast.error('Error al enviar email de recuperación');
+    },
+  });
+
   // Mutation para eliminar usuario
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Primero eliminar el perfil
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -100,11 +193,20 @@ const UserManagement = () => {
   const handleEditUser = (user: Profile) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
+    // Cargar áreas del usuario si es un rol que las necesita
+    if (['finanzas', 'rrhh', 'supervisor_salas'].includes(user.role)) {
+      queryClient.invalidateQueries({ queryKey: ['user-area-access', user.id] });
+    }
   };
 
   const handleDeleteUser = (user: Profile) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleResetPassword = (user: Profile) => {
+    setSelectedUser(user);
+    setIsResetPasswordDialogOpen(true);
   };
 
   const handleUpdateUser = (e: React.FormEvent) => {
@@ -114,10 +216,16 @@ const UserManagement = () => {
     const formData = new FormData(e.target as HTMLFormElement);
     const updates = {
       full_name: formData.get('fullName') as string,
-      role: formData.get('role') as 'admin' | 'monitor' | 'supervisor_monitoreo',
+      role: formData.get('role') as AppRole,
     };
 
-    updateUserMutation.mutate({ userId: selectedUser.id, updates });
+    const requiresAreaAccess = ['finanzas', 'rrhh', 'supervisor_salas'].includes(updates.role);
+    
+    updateUserMutation.mutate({ 
+      userId: selectedUser.id, 
+      updates,
+      areaIds: requiresAreaAccess ? selectedAreas : undefined
+    });
   };
 
   // Filtrar usuarios
@@ -128,7 +236,7 @@ const UserManagement = () => {
     return matchesSearch && matchesRole;
   });
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: AppRole) => {
     switch (role) {
       case 'admin':
         return <Badge variant="destructive" className="gap-1"><Shield className="h-3 w-3" />Administrador</Badge>;
@@ -136,6 +244,12 @@ const UserManagement = () => {
         return <Badge variant="secondary" className="gap-1"><Users className="h-3 w-3" />Monitor</Badge>;
       case 'supervisor_monitoreo':
         return <Badge variant="outline" className="gap-1"><Users className="h-3 w-3" />Supervisor de Monitoreo</Badge>;
+      case 'rrhh':
+        return <Badge variant="default" className="gap-1"><Building className="h-3 w-3" />RRHH</Badge>;
+      case 'supervisor_salas':
+        return <Badge className="gap-1 bg-purple-600"><Building className="h-3 w-3" />Supervisor de Salas</Badge>;
+      case 'finanzas':
+        return <Badge className="gap-1 bg-green-600"><Building className="h-3 w-3" />Finanzas</Badge>;
       default:
         return <Badge variant="outline">Sin rol</Badge>;
     }
@@ -191,6 +305,9 @@ const UserManagement = () => {
                   <SelectItem value="admin">Administradores</SelectItem>
                   <SelectItem value="monitor">Monitores</SelectItem>
                   <SelectItem value="supervisor_monitoreo">Supervisor de Monitoreo</SelectItem>
+                  <SelectItem value="rrhh">RRHH</SelectItem>
+                  <SelectItem value="supervisor_salas">Supervisor de Salas</SelectItem>
+                  <SelectItem value="finanzas">Finanzas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -260,6 +377,14 @@ const UserManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleResetPassword(user)}
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDeleteUser(user)}
                           className="text-red-600 hover:text-red-700"
                         >
@@ -287,7 +412,7 @@ const UserManagement = () => {
 
       {/* Dialog para editar usuario */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Usuario</DialogTitle>
             <DialogDescription>
@@ -316,7 +441,20 @@ const UserManagement = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Rol</Label>
-                <Select name="role" defaultValue={selectedUser?.role}>
+                <Select 
+                  name="role" 
+                  defaultValue={selectedUser?.role}
+                  onValueChange={(value) => {
+                    const requiresAreaAccess = ['finanzas', 'rrhh', 'supervisor_salas'].includes(value);
+                    if (!requiresAreaAccess) {
+                      setSelectedAreas([]);
+                    } else {
+                      // Pre-cargar áreas actuales del usuario
+                      const currentAreas = userAreaAccess?.map(access => access.area_id) || [];
+                      setSelectedAreas(currentAreas);
+                    }
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar rol" />
                   </SelectTrigger>
@@ -324,9 +462,42 @@ const UserManagement = () => {
                     <SelectItem value="monitor">Monitor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="supervisor_monitoreo">Supervisor de Monitoreo</SelectItem>
+                    <SelectItem value="rrhh">RRHH</SelectItem>
+                    <SelectItem value="supervisor_salas">Supervisor de Salas</SelectItem>
+                    <SelectItem value="finanzas">Finanzas</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Selector de áreas para roles específicos */}
+              {selectedUser && ['finanzas', 'rrhh', 'supervisor_salas'].includes(selectedUser.role) && (
+                <div className="space-y-2">
+                  <Label>Áreas de Acceso</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                    {areas?.map((area) => (
+                      <div key={area.id} className="flex items-center space-x-2 py-2">
+                        <Checkbox
+                          id={`area-${area.id}`}
+                          checked={selectedAreas.includes(area.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedAreas(prev => [...prev, area.id]);
+                            } else {
+                              setSelectedAreas(prev => prev.filter(id => id !== area.id));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`area-${area.id}`} className="text-sm">
+                          {area.nombre}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Solo verá incidencias de las áreas seleccionadas
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button
@@ -344,6 +515,44 @@ const UserManagement = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para reset de contraseña */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restaurar Contraseña</DialogTitle>
+            <DialogDescription>
+              Se enviará un email de recuperación al usuario para que pueda restablecer su contraseña.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Usuario:</strong> {selectedUser?.email}
+              </p>
+              <p className="text-sm text-blue-600 mt-2">
+                El usuario recibirá un email con las instrucciones para restablecer su contraseña.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsResetPasswordDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => resetPasswordMutation.mutate(selectedUser!.email)}
+              disabled={resetPasswordMutation.isPending}
+            >
+              {resetPasswordMutation.isPending ? 'Enviando...' : 'Enviar Email de Recuperación'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

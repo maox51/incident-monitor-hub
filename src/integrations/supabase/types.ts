@@ -658,6 +658,10 @@ export type Database = {
         Args: { incidencia_id: string; nuevo_estado: string }
         Returns: boolean
       }
+      create_private_chat: {
+        Args: { _user1_id: string; _user2_id: string }
+        Returns: string
+      }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string
@@ -687,6 +691,10 @@ export type Database = {
       obtener_consolidado_con_medios: {
         Args: { fecha_consolidado: string }
         Returns: Json
+      }
+      user_has_area_access: {
+        Args: { _user_id: string; _area_id: string }
+        Returns: boolean
       }
     }
     Enums: {

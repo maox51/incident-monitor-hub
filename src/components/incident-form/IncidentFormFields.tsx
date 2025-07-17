@@ -1,9 +1,11 @@
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building, Lock, Clock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Building, Lock, Clock, X } from "lucide-react";
 
 interface Area {
   id: string;
@@ -27,7 +29,7 @@ interface FormData {
   descripcion: string;
   observaciones: string;
   area_id: string;
-  clasificacion_id: string;
+  clasificacion_ids: string[]; // Cambiado a array para múltiples clasificaciones
   prioridad: string;
   reportado_por: string;
   sala_id: string;
@@ -39,26 +41,36 @@ interface IncidentFormFieldsProps {
   areas?: Area[];
   clasificaciones?: Clasificacion[];
   salas?: Sala[];
-  onInputChange: (field: string, value: string | number) => void;
+  onInputChange: (field: string, value: string | number | string[]) => void;
 }
 
 const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputChange }: IncidentFormFieldsProps) => {
   const selectedArea = areas?.find(area => area.id === formData.area_id);
-  const selectedClasificacion = clasificaciones?.find(c => c.id === formData.clasificacion_id);
+  const selectedClasificaciones = clasificaciones?.filter(c => formData.clasificacion_ids.includes(c.id)) || [];
   
-  // Verificar si la clasificación requiere campo de tiempo - Lógica mejorada
-  const requiresTimeField = selectedClasificacion ? (
-    selectedClasificacion.nombre.toLowerCase().includes('tardio') ||
-    selectedClasificacion.nombre.toLowerCase().includes('tardío') ||
-    selectedClasificacion.nombre.toLowerCase().includes('prematuro') ||
-    selectedClasificacion.nombre.toLowerCase().includes('ingreso') ||
-    selectedClasificacion.nombre.toLowerCase().includes('cierre')
-  ) : false;
+  // Verificar si alguna clasificación requiere campo de tiempo
+  const requiresTimeField = selectedClasificaciones.some(clasificacion => 
+    clasificacion.nombre.toLowerCase().includes('tardio') ||
+    clasificacion.nombre.toLowerCase().includes('tardío') ||
+    clasificacion.nombre.toLowerCase().includes('prematuro') ||
+    clasificacion.nombre.toLowerCase().includes('ingreso') ||
+    clasificacion.nombre.toLowerCase().includes('cierre')
+  );
 
-  console.log('Selected clasificacion:', selectedClasificacion);
-  console.log('Requires time field:', requiresTimeField);
-  console.log('All clasificaciones:', clasificaciones?.map(c => ({ id: c.id, nombre: c.nombre })));
-  
+  const handleClasificacionToggle = (clasificacionId: string) => {
+    const currentIds = formData.clasificacion_ids;
+    const newIds = currentIds.includes(clasificacionId)
+      ? currentIds.filter(id => id !== clasificacionId)
+      : [...currentIds, clasificacionId];
+    
+    onInputChange("clasificacion_ids", newIds);
+  };
+
+  const removeClasificacion = (clasificacionId: string) => {
+    const newIds = formData.clasificacion_ids.filter(id => id !== clasificacionId);
+    onInputChange("clasificacion_ids", newIds);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
@@ -115,31 +127,6 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="clasificacion">Tipo de Incidencia * (Selecciona primero)</Label>
-          <Select value={formData.clasificacion_id} onValueChange={(value) => onInputChange("clasificacion_id", value)}>
-            <SelectTrigger className="border-orange-200 bg-orange-50 w-full">
-              <SelectValue placeholder="Selecciona el tipo de incidencia" />
-            </SelectTrigger>
-            <SelectContent>
-              {clasificaciones?.map((clasificacion) => (
-                <SelectItem key={clasificacion.id} value={clasificacion.id}>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: clasificacion.color || '#6B7280' }}
-                    />
-                    {clasificacion.nombre}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-orange-600">El sistema seleccionará automáticamente el área correspondiente</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        <div className="space-y-2">
           <Label htmlFor="area" className="flex items-center gap-2">
             <Lock className="w-4 h-4" />
             Área (Auto-seleccionada)
@@ -156,45 +143,107 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
           </div>
           <p className="text-xs text-gray-500">Campo de solo lectura - Se asigna automáticamente según tipo de incidencia</p>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="prioridad">Prioridad (Auto-sugerida)</Label>
-          <Select value={formData.prioridad} onValueChange={(value) => onInputChange("prioridad", value)}>
-            <SelectTrigger className="bg-purple-50 border-purple-200 w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="baja">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  Baja
-                </div>
-              </SelectItem>
-              <SelectItem value="media">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  Media
-                </div>
-              </SelectItem>
-              <SelectItem value="alta">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                  Alta
-                </div>
-              </SelectItem>
-              <SelectItem value="critica">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  Crítica
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-purple-600">Sugerida automáticamente según tipo de incidencia</p>
-        </div>
       </div>
 
-      {/* Campo de tiempo condicional - MEJORADO CON LOGS */}
+      {/* Selector múltiple de clasificaciones */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Tipos de Incidencia * (Puedes seleccionar múltiples)</Label>
+          <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {clasificaciones?.map((clasificacion) => (
+                <div key={clasificacion.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`clasificacion-${clasificacion.id}`}
+                    checked={formData.clasificacion_ids.includes(clasificacion.id)}
+                    onCheckedChange={() => handleClasificacionToggle(clasificacion.id)}
+                  />
+                  <Label 
+                    htmlFor={`clasificacion-${clasificacion.id}`} 
+                    className="flex items-center gap-2 cursor-pointer text-sm"
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: clasificacion.color || '#6B7280' }}
+                    />
+                    {clasificacion.nombre}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-orange-600">El sistema seleccionará automáticamente el área correspondiente</p>
+        </div>
+
+        {/* Mostrar clasificaciones seleccionadas */}
+        {formData.clasificacion_ids.length > 0 && (
+          <div className="space-y-2">
+            <Label>Tipos Seleccionados:</Label>
+            <div className="flex flex-wrap gap-2">
+              {selectedClasificaciones.map((clasificacion) => (
+                <Badge 
+                  key={clasificacion.id} 
+                  variant="secondary" 
+                  className="flex items-center gap-2"
+                >
+                  <div 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: clasificacion.color || '#6B7280' }}
+                  />
+                  {clasificacion.nombre}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => removeClasificacion(clasificacion.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="prioridad">Prioridad (Auto-sugerida)</Label>
+        <Select value={formData.prioridad} onValueChange={(value) => onInputChange("prioridad", value)}>
+          <SelectTrigger className="bg-purple-50 border-purple-200 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="baja">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                Baja
+              </div>
+            </SelectItem>
+            <SelectItem value="media">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                Media
+              </div>
+            </SelectItem>
+            <SelectItem value="alta">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                Alta
+              </div>
+            </SelectItem>
+            <SelectItem value="critica">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                Crítica
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-purple-600">Sugerida automáticamente según tipo de incidencia</p>
+      </div>
+
+      {/* Campo de tiempo condicional */}
       {requiresTimeField && (
         <div className="space-y-2 bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
           <Label htmlFor="tiempo_minutos" className="flex items-center gap-2 text-orange-700">
@@ -214,13 +263,6 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
           <p className="text-xs text-orange-600">
             Este campo es requerido para incidencias de ingresos tardíos o cierres prematuros
           </p>
-        </div>
-      )}
-
-      {/* Mostrar info de debug */}
-      {formData.clasificacion_id && (
-        <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-          Debug: Clasificación seleccionada: "{selectedClasificacion?.nombre}" - Requiere tiempo: {requiresTimeField ? 'SÍ' : 'NO'}
         </div>
       )}
 

@@ -23,10 +23,14 @@ interface AuthContextType {
   isAdmin: boolean;
   isMonitor: boolean;
   isSupervisorMonitoreo: boolean;
+  isRRHH: boolean;
+  isSupervisorSalas: boolean;
+  isFinanzas: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -160,9 +164,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
   const isAdmin = profile?.role === 'admin';
   const isMonitor = profile?.role === 'monitor';
   const isSupervisorMonitoreo = profile?.role === 'supervisor_monitoreo';
+  const isRRHH = profile?.role === 'rrhh';
+  const isSupervisorSalas = profile?.role === 'supervisor_salas';
+  const isFinanzas = profile?.role === 'finanzas';
 
   const value = {
     user,
@@ -172,10 +190,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAdmin,
     isMonitor,
     isSupervisorMonitoreo,
+    isRRHH,
+    isSupervisorSalas,
+    isFinanzas,
     signIn,
     signUp,
     signOut,
     updateProfile,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ export interface IncidenciaData {
   descripcion: string;
   area_id: string;
   sala_id: string;
-  clasificacion_id: string;
+  clasificacion_ids: string[]; // Array para múltiples clasificaciones
   prioridad: "baja" | "media" | "alta" | "critica";
   fecha_incidencia: string;
   observaciones: string;
@@ -32,7 +31,7 @@ export const useIncidenciaForm = () => {
     descripcion: "",
     area_id: "",
     sala_id: "",
-    clasificacion_id: "",
+    clasificacion_ids: [], // Array vacío inicialmente
     prioridad: "media",
     fecha_incidencia: new Date().toISOString(),
     observaciones: "",
@@ -43,13 +42,14 @@ export const useIncidenciaForm = () => {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleInputChange = useCallback((field: string, value: string | number) => {
+  const handleInputChange = useCallback((field: string, value: string | number | string[]) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       
-      // Si se cambia la clasificación, aplicar selección inteligente
-      if (field === "clasificacion_id" && value) {
-        const smartSelection = getSuggestedArea(value as string);
+      // Si se cambian las clasificaciones, aplicar selección inteligente
+      if (field === "clasificacion_ids" && Array.isArray(value) && value.length > 0) {
+        // Usar la primera clasificación para determinar el área y prioridad
+        const smartSelection = getSuggestedArea(value[0]);
         if (smartSelection) {
           newData.area_id = smartSelection.areaId;
           newData.prioridad = smartSelection.prioridad as any;
@@ -144,11 +144,24 @@ export const useIncidenciaForm = () => {
       return { success: false };
     }
 
+    if (data.clasificacion_ids.length === 0) {
+      toast.error("Debes seleccionar al menos un tipo de incidencia");
+      return { success: false };
+    }
+
     try {
-      // Crear la incidencia en estado borrador
+      // Usar la primera clasificación para crear la incidencia principal
       const incidenciaData = {
-        ...data,
+        titulo: data.titulo,
+        descripcion: data.descripcion,
+        area_id: data.area_id,
+        sala_id: data.sala_id,
+        clasificacion_id: data.clasificacion_ids[0], // Primera clasificación como principal
+        prioridad: data.prioridad,
+        fecha_incidencia: data.fecha_incidencia,
+        observaciones: data.observaciones,
         reportado_por: user.id,
+        tiempo_minutos: data.tiempo_minutos,
         estado: 'borrador' // Las incidencias inician como borrador
       };
 
@@ -164,12 +177,28 @@ export const useIncidenciaForm = () => {
         return { success: false };
       }
 
+      // Crear registros de clasificaciones múltiples
+      const clasificacionRecords = data.clasificacion_ids.map(clasificacionId => ({
+        incidencia_id: incidencia.id,
+        clasificacion_id: clasificacionId
+      }));
+
+      const { error: clasificacionError } = await supabase
+        .from("incidencia_clasificaciones")
+        .insert(clasificacionRecords);
+
+      if (clasificacionError) {
+        console.error("Error creating clasificaciones:", clasificacionError);
+        // No fallar completamente si las clasificaciones adicionales fallan
+        toast.warning("Incidencia creada, pero hubo problemas con las clasificaciones adicionales");
+      }
+
       // Registrar acción de auditoría
       await logAction('create_incident', 'incident', incidencia.id, {
         titulo: data.titulo,
         prioridad: data.prioridad,
         area_id: data.area_id,
-        clasificacion_id: data.clasificacion_id,
+        clasificacion_ids: data.clasificacion_ids,
         tiempo_minutos: data.tiempo_minutos,
         images_count: uploadedImages.length,
         timestamp: new Date().toISOString()
@@ -200,7 +229,7 @@ export const useIncidenciaForm = () => {
         descripcion: "",
         area_id: "",
         sala_id: "",
-        clasificacion_id: "",
+        clasificacion_ids: [],
         prioridad: "media",
         fecha_incidencia: new Date().toISOString(),
         observaciones: "",
