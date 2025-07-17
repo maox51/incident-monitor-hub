@@ -114,22 +114,39 @@ const ChatInterface = () => {
   const loadMessages = async (roomId: string) => {
     try {
       console.log('Loading messages for room:', roomId);
-      const { data, error } = await supabase
+      
+      // First get messages
+      const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
-        .select(`
-          *,
-          profiles(full_name, email)
-        `)
+        .select('*')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error loading messages:', error);
-        throw error;
+      if (messagesError) {
+        console.error('Error loading messages:', messagesError);
+        throw messagesError;
       }
 
-      console.log('Messages loaded:', data);
-      setMessages(data || []);
+      // Then get user profiles for each unique user_id
+      const userIds = [...new Set(messagesData?.map(m => m.user_id) || [])];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Combine messages with profile data
+      const messagesWithProfiles = messagesData?.map(message => ({
+        ...message,
+        profiles: profilesData?.find(p => p.id === message.user_id)
+      })) || [];
+
+      console.log('Messages loaded:', messagesWithProfiles);
+      setMessages(messagesWithProfiles);
     } catch (error) {
       console.error('Error loading messages:', error);
       toast.error('Error al cargar los mensajes');
