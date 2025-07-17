@@ -39,7 +39,7 @@ interface User {
 }
 
 const ChatInterface = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -114,10 +114,20 @@ const ChatInterface = () => {
 
   const loadUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Solo cargar usuarios según el rol del usuario actual
+      let query = supabase
         .from('profiles')
-        .select('id, email, full_name')
+        .select('id, email, full_name, role')
         .neq('id', user?.id);
+
+      // Filtrar usuarios según roles - admins pueden ver a todos
+      if (profile?.role !== 'admin') {
+        // Roles que pueden chatear entre sí
+        const allowedRoles: ("admin" | "monitor" | "supervisor_monitoreo" | "rrhh" | "supervisor_salas" | "finanzas")[] = ['admin', 'supervisor_monitoreo', 'monitor'];
+        query = query.in('role', allowedRoles);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setUsers(data || []);

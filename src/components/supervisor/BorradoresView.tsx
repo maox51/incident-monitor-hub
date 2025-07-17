@@ -45,6 +45,10 @@ const BorradoresView = () => {
           *,
           areas(nombre, descripcion),
           clasificaciones(nombre, color),
+          incidencia_clasificaciones(
+            id,
+            clasificaciones(id, nombre, color)
+          ),
           imagenes_incidencias(id, url_imagen, nombre_archivo, tipo_archivo)
         `)
         .eq("estado", "borrador")
@@ -357,15 +361,32 @@ const BorradoresView = () => {
                             <MapPin className="w-3 h-3 mr-1" />
                             {incidencia.areas?.nombre}
                           </Badge>
-                          <Badge 
-                            variant="outline"
-                            style={{ 
-                              borderColor: incidencia.clasificaciones?.color,
-                              color: incidencia.clasificaciones?.color 
-                            }}
-                          >
-                            {incidencia.clasificaciones?.nombre}
-                          </Badge>
+                          {/* Mostrar todas las clasificaciones */}
+                          {incidencia.incidencia_clasificaciones && incidencia.incidencia_clasificaciones.length > 0 ? (
+                            incidencia.incidencia_clasificaciones.map((relacion: any) => (
+                              <Badge 
+                                key={relacion.id}
+                                variant="outline"
+                                style={{ 
+                                  borderColor: relacion.clasificaciones?.color,
+                                  color: relacion.clasificaciones?.color 
+                                }}
+                              >
+                                {relacion.clasificaciones?.nombre}
+                              </Badge>
+                            ))
+                          ) : (
+                            // Fallback para incidencias existentes con clasificación única
+                            <Badge 
+                              variant="outline"
+                              style={{ 
+                                borderColor: incidencia.clasificaciones?.color,
+                                color: incidencia.clasificaciones?.color 
+                              }}
+                            >
+                              {incidencia.clasificaciones?.nombre}
+                            </Badge>
+                          )}
                           <Badge className={`text-white ${getPrioridadColor(incidencia.prioridad)}`}>
                             <AlertTriangle className="w-3 h-3 mr-1" />
                             {incidencia.prioridad}

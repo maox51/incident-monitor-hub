@@ -692,6 +692,10 @@ export type Database = {
         Args: { fecha_consolidado: string }
         Returns: Json
       }
+      user_can_access_chat_room: {
+        Args: { _user_id: string; _room_id: string }
+        Returns: boolean
+      }
       user_has_area_access: {
         Args: { _user_id: string; _area_id: string }
         Returns: boolean
