@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Users, Search, Plus, Wifi, WifiOff, Bell, BellOff } from 'lucide-react';
+import { MessageCircle, Send, Users, Search, Plus, Wifi, WifiOff, Bell, BellOff, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -50,21 +50,29 @@ const OptimizedChatInterface = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [showNewChat, setShowNewChat] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // WebSocket chat hook
   const {
     isConnected,
     connectionStatus,
+    connect: reconnectWebSocket,
     joinRoom,
     leaveRoom,
     sendChatMessage,
   } = useWebSocketChat({
     onNewMessage: (message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Avoid duplicates
+        const exists = prev.some(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
       scrollToBottom();
     },
     onError: (error) => {
+      console.error('Chat WebSocket error:', error);
       toast.error(error);
     }
   });
@@ -87,14 +95,63 @@ const OptimizedChatInterface = () => {
     if (selectedRoom) {
       loadMessages(selectedRoom);
       joinRoom(selectedRoom);
+      
+      // Set up Supabase realtime subscription as fallback
+      if (!isConnected) {
+        console.log('Setting up Supabase realtime fallback for room:', selectedRoom);
+        const subscription = supabase
+          .channel(`chat_room_${selectedRoom}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'chat_messages',
+              filter: `room_id=eq.${selectedRoom}`,
+            },
+            async (payload) => {
+              console.log('New message via realtime:', payload);
+              
+              // Get user profile for the new message
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('id, full_name, email, avatar_url')
+                .eq('id', payload.new.user_id)
+                .single();
+              
+              const messageWithProfile: ChatMessage = {
+                id: payload.new.id,
+                content: payload.new.content,
+                user_id: payload.new.user_id,
+                room_id: payload.new.room_id,
+                created_at: payload.new.created_at,
+                profiles: profile
+              };
+              
+              setMessages(prev => {
+                const exists = prev.some(m => m.id === messageWithProfile.id);
+                if (exists) return prev;
+                return [...prev, messageWithProfile];
+              });
+              scrollToBottom();
+            }
+          )
+          .subscribe();
+          
+        setRealtimeSubscription(subscription);
+      }
     }
     
     return () => {
       if (selectedRoom) {
         leaveRoom();
       }
+      if (realtimeSubscription) {
+        supabase.removeChannel(realtimeSubscription);
+        setRealtimeSubscription(null);
+      }
     };
-  }, [selectedRoom, joinRoom, leaveRoom]);
+  }, [selectedRoom, joinRoom, leaveRoom, isConnected]);
 
   useEffect(() => {
     scrollToBottom();
@@ -317,13 +374,23 @@ const OptimizedChatInterface = () => {
           </div>
           
           {/* Connection Status */}
-          <div className="mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <Badge 
               variant={isConnected ? "default" : "destructive"}
               className="text-xs"
             >
               {isConnected ? "Conectado en tiempo real" : "Modo offline"}
             </Badge>
+            {!isConnected && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={reconnectWebSocket}
+                className="text-xs h-6 px-2"
+              >
+                Reconectar
+              </Button>
+            )}
           </div>
           
           <div className="space-y-2">

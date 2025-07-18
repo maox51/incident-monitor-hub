@@ -22,7 +22,10 @@ export const useWebSocketChat = ({ onNewMessage, onError }: UseWebSocketChatProp
   const maxReconnectAttempts = 5;
 
   const connect = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user available for WebSocket connection');
+      return;
+    }
 
     try {
       setConnectionStatus('connecting');
@@ -30,15 +33,28 @@ export const useWebSocketChat = ({ onNewMessage, onError }: UseWebSocketChatProp
       // Get current session token from Supabase
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session?.access_token) {
-        throw new Error('No access token available');
+        console.error('No access token available:', error);
+        setConnectionStatus('disconnected');
+        onError?.('Error de autenticación. Por favor, inicia sesión nuevamente.');
+        return;
       }
 
-      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/functions/v1/chat-websocket?userId=${user.id}&token=${session.access_token}`;
+      // Use Supabase URL for WebSocket connection
+      const wsUrl = `wss://wbuddpspfxufhftkcaww.supabase.co/functions/v1/chat-websocket?userId=${user.id}&token=${session.access_token}`;
+      
+      console.log('Attempting WebSocket connection to:', wsUrl);
+      
+      // Add timeout for connection
+      const connectionTimeout = setTimeout(() => {
+        console.error('WebSocket connection timeout');
+        ws.close();
+      }, 10000); // 10 second timeout
       
       const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connected successfully');
+        clearTimeout(connectionTimeout);
         setIsConnected(true);
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
@@ -71,17 +87,24 @@ export const useWebSocketChat = ({ onNewMessage, onError }: UseWebSocketChatProp
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+        console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
         setIsConnected(false);
         setConnectionStatus('disconnected');
         wsRef.current = null;
 
-        // Auto-reconnect logic
+        // Don't auto-reconnect on certain error codes
+        if (event.code === 1008 || event.code === 1011) {
+          console.log('Authentication or server error, not attempting reconnection');
+          onError?.('Error de autenticación. Por favor, recarga la página.');
+          return;
+        }
+
+        // Auto-reconnect logic for other disconnections
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          const delay = Math.pow(2, reconnectAttemptsRef.current) * 1000; // Exponential backoff
+          const delay = Math.min(Math.pow(2, reconnectAttemptsRef.current) * 1000, 10000); // Max 10 seconds
           reconnectAttemptsRef.current += 1;
           
-          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
+          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();

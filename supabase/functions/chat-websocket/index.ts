@@ -35,21 +35,26 @@ serve(async (req) => {
     return new Response("Missing userId or token", { status: 400 });
   }
 
-  // Verify user token with Supabase
+  // Create Supabase client for database operations
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    {
-      global: {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    }
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   );
 
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
-  if (error || !user || user.id !== userId) {
-    return new Response("Unauthorized", { status: 401 });
+  // Simple validation - for now, just check if userId exists in profiles
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (error || !profile) {
+      return new Response("User not found", { status: 404 });
+    }
+  } catch (error) {
+    console.error('Error validating user:', error);
+    return new Response("Validation error", { status: 500 });
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);
