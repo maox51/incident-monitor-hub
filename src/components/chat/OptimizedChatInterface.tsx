@@ -283,11 +283,13 @@ const OptimizedChatInterface = () => {
     return notificationPermission === 'granted' ? (
       <Bell className="h-4 w-4 text-green-500" />
     ) : (
-      <BellOff 
-        className="h-4 w-4 text-gray-400 cursor-pointer hover:text-blue-500" 
+      <div 
+        className="cursor-pointer hover:text-blue-500" 
         onClick={requestNotificationPermission}
         title="Activar notificaciones"
-      />
+      >
+        <BellOff className="h-4 w-4 text-gray-400" />
+      </div>
     );
   };
 

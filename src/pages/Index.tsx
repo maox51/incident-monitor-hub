@@ -7,7 +7,7 @@ import UserManagement from "@/components/admin/UserManagement";
 import ConsolidadoDiario from "@/components/ConsolidadoDiario";
 import ImportDataModule from "@/components/ImportDataModule";
 import BorradoresView from "@/components/supervisor/BorradoresView";
-import ChatInterface from "@/components/chat/ChatInterface";
+import OptimizedChatInterface from "@/components/chat/OptimizedChatInterface";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
@@ -157,7 +157,7 @@ const Index = () => {
 
           {activeTab === "borradores" && <BorradoresView />}
           {activeTab === "nueva-incidencia" && <IncidenciaForm />}
-          {activeTab === "chat" && <div className="h-[calc(100vh-200px)]"><ChatInterface /></div>}
+          {activeTab === "chat" && <div className="h-[calc(100vh-200px)]"><OptimizedChatInterface /></div>}
         </div>
       </div>
     );
@@ -201,7 +201,7 @@ const Index = () => {
           </ProtectedRoute>
         );
       case "chat":
-        return <div className="h-[calc(100vh-200px)]"><ChatInterface /></div>;
+        return <div className="h-[calc(100vh-200px)]"><OptimizedChatInterface /></div>;
       default:
         return (
           <ProtectedRoute requireAdmin>

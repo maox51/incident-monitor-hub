@@ -52,21 +52,24 @@ export const usePushNotifications = () => {
     if (!user) return;
 
     try {
-      // Using RPC call to avoid TypeScript issues with new table
-      const { error: deleteError } = await supabase.rpc('delete_user_fcm_tokens', {
-        p_user_id: user.id
-      });
+      // Use direct database query until types are updated
+      const { error: deleteError } = await supabase
+        .from('fcm_tokens')
+        .delete()
+        .eq('user_id', user.id);
 
       if (deleteError) {
         console.warn('Error deleting existing tokens:', deleteError);
       }
 
       // Insert new token
-      const { error } = await supabase.rpc('insert_fcm_token', {
-        p_user_id: user.id,
-        p_token: fcmToken,
-        p_device_type: getDeviceType()
-      });
+      const { error } = await supabase
+        .from('fcm_tokens')
+        .insert({
+          user_id: user.id,
+          token: fcmToken,
+          device_type: getDeviceType(),
+        });
 
       if (error) {
         console.error('Error saving FCM token:', error);

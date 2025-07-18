@@ -692,6 +692,10 @@ export type Database = {
         Args: { _user1_id: string; _user2_id: string }
         Returns: string
       }
+      delete_user_fcm_tokens: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string
@@ -706,6 +710,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      insert_fcm_token: {
+        Args: { p_user_id: string; p_token: string; p_device_type?: string }
+        Returns: undefined
       }
       log_user_action: {
         Args: {
