@@ -7,13 +7,16 @@ import { TrendingUp, AlertTriangle, Calendar, Users, Database, Clock } from "luc
 import MonitorPerformance from "./dashboard/MonitorPerformance";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
+import AuditLog from "./admin/AuditLog";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
 const COLORS = ['#DC2626', '#EA580C', '#D97706', '#65A30D'];
 
 const Dashboard = () => {
   const { logAction } = useAuditLog();
+  const { profile } = useAuth();
 
   // Registrar acceso al dashboard
   useEffect(() => {
@@ -202,12 +205,13 @@ const Dashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="salas">Por Salas</TabsTrigger>
           <TabsTrigger value="monitors">Rendimiento Monitores</TabsTrigger>
           <TabsTrigger value="consolidado">Consolidado</TabsTrigger>
           <TabsTrigger value="analysis">Análisis</TabsTrigger>
+          <TabsTrigger value="audit">Auditoría</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -401,6 +405,23 @@ const Dashboard = () => {
               <PeriodComparisonChart />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="audit">
+          {profile?.role === 'admin' ? (
+            <AuditLog />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Acceso Restringido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500">
+                  Solo los administradores pueden acceder al registro de auditoría.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
