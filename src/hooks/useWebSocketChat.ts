@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WebSocketMessage {
   type: 'connected' | 'new_message' | 'error' | 'user_typing';
@@ -26,9 +27,9 @@ export const useWebSocketChat = ({ onNewMessage, onError }: UseWebSocketChatProp
     try {
       setConnectionStatus('connecting');
       
-      // Get current session token
-      const session = await user.getSession();
-      if (!session?.access_token) {
+      // Get current session token from Supabase
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session?.access_token) {
         throw new Error('No access token available');
       }
 
