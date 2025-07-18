@@ -94,7 +94,10 @@ const Header = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <AvatarSelector>
-                <DropdownMenuItem className="cursor-pointer hover:bg-slate-50">
+                <DropdownMenuItem 
+                  className="cursor-pointer hover:bg-slate-50"
+                  onSelect={(e) => e.preventDefault()}
+                >
                   <Palette className="h-4 w-4 mr-3 text-slate-600" />
                   <span className="text-slate-700">Cambiar Avatar</span>
                 </DropdownMenuItem>
