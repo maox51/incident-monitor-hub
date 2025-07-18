@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar, Users, Database, Clock } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Users, Database, Clock, Activity, Shield } from "lucide-react";
 import MonitorPerformance from "./dashboard/MonitorPerformance";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
@@ -11,6 +11,8 @@ import AuditLog from "./admin/AuditLog";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import { StatsCard } from "@/components/ui/stats-card";
+import { LoadingCard } from "@/components/ui/loading-spinner";
 
 const COLORS = ['#DC2626', '#EA580C', '#D97706', '#65A30D'];
 
@@ -164,11 +166,7 @@ const Dashboard = () => {
   });
 
   if (statsLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingCard />;
   }
 
   const summaryData = [
@@ -214,21 +212,36 @@ const Dashboard = () => {
           <TabsTrigger value="audit">Auditoría</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {summaryData.map((item, index) => (
-              <Card key={index}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-                    <item.icon className={`w-4 h-4 md:w-5 md:h-5 ${item.color}`} />
-                    {item.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl md:text-2xl font-bold">{item.value}</div>
-                </CardContent>
-              </Card>
-            ))}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatsCard
+              title="Incidencias Totales"
+              value={stats?.totalIncidencias || 0}
+              description="Total de incidencias aprobadas"
+              icon={Database}
+              gradient="blue"
+            />
+            <StatsCard
+              title="Alertas Críticas"
+              value={stats?.incidenciasCriticas || 0}
+              description="Requieren atención inmediata"
+              icon={AlertTriangle}
+              gradient="red"
+            />
+            <StatsCard
+              title="Eventos Hoy"
+              value={stats?.incidenciasHoy || 0}
+              description="Incidencias registradas hoy"
+              icon={Calendar}
+              gradient="green"
+            />
+            <StatsCard
+              title="Monitores Activos"
+              value={stats?.usuariosActivos || 0}
+              description="Usuarios reportando incidencias"
+              icon={Users}
+              gradient="purple"
+            />
           </div>
 
           {(monthlyData && monthlyData.length > 0) || (priorityData && priorityData.length > 0) ? (

@@ -152,29 +152,33 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
       {/* Mountain Background */}
       <div className="absolute inset-0">
         <img 
           src={mountainBackground}
           alt="Mountain landscape"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-blue-800/30 to-purple-900/50"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-purple-900/40 to-slate-900/70 backdrop-blur-sm"></div>
       </div>
       
-      <div className="relative z-10 w-full max-w-md mx-auto">
+      <div className="relative z-10 w-full max-w-md mx-auto animate-fade-in">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
-            <img 
-              src={logoEsva}
-              alt="GRUPO ESVA"
-              className="h-20 w-20 filter invert brightness-0 contrast-100"
-            />
+            <div className="relative">
+              <img 
+                src={logoEsva}
+                alt="GRUPO ESVA"
+                className="h-24 w-24 rounded-2xl shadow-2xl border-4 border-white/20 backdrop-blur-sm"
+              />
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+            </div>
           </div>
-          <h1 className="text-2xl md:text-3xl font-medium text-white mb-2">
-            Iniciar Sesión
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+            Sistema de Monitoreo
           </h1>
+          <p className="text-blue-200 text-lg">Casino Integral</p>
         </div>
 
         <Card className="backdrop-blur-xl bg-white/20 border border-white/30 shadow-2xl rounded-lg">
