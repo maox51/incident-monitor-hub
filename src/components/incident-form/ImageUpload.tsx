@@ -1,9 +1,9 @@
-
 import { Label } from "@/components/ui/label";
 import { Upload, X, Video, Image, Loader2, Camera, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UploadedImage } from "@/utils/supabaseStorage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
 
 interface ImageUploadProps {
   uploadedImages: UploadedImage[];
@@ -15,48 +15,80 @@ interface ImageUploadProps {
 const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading }: ImageUploadProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      // Validar que sean imágenes o videos
-      const validFiles = Array.from(files).filter(file => {
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        
-        if (!isImage && !isVideo) {
-          toast({
-            title: "Archivo no válido",
-            description: `${file.name} no es una imagen o video válido.`,
-            variant: "destructive",
-          });
-          return false;
-        }
-
-        // Límites: 10MB para imágenes y 50MB para videos
-        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
-        if (file.size > maxSize) {
-          toast({
-            title: "Archivo muy grande",
-            description: `${file.name} excede ${isVideo ? '50MB' : '10MB'}.`,
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        return true;
-      });
-      
-      if (validFiles.length > 0) {
-        // Crear FileList con archivos válidos
-        const dt = new DataTransfer();
-        validFiles.forEach(file => dt.items.add(file));
-        onImageUpload(dt.files);
-      }
+      processFiles(files);
     }
     
     // Limpiar el input
     event.target.value = '';
+  };
+
+  const processFiles = (files: FileList) => {
+    // Validar que sean imágenes o videos
+    const validFiles = Array.from(files).filter(file => {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        toast({
+          title: "Archivo no válido",
+          description: `${file.name} no es una imagen o video válido.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Límites: 10MB para imágenes y 50MB para videos
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast({
+          title: "Archivo muy grande",
+          description: `${file.name} excede ${isVideo ? '50MB' : '10MB'}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      return true;
+    });
+    
+    if (validFiles.length > 0) {
+      // Crear FileList con archivos válidos
+      const dt = new DataTransfer();
+      validFiles.forEach(file => dt.items.add(file));
+      onImageUpload(dt.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isUploading) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (isUploading) return;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFiles(files);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -134,12 +166,19 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
             </label>
           </div>
 
-          {/* Botón para galería */}
-          <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
-            isUploading 
-              ? 'border-blue-400 bg-blue-50' 
-              : 'border-purple-300 hover:border-purple-400 bg-purple-50'
-          }`}>
+          {/* Botón para galería con drag & drop */}
+          <div 
+            className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
+              isUploading 
+                ? 'border-blue-400 bg-blue-50' 
+                : isDragOver
+                ? 'border-purple-500 bg-purple-100'
+                : 'border-purple-300 hover:border-purple-400 bg-purple-50'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <input
               type="file"
               multiple
@@ -156,21 +195,28 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
                 <FolderOpen className="mx-auto h-8 w-8 text-purple-600" />
               )}
               <p className="mt-2 text-sm font-medium text-purple-700">
-                {isUploading ? 'Procesando...' : 'Seleccionar de Galería'}
+                {isUploading ? 'Procesando...' : isDragOver ? 'Suelta aquí los archivos' : 'Seleccionar de Galería'}
               </p>
               <p className="text-xs text-purple-600">
-                Elige archivos existentes
+                {isDragOver ? 'Suelta para subir' : 'Elige archivos existentes o arrastra aquí'}
               </p>
             </label>
           </div>
         </div>
       ) : (
-        /* Interfaz para escritorio */
-        <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
-          isUploading 
-            ? 'border-blue-400 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}>
+        /* Interfaz para escritorio con drag & drop mejorado */
+        <div 
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+            isUploading 
+              ? 'border-blue-400 bg-blue-50' 
+              : isDragOver
+              ? 'border-blue-500 bg-blue-100'
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             type="file"
             multiple
@@ -187,7 +233,12 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
               <Upload className="mx-auto h-12 w-12 text-gray-400" />
             )}
             <p className="mt-2 text-sm text-gray-600">
-              {isUploading ? 'Procesando archivos multimedia...' : 'Haz clic para subir imágenes y videos'}
+              {isUploading 
+                ? 'Procesando archivos multimedia...' 
+                : isDragOver 
+                ? 'Suelta los archivos aquí para subirlos'
+                : 'Haz clic para subir o arrastra archivos aquí'
+              }
             </p>
             <p className="text-xs text-gray-500">
               Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
@@ -202,6 +253,7 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
       <div className="text-xs text-gray-500 text-center">
         <p>Límites: Imágenes hasta 10MB | Videos hasta 50MB</p>
         <p className="text-blue-600">Las imágenes se comprimen automáticamente a WebP</p>
+        <p className="text-green-600 mt-1">💡 También puedes arrastrar y soltar archivos</p>
       </div>
 
       {/* Preview de imágenes subidas */}
