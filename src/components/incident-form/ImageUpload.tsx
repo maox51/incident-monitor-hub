@@ -33,7 +33,7 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
           return false;
         }
 
-        // Nuevos límites: 10MB para imágenes y 50MB para videos
+        // Límites: 10MB para imágenes y 50MB para videos
         const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
         if (file.size > maxSize) {
           toast({
@@ -74,7 +74,7 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
       {/* Botones específicos para móvil */}
       {isMobile ? (
         <div className="space-y-3">
-          {/* Botón para cámara */}
+          {/* Botón para cámara - Solo fotos */}
           <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
             isUploading 
               ? 'border-blue-400 bg-blue-50' 
@@ -82,25 +82,54 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
           }`}>
             <input
               type="file"
-              multiple
-              accept="image/*,video/*"
-              capture="environment"
+              accept="image/*"
+              capture="user"
               onChange={handleFileUpload}
               className="hidden"
-              id="camera-upload"
+              id="camera-photo-upload"
               disabled={isUploading}
             />
-            <label htmlFor="camera-upload" className={`cursor-pointer block ${isUploading ? 'cursor-not-allowed' : ''}`}>
+            <label htmlFor="camera-photo-upload" className={`cursor-pointer block ${isUploading ? 'cursor-not-allowed' : ''}`}>
               {isUploading ? (
                 <Loader2 className="mx-auto h-8 w-8 text-blue-500 animate-spin" />
               ) : (
                 <Camera className="mx-auto h-8 w-8 text-green-600" />
               )}
               <p className="mt-2 text-sm font-medium text-green-700">
-                {isUploading ? 'Procesando...' : 'Tomar Foto/Video'}
+                {isUploading ? 'Procesando...' : 'Tomar Foto'}
               </p>
               <p className="text-xs text-green-600">
-                Abre la cámara para capturar
+                Abre la cámara para tomar foto
+              </p>
+            </label>
+          </div>
+
+          {/* Botón para video cámara */}
+          <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
+            isUploading 
+              ? 'border-blue-400 bg-blue-50' 
+              : 'border-orange-300 hover:border-orange-400 bg-orange-50'
+          }`}>
+            <input
+              type="file"
+              accept="video/*"
+              capture="user"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="camera-video-upload"
+              disabled={isUploading}
+            />
+            <label htmlFor="camera-video-upload" className={`cursor-pointer block ${isUploading ? 'cursor-not-allowed' : ''}`}>
+              {isUploading ? (
+                <Loader2 className="mx-auto h-8 w-8 text-blue-500 animate-spin" />
+              ) : (
+                <Video className="mx-auto h-8 w-8 text-orange-600" />
+              )}
+              <p className="mt-2 text-sm font-medium text-orange-700">
+                {isUploading ? 'Procesando...' : 'Grabar Video'}
+              </p>
+              <p className="text-xs text-orange-600">
+                Abre la cámara para grabar video
               </p>
             </label>
           </div>
