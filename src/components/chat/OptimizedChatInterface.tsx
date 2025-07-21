@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -165,7 +164,7 @@ const OptimizedChatInterface = () => {
           room_id,
           created_at,
           status,
-          profiles!inner (
+          profiles:profiles!chat_messages_user_id_fkey (
             full_name,
             email
           )
@@ -289,24 +288,23 @@ const OptimizedChatInterface = () => {
               <h2 className="text-lg font-semibold">Chats</h2>
               <div className="flex items-center gap-1">
                 {isConnected ? (
-                  <div title="Conectado en tiempo real">
+                  <div>
                     <Wifi className="h-4 w-4 text-green-500" />
                   </div>
                 ) : (
-                  <div title="Desconectado">
+                  <div>
                     <WifiOff className="h-4 w-4 text-red-500" />
                   </div>
                 )}
                 {notificationsSupported && (
                   notificationPermission === 'granted' ? (
-                    <div title="Notificaciones activas">
+                    <div>
                       <Bell className="h-4 w-4 text-green-500" />
                     </div>
                   ) : (
                     <div 
                       className="cursor-pointer hover:text-blue-500" 
                       onClick={requestNotificationPermission}
-                      title="Activar notificaciones"
                     >
                       <BellOff className="h-4 w-4 text-gray-400" />
                     </div>
@@ -319,14 +317,12 @@ const OptimizedChatInterface = () => {
                 size="sm"
                 variant="outline"
                 onClick={() => setShowNewChat(true)}
-                title="Nuevo chat privado"
               >
                 <Plus className="h-4 w-4" />
               </Button>
               <Button
                 size="sm"
                 onClick={() => setShowGroupChat(true)}
-                title="Nuevo chat grupal"
               >
                 <UserPlus className="h-4 w-4" />
               </Button>

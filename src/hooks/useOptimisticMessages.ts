@@ -60,7 +60,7 @@ export const useOptimisticMessages = (roomId: string | null) => {
         })
         .select(`
           *,
-          profiles:user_id (
+          profiles:profiles!chat_messages_user_id_fkey (
             full_name,
             email
           )
@@ -75,7 +75,7 @@ export const useOptimisticMessages = (roomId: string | null) => {
           ? { 
               ...data, 
               status: data.status as OptimisticMessage['status'],
-              profiles: data.profiles 
+              profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles
             } 
           : msg
       ));
@@ -96,29 +96,44 @@ export const useOptimisticMessages = (roomId: string | null) => {
   }, [roomId, user, addOptimisticMessage]);
 
   const addRealtimeMessage = useCallback((message: any) => {
-    const typedMessage: OptimisticMessage = {
-      ...message,
-      status: message.status as OptimisticMessage['status'],
+    // Validate and transform the incoming message
+    const validatedMessage: OptimisticMessage = {
+      id: message.id,
+      content: message.content,
+      user_id: message.user_id,
+      room_id: message.room_id,
+      created_at: message.created_at,
+      status: ['sending', 'sent', 'delivered', 'read'].includes(message.status) 
+        ? message.status as OptimisticMessage['status']
+        : 'sent',
+      profiles: message.profiles || {
+        full_name: '',
+        email: ''
+      }
     };
 
     setMessages(prev => {
       // Avoid duplicates - check if message already exists
-      const exists = prev.some(m => m.id === typedMessage.id);
+      const exists = prev.some(m => m.id === validatedMessage.id);
       if (exists) return prev;
       
       // Remove any optimistic messages from the same user with same content
       const filtered = prev.filter(m => 
-        !(m.isOptimistic && m.user_id === typedMessage.user_id && m.content === typedMessage.content)
+        !(m.isOptimistic && m.user_id === validatedMessage.user_id && m.content === validatedMessage.content)
       );
       
-      return [...filtered, typedMessage];
+      return [...filtered, validatedMessage];
     });
   }, []);
 
   const updateMessageStatus = useCallback((messageId: string, status: string) => {
+    const validStatus = ['sending', 'sent', 'delivered', 'read'].includes(status) 
+      ? status as OptimisticMessage['status']
+      : 'sent';
+      
     setMessages(prev => prev.map(msg => 
       msg.id === messageId 
-        ? { ...msg, status: status as OptimisticMessage['status'] }
+        ? { ...msg, status: validStatus }
         : msg
     ));
   }, []);
@@ -144,11 +159,21 @@ export const useOptimisticMessages = (roomId: string | null) => {
   }, [roomId, user]);
 
   const setMessagesFromDatabase = useCallback((dbMessages: any[]) => {
-    const typedMessages: OptimisticMessage[] = dbMessages.map(msg => ({
-      ...msg,
-      status: msg.status as OptimisticMessage['status'],
+    const validatedMessages: OptimisticMessage[] = dbMessages.map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      user_id: msg.user_id,
+      room_id: msg.room_id,
+      created_at: msg.created_at,
+      status: ['sending', 'sent', 'delivered', 'read'].includes(msg.status) 
+        ? msg.status as OptimisticMessage['status']
+        : 'sent',
+      profiles: msg.profiles || {
+        full_name: '',
+        email: ''
+      }
     }));
-    setMessages(typedMessages);
+    setMessages(validatedMessages);
   }, []);
 
   const clearMessages = useCallback(() => {
