@@ -48,6 +48,7 @@ export type Database = {
           id: string
           message_type: string
           room_id: string
+          status: string | null
           updated_at: string
           user_id: string
         }
@@ -57,6 +58,7 @@ export type Database = {
           id?: string
           message_type?: string
           room_id: string
+          status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           id?: string
           message_type?: string
           room_id?: string
+          status?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -684,9 +687,26 @@ export type Database = {
       }
     }
     Functions: {
+      add_participant_to_group: {
+        Args: {
+          _room_id: string
+          _user_id: string
+          _new_participant_id: string
+        }
+        Returns: boolean
+      }
       aprobar_incidencia: {
         Args: { incidencia_id: string; nuevo_estado: string }
         Returns: boolean
+      }
+      create_group_chat: {
+        Args: {
+          _name: string
+          _description: string
+          _creator_id: string
+          _participant_ids: string[]
+        }
+        Returns: string
       }
       create_private_chat: {
         Args: { _user1_id: string; _user2_id: string }
@@ -725,6 +745,10 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      mark_messages_as_read: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: number
       }
       obtener_consolidado_con_medios: {
         Args: { fecha_consolidado: string }

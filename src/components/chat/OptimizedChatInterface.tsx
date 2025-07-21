@@ -1,7 +1,10 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useWebSocketChat } from '@/hooks/useWebSocketChat';
+import { useStableRealtime } from '@/hooks/useStableRealtime';
+import { useOptimisticMessages } from '@/hooks/useOptimisticMessages';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Users, Search, Plus, Wifi, WifiOff, Bell, BellOff, RefreshCw } from 'lucide-react';
+import { MessageCircle, Send, Users, Search, Plus, Wifi, WifiOff, Bell, BellOff, Check, CheckCheck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,19 +23,7 @@ interface ChatRoom {
   is_group: boolean;
   created_at: string;
   created_by: string;
-}
-
-interface ChatMessage {
-  id: string;
-  content: string;
-  user_id: string;
-  room_id: string;
-  created_at: string;
-  profiles?: {
-    full_name: string;
-    email: string;
-    avatar_url?: string;
-  };
+  description?: string;
 }
 
 interface User {
@@ -45,39 +36,36 @@ const OptimizedChatInterface = () => {
   const { user, profile } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [showNewChat, setShowNewChat] = useState(false);
+  const [showGroupChat, setShowGroupChat] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // WebSocket chat hook
+  // Custom hooks
   const {
-    isConnected,
-    connectionStatus,
-    connect: reconnectWebSocket,
-    joinRoom,
-    leaveRoom,
-    sendChatMessage,
-  } = useWebSocketChat({
-    onNewMessage: (message) => {
-      setMessages(prev => {
-        // Avoid duplicates
-        const exists = prev.some(m => m.id === message.id);
-        if (exists) return prev;
-        return [...prev, message];
-      });
-      scrollToBottom();
-    },
-    onError: (error) => {
-      console.error('Chat WebSocket error:', error);
-      toast.error(error);
-    }
+    messages,
+    sendMessage,
+    addRealtimeMessage,
+    updateMessageStatus,
+    markMessagesAsRead,
+    setMessagesFromDatabase,
+    clearMessages,
+  } = useOptimisticMessages(selectedRoom);
+
+  const { isConnected, reconnect } = useStableRealtime({
+    roomId: selectedRoom,
+    onNewMessage: addRealtimeMessage,
+    onMessageStatusUpdate: updateMessageStatus,
   });
 
-  // Push notifications hook
+  const { typingUsers, startTyping, stopTyping } = useTypingIndicator(selectedRoom);
+
   const {
     isSupported: notificationsSupported,
     permission: notificationPermission,
@@ -94,69 +82,17 @@ const OptimizedChatInterface = () => {
   useEffect(() => {
     if (selectedRoom) {
       loadMessages(selectedRoom);
-      joinRoom(selectedRoom);
-      
-      // Set up Supabase realtime subscription as fallback
-      if (!isConnected) {
-        console.log('Setting up Supabase realtime fallback for room:', selectedRoom);
-        const subscription = supabase
-          .channel(`chat_room_${selectedRoom}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'chat_messages',
-              filter: `room_id=eq.${selectedRoom}`,
-            },
-            async (payload) => {
-              console.log('New message via realtime:', payload);
-              
-              // Get user profile for the new message
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('id, full_name, email, avatar_url')
-                .eq('id', payload.new.user_id)
-                .single();
-              
-              const messageWithProfile: ChatMessage = {
-                id: payload.new.id,
-                content: payload.new.content,
-                user_id: payload.new.user_id,
-                room_id: payload.new.room_id,
-                created_at: payload.new.created_at,
-                profiles: profile
-              };
-              
-              setMessages(prev => {
-                const exists = prev.some(m => m.id === messageWithProfile.id);
-                if (exists) return prev;
-                return [...prev, messageWithProfile];
-              });
-              scrollToBottom();
-            }
-          )
-          .subscribe();
-          
-        setRealtimeSubscription(subscription);
-      }
+      markMessagesAsRead();
+    } else {
+      clearMessages();
     }
-    
-    return () => {
-      if (selectedRoom) {
-        leaveRoom();
-      }
-      if (realtimeSubscription) {
-        supabase.removeChannel(realtimeSubscription);
-        setRealtimeSubscription(null);
-      }
-    };
-  }, [selectedRoom, joinRoom, leaveRoom, isConnected]);
+  }, [selectedRoom, clearMessages, markMessagesAsRead]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -165,16 +101,12 @@ const OptimizedChatInterface = () => {
     try {
       console.log('Loading chat rooms for user:', user?.id);
       
-      // Primero obtener los IDs de las salas del usuario
       const { data: participantData, error: participantError } = await supabase
         .from('chat_participants')
         .select('room_id')
         .eq('user_id', user?.id);
 
-      if (participantError) {
-        console.error('Error loading participant data:', participantError);
-        throw participantError;
-      }
+      if (participantError) throw participantError;
 
       if (!participantData || participantData.length === 0) {
         setRooms([]);
@@ -183,16 +115,13 @@ const OptimizedChatInterface = () => {
 
       const roomIds = participantData.map(p => p.room_id);
 
-      // Luego obtener las salas
       const { data: roomsData, error: roomsError } = await supabase
         .from('chat_rooms')
         .select('*')
-        .in('id', roomIds);
+        .in('id', roomIds)
+        .order('updated_at', { ascending: false });
 
-      if (roomsError) {
-        console.error('Error loading rooms:', roomsError);
-        throw roomsError;
-      }
+      if (roomsError) throw roomsError;
 
       console.log('Chat rooms loaded:', roomsData);
       setRooms(roomsData || []);
@@ -204,21 +133,18 @@ const OptimizedChatInterface = () => {
 
   const loadUsers = async () => {
     try {
-      // Solo cargar usuarios según el rol del usuario actual
       let query = supabase
         .from('profiles')
         .select('id, email, full_name, role')
         .neq('id', user?.id);
 
-      // Filtrar usuarios según roles - admins pueden ver a todos
       if (profile?.role !== 'admin') {
-        // Roles que pueden chatear entre sí
-        const allowedRoles: ("admin" | "monitor" | "supervisor_monitoreo" | "rrhh" | "supervisor_salas" | "finanzas")[] = ['admin', 'supervisor_monitoreo', 'monitor'];
+        const allowedRoles: ("admin" | "monitor" | "supervisor_monitoreo" | "rrhh" | "supervisor_salas" | "finanzas")[] = 
+          ['admin', 'supervisor_monitoreo', 'monitor'];
         query = query.in('role', allowedRoles);
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
@@ -230,71 +156,48 @@ const OptimizedChatInterface = () => {
     try {
       console.log('Loading messages for room:', roomId);
       
-      // First get messages
       const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            email
+          )
+        `)
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
-      if (messagesError) {
-        console.error('Error loading messages:', messagesError);
-        throw messagesError;
-      }
+      if (messagesError) throw messagesError;
 
-      // Then get user profiles for each unique user_id
-      const userIds = [...new Set(messagesData?.map(m => m.user_id) || [])];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
-        throw profilesError;
-      }
-
-      // Combine messages with profile data
-      const messagesWithProfiles = messagesData?.map(message => ({
-        ...message,
-        profiles: profilesData?.find(p => p.id === message.user_id)
-      })) || [];
-
-      console.log('Messages loaded:', messagesWithProfiles);
-      setMessages(messagesWithProfiles);
+      console.log('Messages loaded:', messagesData);
+      setMessagesFromDatabase(messagesData || []);
     } catch (error) {
       console.error('Error loading messages:', error);
       toast.error('Error al cargar los mensajes');
     }
   };
 
-  const sendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedRoom || !user) return;
 
     const content = newMessage.trim();
     setNewMessage('');
+    stopTyping();
 
-    // Try WebSocket first (faster), fallback to regular API
-    const success = sendChatMessage(content, selectedRoom);
-    
+    const success = await sendMessage(content);
     if (!success) {
-      // Fallback to regular Supabase insert
-      try {
-        const { error } = await supabase
-          .from('chat_messages')
-          .insert({
-            content,
-            room_id: selectedRoom,
-            user_id: user.id,
-          });
+      toast.error('Error al enviar el mensaje');
+      setNewMessage(content); // Restore message on error
+    }
+  };
 
-        if (error) throw error;
-        toast.success('Mensaje enviado (modo compatibilidad)');
-      } catch (error) {
-        console.error('Error sending message:', error);
-        toast.error('Error al enviar el mensaje');
-        setNewMessage(content); // Restore message
-      }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    if (e.target.value.trim()) {
+      startTyping();
+    } else {
+      stopTyping();
     }
   };
 
@@ -309,10 +212,39 @@ const OptimizedChatInterface = () => {
 
       setSelectedRoom(data);
       setShowNewChat(false);
-      loadChatRooms();
+      await loadChatRooms();
     } catch (error) {
       console.error('Error creating chat:', error);
       toast.error('Error al crear el chat');
+    }
+  };
+
+  const createGroupChat = async () => {
+    if (!groupName.trim() || selectedUsers.length === 0) {
+      toast.error('Ingresa un nombre y selecciona al menos un participante');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('create_group_chat', {
+        _name: groupName.trim(),
+        _description: groupDescription.trim() || null,
+        _creator_id: user?.id,
+        _participant_ids: selectedUsers,
+      });
+
+      if (error) throw error;
+
+      setSelectedRoom(data);
+      setShowGroupChat(false);
+      setGroupName('');
+      setGroupDescription('');
+      setSelectedUsers([]);
+      await loadChatRooms();
+      toast.success('Chat grupal creado exitosamente');
+    } catch (error) {
+      console.error('Error creating group chat:', error);
+      toast.error('Error al crear el chat grupal');
     }
   };
 
@@ -323,31 +255,23 @@ const OptimizedChatInterface = () => {
 
   const selectedRoomData = rooms.find(room => room.id === selectedRoom);
 
-  const getConnectionStatusIcon = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return <Wifi className="h-4 w-4 text-green-500" />;
-      case 'connecting':
-        return <Wifi className="h-4 w-4 text-yellow-500 animate-pulse" />;
-      default:
-        return <WifiOff className="h-4 w-4 text-red-500" />;
-    }
-  };
-
-  const getNotificationIcon = () => {
-    if (!notificationsSupported) return null;
+  const getMessageStatusIcon = (status: string, isOwnMessage: boolean) => {
+    if (!isOwnMessage) return null;
     
-    return notificationPermission === 'granted' ? (
-      <Bell className="h-4 w-4 text-green-500" />
-    ) : (
-      <div 
-        className="cursor-pointer hover:text-blue-500" 
-        onClick={requestNotificationPermission}
-        title="Activar notificaciones"
-      >
-        <BellOff className="h-4 w-4 text-gray-400" />
-      </div>
-    );
+    switch (status) {
+      case 'sending':
+        return <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />;
+      case 'sent':
+        return <Check className="h-3 w-3 text-gray-400" />;
+      case 'delivered':
+        return <CheckCheck className="h-3 w-3 text-gray-400" />;
+      case 'read':
+        return <CheckCheck className="h-3 w-3 text-blue-500" />;
+      case 'failed':
+        return <div className="h-3 w-3 bg-red-500 rounded-full" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -359,35 +283,50 @@ const OptimizedChatInterface = () => {
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold">Chats</h2>
               <div className="flex items-center gap-1">
-                {getConnectionStatusIcon()}
-                {getNotificationIcon()}
+                {isConnected ? (
+                  <Wifi className="h-4 w-4 text-green-500" title="Conectado en tiempo real" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-red-500" title="Desconectado" />
+                )}
+                {notificationsSupported && (
+                  notificationPermission === 'granted' ? (
+                    <Bell className="h-4 w-4 text-green-500" title="Notificaciones activas" />
+                  ) : (
+                    <BellOff 
+                      className="h-4 w-4 text-gray-400 cursor-pointer hover:text-blue-500" 
+                      onClick={requestNotificationPermission}
+                      title="Activar notificaciones"
+                    />
+                  )
+                )}
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setShowNewChat(true)}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo Chat
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowNewChat(true)}
+                title="Nuevo chat privado"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowGroupChat(true)}
+                title="Nuevo chat grupal"
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           
           {/* Connection Status */}
           <div className="mb-3 flex items-center justify-between">
-            <Badge 
-              variant={isConnected ? "default" : "destructive"}
-              className="text-xs"
-            >
-              {isConnected ? "Conectado en tiempo real" : "Modo offline"}
+            <Badge variant={isConnected ? "default" : "destructive"} className="text-xs">
+              {isConnected ? "Conectado" : "Reconectando..."}
             </Badge>
             {!isConnected && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={reconnectWebSocket}
-                className="text-xs h-6 px-2"
-              >
+              <Button size="sm" variant="outline" onClick={reconnect} className="text-xs h-6 px-2">
                 Reconectar
               </Button>
             )}
@@ -398,7 +337,6 @@ const OptimizedChatInterface = () => {
               <div className="text-center py-8 text-gray-500">
                 <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No tienes chats activos</p>
-                <p className="text-xs">Inicia una conversación</p>
               </div>
             ) : (
               rooms.map((room) => (
@@ -413,12 +351,12 @@ const OptimizedChatInterface = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="bg-gray-200 p-2 rounded-full">
-                      <Users className="h-4 w-4" />
+                      {room.is_group ? <Users className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{room.name}</p>
                       <p className="text-xs opacity-70">
-                        {format(new Date(room.created_at), 'dd/MM/yyyy', { locale: es })}
+                        {room.is_group ? 'Grupo' : 'Privado'} • {format(new Date(room.created_at), 'dd/MM', { locale: es })}
                       </p>
                     </div>
                   </div>
@@ -435,48 +373,67 @@ const OptimizedChatInterface = () => {
           <>
             {/* Header del chat */}
             <div className="p-4 border-b bg-white">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <MessageCircle className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    {selectedRoomData?.is_group ? <Users className="h-5 w-5 text-primary" /> : <MessageCircle className="h-5 w-5 text-primary" />}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{selectedRoomData?.name}</h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <span>Chat {selectedRoomData?.is_group ? 'grupal' : 'privado'}</span>
+                      {typingUsers.length > 0 && (
+                        <span className="text-blue-500 animate-pulse">
+                          {typingUsers.length === 1 
+                            ? `${typingUsers[0].userName} está escribiendo...`
+                            : `${typingUsers.length} personas están escribiendo...`
+                          }
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">{selectedRoomData?.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    Chat {selectedRoomData?.is_group ? 'grupal' : 'privado'}
-                  </p>
-                </div>
+                {!isConnected && (
+                  <Badge variant="destructive" className="text-xs">
+                    Sin conexión
+                  </Badge>
+                )}
               </div>
             </div>
 
             {/* Mensajes */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.user_id === user?.id ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
+                {messages.map((message) => {
+                  const isOwnMessage = message.user_id === user?.id;
+                  return (
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.user_id === user?.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-gray-100'
-                      }`}
+                      key={message.id}
+                      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                     >
-                      {message.user_id !== user?.id && (
-                        <p className="text-xs font-medium mb-1">
-                          {message.profiles?.full_name || message.profiles?.email}
-                        </p>
-                      )}
-                      <p className="text-sm">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {format(new Date(message.created_at), 'HH:mm', { locale: es })}
-                      </p>
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          isOwnMessage
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-gray-100'
+                        } ${message.isOptimistic ? 'opacity-70' : ''}`}
+                      >
+                        {!isOwnMessage && (
+                          <p className="text-xs font-medium mb-1">
+                            {message.profiles?.full_name || message.profiles?.email}
+                          </p>
+                        )}
+                        <p className="text-sm">{message.content}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs opacity-70">
+                            {format(new Date(message.created_at), 'HH:mm', { locale: es })}
+                          </p>
+                          {getMessageStatusIcon(message.status, isOwnMessage)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
@@ -485,13 +442,25 @@ const OptimizedChatInterface = () => {
             <div className="p-4 border-t bg-white">
               <div className="flex gap-2">
                 <Input
+                  ref={inputRef}
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleInputChange}
                   placeholder="Escribe un mensaje..."
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   className="flex-1"
+                  disabled={!isConnected}
                 />
-                <Button onClick={sendMessage} size="sm" className="gap-2">
+                <Button 
+                  onClick={handleSendMessage} 
+                  size="sm" 
+                  className="gap-2"
+                  disabled={!newMessage.trim() || !isConnected}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -502,26 +471,29 @@ const OptimizedChatInterface = () => {
             <div className="text-center">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Chat en Tiempo Real
+                Chat en Tiempo Real Mejorado
               </h3>
               <p className="text-gray-500 mb-4">
-                Elige una conversación existente o inicia una nueva
+                Selecciona una conversación o crea una nueva
               </p>
-              {isConnected && (
-                <Badge className="bg-green-50 text-green-700">
-                  ⚡ Conectado con latencia ultra-baja
-                </Badge>
-              )}
+              <div className="flex gap-2 justify-center">
+                <Button onClick={() => setShowNewChat(true)} variant="outline">
+                  Chat Privado
+                </Button>
+                <Button onClick={() => setShowGroupChat(true)}>
+                  Chat Grupal
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Dialog para nuevo chat */}
+      {/* Dialog para nuevo chat privado */}
       <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuevo Chat</DialogTitle>
+            <DialogTitle>Nuevo Chat Privado</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="relative">
@@ -542,7 +514,7 @@ const OptimizedChatInterface = () => {
                     onClick={() => createPrivateChat(user.id)}
                   >
                     <div className="bg-blue-100 p-2 rounded-full">
-                      <Users className="h-4 w-4 text-blue-600" />
+                      <MessageCircle className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{user.full_name || 'Sin nombre'}</p>
@@ -550,13 +522,77 @@ const OptimizedChatInterface = () => {
                     </div>
                   </div>
                 ))}
-                {filteredUsers.length === 0 && (
-                  <p className="text-center text-gray-500 py-4">
-                    No se encontraron usuarios
-                  </p>
-                )}
               </div>
             </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para nuevo chat grupal */}
+      <Dialog open={showGroupChat} onOpenChange={setShowGroupChat}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuevo Chat Grupal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Nombre del grupo"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+            />
+            <Input
+              placeholder="Descripción (opcional)"
+              value={groupDescription}
+              onChange={(e) => setGroupDescription(e.target.value)}
+            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar usuarios..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <ScrollArea className="max-h-40">
+              <div className="space-y-2">
+                {filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                      selectedUsers.includes(user.id) 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => {
+                      setSelectedUsers(prev => 
+                        prev.includes(user.id)
+                          ? prev.filter(id => id !== user.id)
+                          : [...prev, user.id]
+                      );
+                    }}
+                  >
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <Users className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{user.full_name || 'Sin nombre'}</p>
+                      <p className="text-sm opacity-70">{user.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            {selectedUsers.length > 0 && (
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">
+                  {selectedUsers.length} usuario(s) seleccionado(s)
+                </p>
+                <Button onClick={createGroupChat}>
+                  Crear Grupo
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
