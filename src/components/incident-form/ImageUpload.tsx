@@ -1,8 +1,9 @@
 
 import { Label } from "@/components/ui/label";
-import { Upload, X, Video, Image, Loader2 } from "lucide-react";
+import { Upload, X, Video, Image, Loader2, Camera, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UploadedImage } from "@/utils/supabaseStorage";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ImageUploadProps {
   uploadedImages: UploadedImage[];
@@ -13,6 +14,7 @@ interface ImageUploadProps {
 
 const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading }: ImageUploadProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -68,36 +70,109 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
   return (
     <div className="space-y-4">
       <Label>Evidencia Multimedia (Imágenes y Videos)</Label>
-      <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
-        isUploading 
-          ? 'border-blue-400 bg-blue-50' 
-          : 'border-gray-300 hover:border-gray-400'
-      }`}>
-        <input
-          type="file"
-          multiple
-          accept="image/*,video/*"
-          onChange={handleFileUpload}
-          className="hidden"
-          id="media-upload"
-          disabled={isUploading}
-        />
-        <label htmlFor="media-upload" className={`cursor-pointer ${isUploading ? 'cursor-not-allowed' : ''}`}>
-          {isUploading ? (
-            <Loader2 className="mx-auto h-12 w-12 text-blue-500 animate-spin" />
-          ) : (
-            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-          )}
-          <p className="mt-2 text-sm text-gray-600">
-            {isUploading ? 'Procesando archivos multimedia...' : 'Haz clic para subir imágenes y videos'}
-          </p>
-          <p className="text-xs text-gray-500">
-            Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
-          </p>
-          <p className="text-xs text-blue-600 mt-1">
-            Las imágenes se comprimen automáticamente a WebP (máx. 2MB, 1024px)
-          </p>
-        </label>
+      
+      {/* Botones específicos para móvil */}
+      {isMobile ? (
+        <div className="space-y-3">
+          {/* Botón para cámara */}
+          <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
+            isUploading 
+              ? 'border-blue-400 bg-blue-50' 
+              : 'border-green-300 hover:border-green-400 bg-green-50'
+          }`}>
+            <input
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              capture="environment"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="camera-upload"
+              disabled={isUploading}
+            />
+            <label htmlFor="camera-upload" className={`cursor-pointer block ${isUploading ? 'cursor-not-allowed' : ''}`}>
+              {isUploading ? (
+                <Loader2 className="mx-auto h-8 w-8 text-blue-500 animate-spin" />
+              ) : (
+                <Camera className="mx-auto h-8 w-8 text-green-600" />
+              )}
+              <p className="mt-2 text-sm font-medium text-green-700">
+                {isUploading ? 'Procesando...' : 'Tomar Foto/Video'}
+              </p>
+              <p className="text-xs text-green-600">
+                Abre la cámara para capturar
+              </p>
+            </label>
+          </div>
+
+          {/* Botón para galería */}
+          <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
+            isUploading 
+              ? 'border-blue-400 bg-blue-50' 
+              : 'border-purple-300 hover:border-purple-400 bg-purple-50'
+          }`}>
+            <input
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="gallery-upload"
+              disabled={isUploading}
+            />
+            <label htmlFor="gallery-upload" className={`cursor-pointer block ${isUploading ? 'cursor-not-allowed' : ''}`}>
+              {isUploading ? (
+                <Loader2 className="mx-auto h-8 w-8 text-blue-500 animate-spin" />
+              ) : (
+                <FolderOpen className="mx-auto h-8 w-8 text-purple-600" />
+              )}
+              <p className="mt-2 text-sm font-medium text-purple-700">
+                {isUploading ? 'Procesando...' : 'Seleccionar de Galería'}
+              </p>
+              <p className="text-xs text-purple-600">
+                Elige archivos existentes
+              </p>
+            </label>
+          </div>
+        </div>
+      ) : (
+        /* Interfaz para escritorio */
+        <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+          isUploading 
+            ? 'border-blue-400 bg-blue-50' 
+            : 'border-gray-300 hover:border-gray-400'
+        }`}>
+          <input
+            type="file"
+            multiple
+            accept="image/*,video/*"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="media-upload"
+            disabled={isUploading}
+          />
+          <label htmlFor="media-upload" className={`cursor-pointer ${isUploading ? 'cursor-not-allowed' : ''}`}>
+            {isUploading ? (
+              <Loader2 className="mx-auto h-12 w-12 text-blue-500 animate-spin" />
+            ) : (
+              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+            )}
+            <p className="mt-2 text-sm text-gray-600">
+              {isUploading ? 'Procesando archivos multimedia...' : 'Haz clic para subir imágenes y videos'}
+            </p>
+            <p className="text-xs text-gray-500">
+              Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Las imágenes se comprimen automáticamente a WebP (máx. 2MB, 1024px)
+            </p>
+          </label>
+        </div>
+      )}
+
+      <div className="text-xs text-gray-500 text-center">
+        <p>Límites: Imágenes hasta 10MB | Videos hasta 50MB</p>
+        <p className="text-blue-600">Las imágenes se comprimen automáticamente a WebP</p>
       </div>
 
       {/* Preview de imágenes subidas */}
@@ -151,7 +226,7 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
                   <X className="h-3 w-3" />
                 </button>
                   <div className="mt-1">
-                    <p className="text-xs text-gray-500 truncate" title={image.fileName}>
+                    <p className="text-xs text-gray-500 truncate">
                       {image.fileName}
                     </p>
                     <p className="text-xs text-gray-400">
