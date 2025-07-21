@@ -31,12 +31,12 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
           return false;
         }
 
-        // Límite inicial de 10MB para imágenes y 2MB para videos
-        const maxSize = isVideo ? 30 * 1024 * 1024 : 10 * 1024 * 1024;
+        // Nuevos límites: 10MB para imágenes y 50MB para videos
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
         if (file.size > maxSize) {
           toast({
             title: "Archivo muy grande",
-            description: `${file.name} excede ${isVideo ? '30MB' : '10MB'}.`,
+            description: `${file.name} excede ${isVideo ? '50MB' : '10MB'}.`,
             variant: "destructive",
           });
           return false;
@@ -92,7 +92,7 @@ const ImageUpload = ({ uploadedImages, onImageUpload, onRemoveImage, isUploading
             {isUploading ? 'Procesando archivos multimedia...' : 'Haz clic para subir imágenes y videos'}
           </p>
           <p className="text-xs text-gray-500">
-            Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 30MB
+            Imágenes: PNG, JPG, GIF hasta 10MB | Videos: MP4, MOV, AVI hasta 50MB
           </p>
           <p className="text-xs text-blue-600 mt-1">
             Las imágenes se comprimen automáticamente a WebP (máx. 2MB, 1024px)

@@ -1,3 +1,4 @@
+
 import imageCompression from 'browser-image-compression';
 
 interface CompressionOptions {
@@ -47,15 +48,20 @@ export const processMediaFile = async (file: File): Promise<File> => {
   const isImage = file.type.startsWith('image/');
   
   if (isVideo) {
-    // Para videos, solo verificar tamaño y retornar sin cambios
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit for videos
-      throw new Error(`El video es demasiado grande. Máximo permitido: 2MB`);
+    // Para videos, verificar tamaño con el nuevo límite de 50MB
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit for videos
+      throw new Error(`El video es demasiado grande. Máximo permitido: 50MB`);
     }
     
     console.log(`Video procesado: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
     return file;
   } else if (isImage) {
-    // Para imágenes, comprimir a WebP
+    // Para imágenes, verificar tamaño con el nuevo límite de 10MB antes de comprimir
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit for images
+      throw new Error(`La imagen es demasiado grande. Máximo permitido: 10MB`);
+    }
+    
+    // Comprimir a WebP
     return compressImageToWebP(file);
   } else {
     throw new Error('Tipo de archivo no soportado. Solo se permiten imágenes y videos.');
