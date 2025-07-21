@@ -28,10 +28,12 @@ interface AuthContextType {
   isSupervisorSalas: boolean;
   isFinanzas: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithUsername: (username: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  validatePassword: (password: string) => { isValid: boolean; errors: string[] };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -109,6 +111,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const validatePassword = (password: string) => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('La contraseña debe tener al menos 8 caracteres');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Debe contener al menos una letra mayúscula');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('Debe contener al menos una letra minúscula');
+    }
+    if (!/\d/.test(password)) {
+      errors.push('Debe contener al menos un número');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('Debe contener al menos un carácter especial');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
   const signIn = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -121,8 +148,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const signInWithUsername = async (username: string, password: string) => {
+    try {
+      // Buscar el usuario por nombre completo o email
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .or(`full_name.ilike.%${username}%,email.ilike.%${username}%`)
+        .limit(1);
+
+      if (profileError || !profiles || profiles.length === 0) {
+        return { error: { message: 'Usuario no encontrado' } };
+      }
+
+      const email = profiles[0].email;
+      return await signIn(email, password);
+    } catch (error) {
+      return { error };
+    }
+  };
+
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        return { error: { message: passwordValidation.errors.join('. ') } };
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
@@ -195,10 +247,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isSupervisorSalas,
     isFinanzas,
     signIn,
+    signInWithUsername,
     signUp,
     signOut,
     updateProfile,
     resetPassword,
+    validatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
