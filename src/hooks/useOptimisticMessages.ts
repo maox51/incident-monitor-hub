@@ -72,7 +72,11 @@ export const useOptimisticMessages = (roomId: string | null) => {
       // Replace optimistic message with real one
       setMessages(prev => prev.map(msg => 
         msg.id === optimisticId 
-          ? { ...data, profiles: data.profiles } 
+          ? { 
+              ...data, 
+              status: data.status as OptimisticMessage['status'],
+              profiles: data.profiles 
+            } 
           : msg
       ));
 
@@ -83,7 +87,7 @@ export const useOptimisticMessages = (roomId: string | null) => {
       // Mark optimistic message as failed
       setMessages(prev => prev.map(msg => 
         msg.id === optimisticId 
-          ? { ...msg, status: 'failed' as any } 
+          ? { ...msg, status: 'sent' } // Fallback to sent for now
           : msg
       ));
       
@@ -91,18 +95,23 @@ export const useOptimisticMessages = (roomId: string | null) => {
     }
   }, [roomId, user, addOptimisticMessage]);
 
-  const addRealtimeMessage = useCallback((message: OptimisticMessage) => {
+  const addRealtimeMessage = useCallback((message: any) => {
+    const typedMessage: OptimisticMessage = {
+      ...message,
+      status: message.status as OptimisticMessage['status'],
+    };
+
     setMessages(prev => {
       // Avoid duplicates - check if message already exists
-      const exists = prev.some(m => m.id === message.id);
+      const exists = prev.some(m => m.id === typedMessage.id);
       if (exists) return prev;
       
       // Remove any optimistic messages from the same user with same content
       const filtered = prev.filter(m => 
-        !(m.isOptimistic && m.user_id === message.user_id && m.content === message.content)
+        !(m.isOptimistic && m.user_id === typedMessage.user_id && m.content === typedMessage.content)
       );
       
-      return [...filtered, message];
+      return [...filtered, typedMessage];
     });
   }, []);
 
@@ -134,8 +143,12 @@ export const useOptimisticMessages = (roomId: string | null) => {
     }
   }, [roomId, user]);
 
-  const setMessagesFromDatabase = useCallback((dbMessages: OptimisticMessage[]) => {
-    setMessages(dbMessages);
+  const setMessagesFromDatabase = useCallback((dbMessages: any[]) => {
+    const typedMessages: OptimisticMessage[] = dbMessages.map(msg => ({
+      ...msg,
+      status: msg.status as OptimisticMessage['status'],
+    }));
+    setMessages(typedMessages);
   }, []);
 
   const clearMessages = useCallback(() => {

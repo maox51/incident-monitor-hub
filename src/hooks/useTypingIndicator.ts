@@ -9,6 +9,15 @@ interface TypingUser {
   timestamp: number;
 }
 
+interface PresenceState {
+  [key: string]: Array<{
+    userId: string;
+    userName: string;
+    typing: boolean;
+    timestamp: number;
+  }>;
+}
+
 export const useTypingIndicator = (roomId: string | null) => {
   const { user, profile } = useAuth();
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
@@ -27,17 +36,20 @@ export const useTypingIndicator = (roomId: string | null) => {
 
     roomChannel
       .on('presence', { event: 'sync' }, () => {
-        const state = roomChannel.presenceState();
+        const state = roomChannel.presenceState() as PresenceState;
         const users: TypingUser[] = [];
         
         Object.keys(state).forEach((userId) => {
-          const presence = state[userId][0];
-          if (presence?.typing && presence.userId !== user.id) {
-            users.push({
-              userId: presence.userId,
-              userName: presence.userName,
-              timestamp: presence.timestamp,
-            });
+          const presences = state[userId];
+          if (presences && presences.length > 0) {
+            const presence = presences[0];
+            if (presence.typing && presence.userId !== user.id) {
+              users.push({
+                userId: presence.userId,
+                userName: presence.userName,
+                timestamp: presence.timestamp,
+              });
+            }
           }
         });
         

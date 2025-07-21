@@ -159,8 +159,13 @@ const OptimizedChatInterface = () => {
       const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
         .select(`
-          *,
-          profiles:user_id (
+          id,
+          content,
+          user_id,
+          room_id,
+          created_at,
+          status,
+          profiles!inner (
             full_name,
             email
           )
@@ -284,19 +289,27 @@ const OptimizedChatInterface = () => {
               <h2 className="text-lg font-semibold">Chats</h2>
               <div className="flex items-center gap-1">
                 {isConnected ? (
-                  <Wifi className="h-4 w-4 text-green-500" title="Conectado en tiempo real" />
+                  <div title="Conectado en tiempo real">
+                    <Wifi className="h-4 w-4 text-green-500" />
+                  </div>
                 ) : (
-                  <WifiOff className="h-4 w-4 text-red-500" title="Desconectado" />
+                  <div title="Desconectado">
+                    <WifiOff className="h-4 w-4 text-red-500" />
+                  </div>
                 )}
                 {notificationsSupported && (
                   notificationPermission === 'granted' ? (
-                    <Bell className="h-4 w-4 text-green-500" title="Notificaciones activas" />
+                    <div title="Notificaciones activas">
+                      <Bell className="h-4 w-4 text-green-500" />
+                    </div>
                   ) : (
-                    <BellOff 
-                      className="h-4 w-4 text-gray-400 cursor-pointer hover:text-blue-500" 
+                    <div 
+                      className="cursor-pointer hover:text-blue-500" 
                       onClick={requestNotificationPermission}
                       title="Activar notificaciones"
-                    />
+                    >
+                      <BellOff className="h-4 w-4 text-gray-400" />
+                    </div>
                   )
                 )}
               </div>
