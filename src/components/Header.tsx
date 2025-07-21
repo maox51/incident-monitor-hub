@@ -44,8 +44,12 @@ const Header = () => {
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">SI</span>
+            <div className="h-10 w-10 flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/e838c224-34ca-4c7c-ae45-56034feffb0c.png" 
+                alt="ESVA Logo" 
+                className="h-8 w-8 object-contain"
+              />
             </div>
             <h2 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
               Sistema de Incidencias
