@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Lock, Mail, User, AlertCircle, CheckCircle, Shield } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import Particles from "react-particles";
+import { loadSlim } from "tsparticles-slim";
 
 const AuthPage = () => {
   const { signIn, signInWithUsername, signUp, loading, validatePassword } = useAuth();
@@ -31,6 +33,15 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [passwordValidation, setPasswordValidation] = useState({ isValid: false, errors: [] as string[] });
+
+  // Initialize particles
+  const particlesInit = useCallback(async (engine: any) => {
+    await loadSlim(engine);
+  }, []);
+
+  const particlesLoaded = useCallback(async (container: any) => {
+    // Particles loaded callback
+  }, []);
 
   const handlePasswordChange = (password: string) => {
     setRegisterData(prev => ({ ...prev, password }));
@@ -117,26 +128,110 @@ const AuthPage = () => {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: '#013974' }}
     >
+      {/* Particles Background */}
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        loaded={particlesLoaded}
+        options={{
+          background: {
+            color: {
+              value: "transparent",
+            },
+          },
+          fpsLimit: 120,
+          interactivity: {
+            events: {
+              onClick: {
+                enable: true,
+                mode: "push",
+              },
+              onHover: {
+                enable: true,
+                mode: "repulse",
+              },
+              resize: true,
+            },
+            modes: {
+              push: {
+                quantity: 4,
+              },
+              repulse: {
+                distance: 200,
+                duration: 0.4,
+              },
+            },
+          },
+          particles: {
+            color: {
+              value: "#ffffff",
+            },
+            links: {
+              color: "#ffffff",
+              distance: 150,
+              enable: true,
+              opacity: 0.3,
+              width: 1,
+            },
+            collisions: {
+              enable: true,
+            },
+            move: {
+              direction: "none",
+              enable: true,
+              outModes: {
+                default: "bounce",
+              },
+              random: false,
+              speed: 1,
+              straight: false,
+            },
+            number: {
+              density: {
+                enable: true,
+                area: 800,
+              },
+              value: 80,
+            },
+            opacity: {
+              value: 0.5,
+            },
+            shape: {
+              type: "circle",
+            },
+            size: {
+              value: { min: 1, max: 5 },
+            },
+          },
+          detectRetina: true,
+        }}
+        className="absolute inset-0 z-0"
+      />
+
       {/* Decorative Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden z-10">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
       </div>
 
       {/* Floating geometric shapes */}
-      <div className="absolute top-20 left-20 w-4 h-4 bg-white/20 rounded-full animate-pulse"></div>
-      <div className="absolute top-40 right-32 w-6 h-6 bg-white/15 rounded-full animate-pulse delay-1000"></div>
-      <div className="absolute bottom-32 left-1/4 w-3 h-3 bg-white/25 rounded-full animate-pulse delay-500"></div>
-      <div className="absolute bottom-20 right-20 w-5 h-5 bg-white/20 rounded-full animate-pulse delay-1500"></div>
+      <div className="absolute top-20 left-20 w-4 h-4 bg-white/20 rounded-full animate-pulse z-10"></div>
+      <div className="absolute top-40 right-32 w-6 h-6 bg-white/15 rounded-full animate-pulse delay-1000 z-10"></div>
+      <div className="absolute bottom-32 left-1/4 w-3 h-3 bg-white/25 rounded-full animate-pulse delay-500 z-10"></div>
+      <div className="absolute bottom-20 right-20 w-5 h-5 bg-white/20 rounded-full animate-pulse delay-1500 z-10"></div>
 
-      <div className="w-full max-w-md space-y-8 relative z-10">
+      <div className="w-full max-w-md space-y-8 relative z-20">
         {/* Logo and Title Section */}
         <div className="text-center space-y-6">
           <div className="relative group">
             <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-            <div className="relative h-16 w-16 bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 shadow-2xl">
-              <Shield className="text-white h-8 w-8" />
+            <div className="relative h-20 w-20 bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 shadow-2xl">
+              <img 
+                src="/lovable-uploads/e838c224-34ca-4c7c-ae45-56034feffb0c.png" 
+                alt="ESVA Logo" 
+                className="h-12 w-12 object-contain"
+              />
             </div>
           </div>
           <div className="space-y-2">
