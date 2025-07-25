@@ -44,95 +44,80 @@ export const useQuinzenalStats = () => {
     }
   };
 
-  const getQuincenalPeriods = () => {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
-    const lastDay = new Date(year, month, 0).getDate();
-
-    return {
-      primera: {
-        inicio: new Date(year, month - 1, 1),
-        fin: new Date(year, month - 1, 15, 23, 59, 59),
-        nombre: `Primera quincena ${month}/${year}`
-      },
-      segunda: {
-        inicio: new Date(year, month - 1, 16),
-        fin: new Date(year, month - 1, lastDay, 23, 59, 59),
-        nombre: `Segunda quincena ${month}/${year}`
-      }
-    };
-  };
-
   const fetchQuinzenalStats = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const periods = getQuincenalPeriods();
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
 
-      // Obtener todas las incidencias aprobadas del mes actual
-      const { data: allIncidencias, error: allError } = await supabase
-        .from('incidencias')
-        .select(`
-          *,
-          salas(nombre)
-        `)
-        .eq('estado', 'aprobado')
-        .gte('created_at', periods.primera.inicio.toISOString())
-        .lte('created_at', periods.segunda.fin.toISOString());
+      console.log('Fetching quincenal stats for year:', year, 'month:', month);
 
-      if (allError) throw allError;
-
-      // Función para filtrar incidencias por período quincenal
-      const filtrarPorPeriodo = (incidencias: any[], periodoInicio: Date, periodoFin: Date) => {
-        return incidencias.filter(incidencia => {
-          const fechaIncidencia = new Date(incidencia.created_at);
-          return fechaIncidencia >= periodoInicio && fechaIncidencia <= periodoFin;
+      // Usar la función de base de datos para obtener estadísticas quincenales
+      const { data: estadisticas, error: statsError } = await supabase
+        .rpc('obtener_estadisticas_quincenales_sala', {
+          p_año: year,
+          p_mes: month
         });
-      };
 
-      // Filtrar datos por quincena
-      const primeraData = filtrarPorPeriodo(allIncidencias || [], periods.primera.inicio, periods.primera.fin);
-      const segundaData = filtrarPorPeriodo(allIncidencias || [], periods.segunda.inicio, periods.segunda.fin);
+      if (statsError) {
+        console.error('Error fetching quincenal stats:', statsError);
+        throw statsError;
+      }
 
-      // Función para calcular minutos por sala del período específico
-      const calcularMinutosPorSalaQuincenal = (datos: any[]) => {
-        const minutosPorSala: Record<string, number> = {};
-        
-        datos.forEach(incidencia => {
-          const nombreSala = incidencia.salas?.nombre || 'Sin sala';
-          const minutos = incidencia.tiempo_minutos || 0;
-          
-          if (!minutosPorSala[nombreSala]) {
-            minutosPorSala[nombreSala] = 0;
-          }
-          minutosPorSala[nombreSala] += minutos;
-        });
-        
-        return minutosPorSala;
-      };
+      console.log('Quincenal stats data:', estadisticas);
 
-      // Procesar datos de primera quincena
-      const primeraStats = {
-        ingresos_tardios: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
-        cierres_prematuros: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
-        periodo: periods.primera.nombre,
-        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(primeraData)
-      };
+      // Procesar datos para primera quincena
+      const primeraQuincena = estadisticas?.filter((stat: any) => stat.quincena === 1) || [];
+      const segundaQuincena = estadisticas?.filter((stat: any) => stat.quincena === 2) || [];
 
-      // Procesar datos de segunda quincena
-      const segundaStats = {
-        ingresos_tardios: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
-        cierres_prematuros: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
-        periodo: periods.segunda.nombre,
-        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(segundaData)
-      };
+      // Calcular totales y minutos por sala para primera quincena
+      const primeraMinutosPorSala: Record<string, number> = {};
+      let primeraIngresosTotal = 0;
+      let primeraCierresTotal = 0;
 
-      setStats({
-        primera_quincena: primeraStats,
-        segunda_quincena: segundaStats
+      primeraQuincena.forEach((stat: any) => {
+        const totalMinutos = stat.minutos_ingresos_tardios + stat.minutos_cierres_prematuros;
+        if (totalMinutos > 0) {
+          primeraMinutosPorSala[stat.sala_nombre] = totalMinutos;
+        }
+        primeraIngresosTotal += stat.total_incidencias_ingresos;
+        primeraCierresTotal += stat.total_incidencias_cierres;
       });
+
+      // Calcular totales y minutos por sala para segunda quincena
+      const segundaMinutosPorSala: Record<string, number> = {};
+      let segundaIngresosTotal = 0;
+      let segundaCierresTotal = 0;
+
+      segundaQuincena.forEach((stat: any) => {
+        const totalMinutos = stat.minutos_ingresos_tardios + stat.minutos_cierres_prematuros;
+        if (totalMinutos > 0) {
+          segundaMinutosPorSala[stat.sala_nombre] = totalMinutos;
+        }
+        segundaIngresosTotal += stat.total_incidencias_ingresos;
+        segundaCierresTotal += stat.total_incidencias_cierres;
+      });
+
+      const statsResult = {
+        primera_quincena: {
+          ingresos_tardios: primeraIngresosTotal,
+          cierres_prematuros: primeraCierresTotal,
+          periodo: `Primera quincena ${month}/${year}`,
+          minutos_totales_por_sala: primeraMinutosPorSala
+        },
+        segunda_quincena: {
+          ingresos_tardios: segundaIngresosTotal,
+          cierres_prematuros: segundaCierresTotal,
+          periodo: `Segunda quincena ${month}/${year}`,
+          minutos_totales_por_sala: segundaMinutosPorSala
+        }
+      };
+
+      console.log('Processed stats:', statsResult);
+      setStats(statsResult);
 
     } catch (error) {
       console.error('Error fetching quinzenal stats:', error);
@@ -142,28 +127,34 @@ export const useQuinzenalStats = () => {
     }
   };
 
-  const addIncidenciaToCount = async (tipo: 'ingreso_tardio' | 'cierre_prematuro', detalles: any) => {
+  const addIncidenciaToCount = async (
+    tipo: 'ingreso_tardio' | 'cierre_prematuro', 
+    detalles: {
+      area_id: string;
+      sala_id: string;
+      clasificacion_id: string;
+      reportado_por: string;
+      tiempo_minutos: number;
+    }
+  ) => {
     try {
-      const currentQuincena = getCurrentQuincena();
-      
-      // Crear incidencia específica para el conteo quincenal
-      const { error } = await supabase
-        .from('incidencias')
-        .insert({
-          titulo: tipo === 'ingreso_tardio' ? 'Ingreso Tardío' : 'Cierre Prematuro',
-          descripcion: `Registrado automáticamente - ${tipo === 'ingreso_tardio' ? 'Ingreso Tardío' : 'Cierre Prematuro'}`,
-          area_id: detalles.area_id,
-          sala_id: detalles.sala_id,
-          clasificacion_id: detalles.clasificacion_id,
-          reportado_por: detalles.reportado_por,
-          prioridad: 'media',
-          estado: 'aprobado',
-          observaciones: `Periodo: ${currentQuincena.periodo} quincena - ${JSON.stringify(detalles)}`,
-          fecha_incidencia: new Date().toISOString(),
-          tiempo_minutos: detalles.tiempo_minutos || 0
+      console.log('Adding incidencia to quinzenal count:', { tipo, detalles });
+
+      // Usar la función de base de datos para actualizar el conteo
+      const { data, error } = await supabase
+        .rpc('actualizar_conteo_quincenal_sala', {
+          p_sala_id: detalles.sala_id,
+          p_tipo_incidencia: tipo,
+          p_minutos: detalles.tiempo_minutos || 0,
+          p_fecha: new Date().toISOString().split('T')[0]
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating quinzenal count:', error);
+        throw error;
+      }
+
+      console.log('Quinzenal count updated successfully:', data);
       
       // Refrescar estadísticas
       await fetchQuinzenalStats();

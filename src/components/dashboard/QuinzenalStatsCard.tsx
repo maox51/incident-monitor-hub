@@ -83,7 +83,7 @@ const QuinzenalStatsCard = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          Estadísticas Quincenales - RRHH
+          Estadísticas Quincenales por Sala - RRHH
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -109,7 +109,7 @@ const QuinzenalStatsCard = () => {
               </div>
             </div>
             <div className="mt-4">
-              <h4 className="font-medium text-blue-900 mb-2">Minutos por Sala:</h4>
+              <h4 className="font-medium text-blue-900 mb-2">Minutos Acumulados por Sala:</h4>
               <MinutosPorSala minutosPorSala={stats.primera_quincena.minutos_totales_por_sala} />
             </div>
           </div>
@@ -135,7 +135,7 @@ const QuinzenalStatsCard = () => {
               </div>
             </div>
             <div className="mt-4">
-              <h4 className="font-medium text-green-900 mb-2">Minutos por Sala:</h4>
+              <h4 className="font-medium text-green-900 mb-2">Minutos Acumulados por Sala:</h4>
               <MinutosPorSala minutosPorSala={stats.segunda_quincena.minutos_totales_por_sala} />
             </div>
           </div>
@@ -143,7 +143,7 @@ const QuinzenalStatsCard = () => {
           {/* Totales del Mes */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold text-gray-900 mb-3">Totales del Mes</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center">
                 <Badge variant="outline" className="text-blue-700 border-blue-300">
                   {stats.primera_quincena.ingresos_tardios + stats.segunda_quincena.ingresos_tardios} Total Ingresos Tardíos
@@ -155,12 +155,51 @@ const QuinzenalStatsCard = () => {
                 </Badge>
               </div>
             </div>
+            
+            {/* Resumen total de minutos por sala */}
+            <div className="mt-4">
+              <h4 className="font-medium text-gray-900 mb-2">Resumen Total de Minutos por Sala:</h4>
+              <div className="space-y-2">
+                {(() => {
+                  const todasLasSalas = new Set([
+                    ...Object.keys(stats.primera_quincena.minutos_totales_por_sala),
+                    ...Object.keys(stats.segunda_quincena.minutos_totales_por_sala)
+                  ]);
+                  
+                  return Array.from(todasLasSalas).map(sala => {
+                    const minutosPrimera = stats.primera_quincena.minutos_totales_por_sala[sala] || 0;
+                    const minutosSegunda = stats.segunda_quincena.minutos_totales_por_sala[sala] || 0;
+                    const totalMinutos = minutosPrimera + minutosSegunda;
+                    
+                    if (totalMinutos > 0) {
+                      return (
+                        <div key={sala} className="flex justify-between items-center p-2 bg-white rounded border">
+                          <span className="text-sm font-medium">{sala}</span>
+                          <div className="flex gap-2">
+                            <Badge variant="outline" className="text-xs text-blue-600">
+                              1ª: {minutosPrimera}min
+                            </Badge>
+                            <Badge variant="outline" className="text-xs text-green-600">
+                              2ª: {minutosSegunda}min
+                            </Badge>
+                            <Badge variant="outline" className="text-gray-700 border-gray-400">
+                              Total: {totalMinutos}min
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }).filter(Boolean);
+                })()}
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-center">
             <Button onClick={refetch} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
+              Actualizar Estadísticas
             </Button>
           </div>
         </div>

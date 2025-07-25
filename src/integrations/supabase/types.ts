@@ -261,6 +261,56 @@ export type Database = {
         }
         Relationships: []
       }
+      conteos_quincenales_sala: {
+        Row: {
+          año: number
+          created_at: string
+          id: string
+          mes: number
+          minutos_cierres_prematuros: number
+          minutos_ingresos_tardios: number
+          quincena: number
+          sala_id: string
+          total_incidencias_cierres: number
+          total_incidencias_ingresos: number
+          updated_at: string
+        }
+        Insert: {
+          año: number
+          created_at?: string
+          id?: string
+          mes: number
+          minutos_cierres_prematuros?: number
+          minutos_ingresos_tardios?: number
+          quincena: number
+          sala_id: string
+          total_incidencias_cierres?: number
+          total_incidencias_ingresos?: number
+          updated_at?: string
+        }
+        Update: {
+          año?: number
+          created_at?: string
+          id?: string
+          mes?: number
+          minutos_cierres_prematuros?: number
+          minutos_ingresos_tardios?: number
+          quincena?: number
+          sala_id?: string
+          total_incidencias_cierres?: number
+          total_incidencias_ingresos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteos_quincenales_sala_sala_id_fkey"
+            columns: ["sala_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fcm_tokens: {
         Row: {
           created_at: string
@@ -687,6 +737,15 @@ export type Database = {
       }
     }
     Functions: {
+      actualizar_conteo_quincenal_sala: {
+        Args: {
+          p_sala_id: string
+          p_tipo_incidencia: string
+          p_minutos: number
+          p_fecha?: string
+        }
+        Returns: boolean
+      }
       add_participant_to_group: {
         Args: {
           _room_id: string
@@ -753,6 +812,25 @@ export type Database = {
       obtener_consolidado_con_medios: {
         Args: { fecha_consolidado: string }
         Returns: Json
+      }
+      obtener_conteo_quincenal_sala: {
+        Args: { p_sala_id: string; p_fecha?: string }
+        Returns: string
+      }
+      obtener_estadisticas_quincenales_sala: {
+        Args: { p_año?: number; p_mes?: number }
+        Returns: {
+          sala_id: string
+          sala_nombre: string
+          año: number
+          mes: number
+          quincena: number
+          minutos_ingresos_tardios: number
+          minutos_cierres_prematuros: number
+          total_incidencias_ingresos: number
+          total_incidencias_cierres: number
+          total_minutos: number
+        }[]
       }
       user_can_access_chat_room: {
         Args: { _user_id: string; _room_id: string }
