@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,8 +9,8 @@ const QuinzenalStatsCard = () => {
   const { stats, loading, error, refetch } = useQuinzenalStats();
   const { profile } = useAuth();
 
-  // Solo mostrar para roles de RRHH y admin
-  if (!profile || !['rrhh', 'admin', 'supervisor_monitoreo'].includes(profile.role)) {
+  // Mostrar para todos los usuarios autenticados para pruebas
+  if (!profile) {
     return null;
   }
 
@@ -21,7 +20,7 @@ const QuinzenalStatsCard = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Estadísticas Quincenales
+            Estadísticas Quincenales por Sala
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -39,7 +38,7 @@ const QuinzenalStatsCard = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            Error en Estadísticas
+            Error en Estadísticas Quincenales
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -55,7 +54,27 @@ const QuinzenalStatsCard = () => {
     );
   }
 
-  if (!stats) return null;
+  if (!stats) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Estadísticas Quincenales por Sala
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">
+            <p className="text-gray-500">No hay datos disponibles para mostrar</p>
+            <Button onClick={refetch} variant="outline" size="sm" className="mt-2">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Cargar Estadísticas
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const MinutosPorSala = ({ minutosPorSala }: { minutosPorSala: Record<string, number> }) => {
     const salasConMinutos = Object.entries(minutosPorSala).filter(([_, minutos]) => minutos > 0);
@@ -83,7 +102,7 @@ const QuinzenalStatsCard = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          Estadísticas Quincenales por Sala - RRHH
+          Estadísticas Quincenales por Sala
         </CardTitle>
       </CardHeader>
       <CardContent>

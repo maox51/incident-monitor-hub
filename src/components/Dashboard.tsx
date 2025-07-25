@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import MonitorPerformance from "./dashboard/MonitorPerformance";
 import ConsolidadoDiario from "./ConsolidadoDiario";
 import PeriodComparisonChart from "./dashboard/PeriodComparisonChart";
 import AuditLog from "./admin/AuditLog";
+import QuinzenalStatsCard from "./dashboard/QuinzenalStatsCard";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -217,6 +217,9 @@ const Dashboard = () => {
               gradient="purple"
             />
           </div>
+
+          {/* Agregar tarjeta de estadísticas quincenales */}
+          <QuinzenalStatsCard />
 
           {(monthlyData && monthlyData.length > 0) || (priorityData && priorityData.length > 0) ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
