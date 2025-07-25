@@ -99,11 +99,17 @@ export const useQuinzenalStats = () => {
 
       if (segundaError) throw segundaError;
 
-      // Función para calcular minutos totales por sala
-      const calcularMinutosPorSala = (datos: any[]) => {
+      // Función para calcular minutos REINICIADOS por quincena y por sala
+      const calcularMinutosPorSalaQuincenal = (datos: any[], periodoInicio: Date, periodoFin: Date) => {
         const minutosPorSala: Record<string, number> = {};
         
-        datos.forEach(incidencia => {
+        // Filtrar solo las incidencias del periodo específico
+        const incidenciasPeriodo = datos.filter(incidencia => {
+          const fechaIncidencia = new Date(incidencia.created_at);
+          return fechaIncidencia >= periodoInicio && fechaIncidencia <= periodoFin;
+        });
+        
+        incidenciasPeriodo.forEach(incidencia => {
           const nombreSala = incidencia.salas?.nombre || 'Sin sala';
           const minutos = incidencia.tiempo_minutos || 0;
           
@@ -116,20 +122,20 @@ export const useQuinzenalStats = () => {
         return minutosPorSala;
       };
 
-      // Procesar datos de primera quincena
+      // Procesar datos de primera quincena (reinicio automático)
       const primeraStats = {
         ingresos_tardios: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
         cierres_prematuros: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
         periodo: periods.primera.nombre,
-        minutos_totales_por_sala: calcularMinutosPorSala(primeraData || [])
+        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(primeraData || [], periods.primera.inicio, periods.primera.fin)
       };
 
-      // Procesar datos de segunda quincena
+      // Procesar datos de segunda quincena (reinicio automático)
       const segundaStats = {
         ingresos_tardios: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
         cierres_prematuros: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
         periodo: periods.segunda.nombre,
-        minutos_totales_por_sala: calcularMinutosPorSala(segundaData || [])
+        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(segundaData || [], periods.segunda.inicio, periods.segunda.fin)
       };
 
       setStats({
