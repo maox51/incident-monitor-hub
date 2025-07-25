@@ -71,7 +71,7 @@ export const useQuinzenalStats = () => {
 
       const periods = getQuincenalPeriods();
 
-      // Obtener estadísticas de primera quincena con datos de salas
+      // Obtener estadísticas de primera quincena - SOLO INCIDENCIAS APROBADAS
       const { data: primeraData, error: primeraError } = await supabase
         .from('incidencias')
         .select(`
@@ -85,7 +85,7 @@ export const useQuinzenalStats = () => {
 
       if (primeraError) throw primeraError;
 
-      // Obtener estadísticas de segunda quincena con datos de salas
+      // Obtener estadísticas de segunda quincena - SOLO INCIDENCIAS APROBADAS
       const { data: segundaData, error: segundaError } = await supabase
         .from('incidencias')
         .select(`

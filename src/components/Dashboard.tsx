@@ -100,7 +100,7 @@ const Dashboard = () => {
               <MonitorPerformance />
             </div>
 
-            {/* Quinzenal Stats and Additional Analytics */}
+            {/* Quinzenal Stats and User Statistics */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <QuinzenalStatsCard />
               <UserStatisticsChart />

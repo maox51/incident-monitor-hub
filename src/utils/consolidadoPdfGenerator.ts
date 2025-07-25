@@ -70,6 +70,13 @@ export const generarConsolidadoPDF = async (consolidado: ConsolidadoParaPDF): Pr
 
   yPosition = 70;
 
+  // Nota importante sobre el estado de las incidencias
+  doc.setFontSize(10);
+  doc.setTextColor(150, 50, 50);
+  doc.setFont('helvetica', 'italic');
+  doc.text('* Solo incluye incidencias aprobadas', pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 15;
+
   // Resumen estadístico
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
@@ -113,7 +120,7 @@ export const generarConsolidadoPDF = async (consolidado: ConsolidadoParaPDF): Pr
   // Detalle de incidencias
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('DETALLE DE INCIDENCIAS', margin, yPosition);
+  doc.text('DETALLE DE INCIDENCIAS APROBADAS', margin, yPosition);
   yPosition += 15;
 
   for (const incidencia of consolidado.incidencias_detalle) {
