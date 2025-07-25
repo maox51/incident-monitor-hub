@@ -71,8 +71,8 @@ export const useQuinzenalStats = () => {
 
       const periods = getQuincenalPeriods();
 
-      // Obtener estadísticas de primera quincena - SOLO INCIDENCIAS APROBADAS
-      const { data: primeraData, error: primeraError } = await supabase
+      // Obtener todas las incidencias aprobadas del mes actual
+      const { data: allIncidencias, error: allError } = await supabase
         .from('incidencias')
         .select(`
           *,
@@ -80,36 +80,27 @@ export const useQuinzenalStats = () => {
         `)
         .eq('estado', 'aprobado')
         .gte('created_at', periods.primera.inicio.toISOString())
-        .lte('created_at', periods.primera.fin.toISOString())
-        .in('clasificacion_id', ['ingreso_tardio', 'cierre_prematuro']);
+        .lte('created_at', periods.segunda.fin.toISOString());
 
-      if (primeraError) throw primeraError;
+      if (allError) throw allError;
 
-      // Obtener estadísticas de segunda quincena - SOLO INCIDENCIAS APROBADAS
-      const { data: segundaData, error: segundaError } = await supabase
-        .from('incidencias')
-        .select(`
-          *,
-          salas(nombre)
-        `)
-        .eq('estado', 'aprobado')
-        .gte('created_at', periods.segunda.inicio.toISOString())
-        .lte('created_at', periods.segunda.fin.toISOString())
-        .in('clasificacion_id', ['ingreso_tardio', 'cierre_prematuro']);
-
-      if (segundaError) throw segundaError;
-
-      // Función para calcular minutos REINICIADOS por quincena y por sala
-      const calcularMinutosPorSalaQuincenal = (datos: any[], periodoInicio: Date, periodoFin: Date) => {
-        const minutosPorSala: Record<string, number> = {};
-        
-        // Filtrar solo las incidencias del periodo específico
-        const incidenciasPeriodo = datos.filter(incidencia => {
+      // Función para filtrar incidencias por período quincenal
+      const filtrarPorPeriodo = (incidencias: any[], periodoInicio: Date, periodoFin: Date) => {
+        return incidencias.filter(incidencia => {
           const fechaIncidencia = new Date(incidencia.created_at);
           return fechaIncidencia >= periodoInicio && fechaIncidencia <= periodoFin;
         });
+      };
+
+      // Filtrar datos por quincena
+      const primeraData = filtrarPorPeriodo(allIncidencias || [], periods.primera.inicio, periods.primera.fin);
+      const segundaData = filtrarPorPeriodo(allIncidencias || [], periods.segunda.inicio, periods.segunda.fin);
+
+      // Función para calcular minutos por sala del período específico
+      const calcularMinutosPorSalaQuincenal = (datos: any[]) => {
+        const minutosPorSala: Record<string, number> = {};
         
-        incidenciasPeriodo.forEach(incidencia => {
+        datos.forEach(incidencia => {
           const nombreSala = incidencia.salas?.nombre || 'Sin sala';
           const minutos = incidencia.tiempo_minutos || 0;
           
@@ -122,20 +113,20 @@ export const useQuinzenalStats = () => {
         return minutosPorSala;
       };
 
-      // Procesar datos de primera quincena (reinicio automático)
+      // Procesar datos de primera quincena
       const primeraStats = {
         ingresos_tardios: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
         cierres_prematuros: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
         periodo: periods.primera.nombre,
-        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(primeraData || [], periods.primera.inicio, periods.primera.fin)
+        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(primeraData)
       };
 
-      // Procesar datos de segunda quincena (reinicio automático)
+      // Procesar datos de segunda quincena
       const segundaStats = {
         ingresos_tardios: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
         cierres_prematuros: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
         periodo: periods.segunda.nombre,
-        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(segundaData || [], periods.segunda.inicio, periods.segunda.fin)
+        minutos_totales_por_sala: calcularMinutosPorSalaQuincenal(segundaData)
       };
 
       setStats({
