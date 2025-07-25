@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, FileText, Image as ImageIcon, Video, Eye, AlertTriangle, Users, Building } from "lucide-react";
+import { Calendar, FileText, Image as ImageIcon, Video, Eye, AlertTriangle, Users, Building, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -60,7 +61,7 @@ const ConsolidadoDiario = () => {
     new Date().toISOString().split('T')[0]
   );
 
-  // Obtener consolidado detallado con tipo de retorno correcto
+  // Obtener consolidado detallado con tipo de retorno correcto - SOLO INCIDENCIAS APROBADAS
   const { data: consolidado, isLoading, refetch } = useQuery({
     queryKey: ["consolidado-detallado", fechaSeleccionada],
     queryFn: async (): Promise<ConsolidadoDetallado | null> => {
@@ -266,15 +267,6 @@ const ConsolidadoDiario = () => {
               <FileText className="w-4 h-4" />
               Generar Consolidado
             </Button>
-            {/*<Button 
-              onClick={generarPDF} 
-              variant="outline" 
-              className="flex items-center gap-2"
-              disabled={!consolidado}
-            >
-              <FileText className="w-4 h-4" />
-              Generar PDF y Enviar
-            </Button>*/}
             <Button 
               onClick={exportarPDFLocal} 
               variant="secondary" 
@@ -297,6 +289,18 @@ const ConsolidadoDiario = () => {
               Para cambiar el destinatario, contacta al administrador del sistema.
             </p>
           </div>
+
+          {/* Indicador de filtro de incidencias aprobadas */}
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2 text-green-800 text-sm">
+              <CheckCircle className="w-4 h-4" />
+              <span className="font-medium">Filtro de Seguridad Activo:</span>
+            </div>
+            <p className="text-green-700 text-sm mt-1">
+              Este consolidado incluye únicamente incidencias que han sido <strong>aprobadas</strong> por un supervisor. 
+              Las incidencias en estado "borrador" o "rechazado" no se incluyen en el reporte.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -305,8 +309,10 @@ const ConsolidadoDiario = () => {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
                 Resumen del {format(new Date(consolidado.fecha_reporte), 'dd \'de\' MMMM \'de\' yyyy', { locale: es })}
+                <Badge variant="secondary" className="ml-2">Solo Incidencias Aprobadas</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -314,18 +320,22 @@ const ConsolidadoDiario = () => {
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">{consolidado.total_incidencias}</div>
                   <div className="text-sm text-gray-600">Total Incidencias</div>
+                  <div className="text-xs text-gray-500 mt-1">Aprobadas</div>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
                   <div className="text-2xl font-bold text-red-600">{consolidado.incidencias_criticas}</div>
                   <div className="text-sm text-gray-600">Críticas</div>
+                  <div className="text-xs text-gray-500 mt-1">Aprobadas</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <div className="text-2xl font-bold text-green-600">{consolidado.areas_afectadas}</div>
                   <div className="text-sm text-gray-600">Áreas Afectadas</div>
+                  <div className="text-xs text-gray-500 mt-1">Con incidencias aprobadas</div>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <div className="text-2xl font-bold text-purple-600">{consolidado.salas_afectadas}</div>
                   <div className="text-sm text-gray-600">Sucursales Afectadas</div>
+                  <div className="text-xs text-gray-500 mt-1">Con incidencias aprobadas</div>
                 </div>
               </div>
 
@@ -335,6 +345,7 @@ const ConsolidadoDiario = () => {
                   <h4 className="font-semibold mb-2 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" />
                     Evidencia Multimedia
+                    <Badge variant="outline" className="text-xs">Solo de incidencias aprobadas</Badge>
                   </h4>
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
@@ -380,20 +391,29 @@ const ConsolidadoDiario = () => {
           {/* Detalle de incidencias */}
           <Card>
             <CardHeader>
-              <CardTitle>Detalle de Incidencias</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                Detalle de Incidencias Aprobadas
+              </CardTitle>
               <CardDescription>
-                Listado completo de incidencias del día con evidencia multimedia
+                Listado completo de incidencias aprobadas del día con evidencia multimedia
               </CardDescription>
             </CardHeader>
             <CardContent>
               {consolidado.incidencias_detalle.length > 0 ? (
                 <div className="space-y-4">
                   {consolidado.incidencias_detalle.map((incidencia) => (
-                    <Card key={incidencia.id} className="border-l-4 border-l-blue-500">
+                    <Card key={incidencia.id} className="border-l-4 border-l-green-500">
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex-1">
-                            <h4 className="font-semibold text-lg mb-1">{incidencia.titulo}</h4>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-lg">{incidencia.titulo}</h4>
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Aprobada
+                              </Badge>
+                            </div>
                             <div className="flex flex-wrap gap-2 mb-2">
                               <Badge className={getPrioridadColor(incidencia.prioridad)}>
                                 {incidencia.prioridad}
@@ -447,8 +467,11 @@ const ConsolidadoDiario = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <AlertTriangle className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-gray-600">No hay incidencias registradas para esta fecha</p>
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
+                  <p className="mt-2 text-gray-600">No hay incidencias aprobadas para esta fecha</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Solo se muestran incidencias que han sido aprobadas por un supervisor
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -462,6 +485,9 @@ const ConsolidadoDiario = () => {
             <div className="text-center py-8">
               <Calendar className="mx-auto h-12 w-12 text-gray-400" />
               <p className="mt-2 text-gray-600">No hay consolidado disponible para esta fecha</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Recuerda que solo se incluyen incidencias aprobadas
+              </p>
               <Button onClick={generarConsolidado} className="mt-4">
                 Generar Consolidado
               </Button>
