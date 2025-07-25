@@ -7,11 +7,10 @@ import UserManagement from "@/components/admin/UserManagement";
 import ConsolidadoDiario from "@/components/ConsolidadoDiario";
 import ImportDataModule from "@/components/ImportDataModule";
 import BorradoresView from "@/components/supervisor/BorradoresView";
-import OptimizedChatInterface from "@/components/chat/OptimizedChatInterface";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MessageSquare } from "lucide-react";
+import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -33,7 +32,6 @@ const Index = () => {
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin'] },
     { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin'] },
-    { id: 'chat', label: 'Mensajes', icon: MessageSquare, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
     { id: 'usuarios', label: 'Usuarios', icon: Users, roles: ['admin'] },
     { id: 'importar', label: 'Importar Datos', icon: Upload, roles: ['admin'] },
   ];
@@ -157,7 +155,6 @@ const Index = () => {
 
           {activeTab === "borradores" && <BorradoresView />}
           {activeTab === "nueva-incidencia" && <IncidenciaForm />}
-          {activeTab === "chat" && <div className="h-[calc(100vh-200px)]"><OptimizedChatInterface /></div>}
         </div>
       </div>
     );
@@ -200,8 +197,6 @@ const Index = () => {
             <ImportDataModule />
           </ProtectedRoute>
         );
-      case "chat":
-        return <div className="h-[calc(100vh-200px)]"><OptimizedChatInterface /></div>;
       default:
         return (
           <ProtectedRoute requireAdmin>

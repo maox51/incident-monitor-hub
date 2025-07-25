@@ -99,7 +99,7 @@ export const useQuinzenalStats = () => {
       // Procesar datos de segunda quincena
       const segundaStats = {
         ingresos_tardios: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
-        cierres_prematuros: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripion?.toLowerCase().includes('cierre prematuro')).length || 0,
+        cierres_prematuros: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
         periodo: periods.segunda.nombre
       };
 
