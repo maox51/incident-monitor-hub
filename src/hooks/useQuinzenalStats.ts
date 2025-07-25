@@ -7,11 +7,13 @@ interface QuinzenalStats {
     ingresos_tardios: number;
     cierres_prematuros: number;
     periodo: string;
+    minutos_totales_por_sala: Record<string, number>;
   };
   segunda_quincena: {
     ingresos_tardios: number;
     cierres_prematuros: number;
     periodo: string;
+    minutos_totales_por_sala: Record<string, number>;
   };
 }
 
@@ -69,38 +71,65 @@ export const useQuinzenalStats = () => {
 
       const periods = getQuincenalPeriods();
 
-      // Obtener estadísticas de primera quincena
+      // Obtener estadísticas de primera quincena con datos de salas
       const { data: primeraData, error: primeraError } = await supabase
         .from('incidencias')
-        .select('*')
+        .select(`
+          *,
+          salas(nombre)
+        `)
+        .eq('estado', 'aprobado')
         .gte('created_at', periods.primera.inicio.toISOString())
         .lte('created_at', periods.primera.fin.toISOString())
         .in('clasificacion_id', ['ingreso_tardio', 'cierre_prematuro']);
 
       if (primeraError) throw primeraError;
 
-      // Obtener estadísticas de segunda quincena
+      // Obtener estadísticas de segunda quincena con datos de salas
       const { data: segundaData, error: segundaError } = await supabase
         .from('incidencias')
-        .select('*')
+        .select(`
+          *,
+          salas(nombre)
+        `)
+        .eq('estado', 'aprobado')
         .gte('created_at', periods.segunda.inicio.toISOString())
         .lte('created_at', periods.segunda.fin.toISOString())
         .in('clasificacion_id', ['ingreso_tardio', 'cierre_prematuro']);
 
       if (segundaError) throw segundaError;
 
+      // Función para calcular minutos totales por sala
+      const calcularMinutosPorSala = (datos: any[]) => {
+        const minutosPorSala: Record<string, number> = {};
+        
+        datos.forEach(incidencia => {
+          const nombreSala = incidencia.salas?.nombre || 'Sin sala';
+          const minutos = incidencia.tiempo_minutos || 0;
+          
+          if (!minutosPorSala[nombreSala]) {
+            minutosPorSala[nombreSala] = 0;
+          }
+          minutosPorSala[nombreSala] += minutos;
+        });
+        
+        return minutosPorSala;
+      };
+
       // Procesar datos de primera quincena
       const primeraStats = {
         ingresos_tardios: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
         cierres_prematuros: primeraData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
-        periodo: periods.primera.nombre
+        periodo: periods.primera.nombre,
+        minutos_totales_por_sala: calcularMinutosPorSala(primeraData || [])
       };
 
       // Procesar datos de segunda quincena
       const segundaStats = {
         ingresos_tardios: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('ingreso tardío') || inc.descripcion?.toLowerCase().includes('ingreso tardío')).length || 0,
         cierres_prematuros: segundaData?.filter(inc => inc.titulo?.toLowerCase().includes('cierre prematuro') || inc.descripcion?.toLowerCase().includes('cierre prematuro')).length || 0,
-        periodo: periods.segunda.nombre
+        periodo: periods.segunda.nombre,
+        minutos_totales_por_sala: calcularMinutosPorSala(segundaData || [])
       };
 
       setStats({
@@ -133,7 +162,8 @@ export const useQuinzenalStats = () => {
           prioridad: 'media',
           estado: 'aprobado',
           observaciones: `Periodo: ${currentQuincena.periodo} quincena - ${JSON.stringify(detalles)}`,
-          fecha_incidencia: new Date().toISOString()
+          fecha_incidencia: new Date().toISOString(),
+          tiempo_minutos: detalles.tiempo_minutos || 0
         });
 
       if (error) throw error;

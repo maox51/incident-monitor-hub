@@ -57,6 +57,27 @@ const QuinzenalStatsCard = () => {
 
   if (!stats) return null;
 
+  const MinutosPorSala = ({ minutosPorSala }: { minutosPorSala: Record<string, number> }) => {
+    const salasConMinutos = Object.entries(minutosPorSala).filter(([_, minutos]) => minutos > 0);
+    
+    if (salasConMinutos.length === 0) {
+      return <div className="text-sm text-gray-500">No hay minutos registrados</div>;
+    }
+
+    return (
+      <div className="space-y-2">
+        {salasConMinutos.map(([sala, minutos]) => (
+          <div key={sala} className="flex justify-between items-center p-2 bg-white rounded border">
+            <span className="text-sm font-medium">{sala}</span>
+            <Badge variant="outline" className="text-orange-700 border-orange-300">
+              {minutos} min
+            </Badge>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -73,7 +94,7 @@ const QuinzenalStatsCard = () => {
               <Clock className="h-4 w-4" />
               {stats.primera_quincena.periodo}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-700">
                   {stats.primera_quincena.ingresos_tardios}
@@ -87,6 +108,10 @@ const QuinzenalStatsCard = () => {
                 <div className="text-sm text-red-600">Cierres Prematuros</div>
               </div>
             </div>
+            <div className="mt-4">
+              <h4 className="font-medium text-blue-900 mb-2">Minutos por Sala:</h4>
+              <MinutosPorSala minutosPorSala={stats.primera_quincena.minutos_totales_por_sala} />
+            </div>
           </div>
 
           {/* Segunda Quincena */}
@@ -95,7 +120,7 @@ const QuinzenalStatsCard = () => {
               <LogOut className="h-4 w-4" />
               {stats.segunda_quincena.periodo}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-700">
                   {stats.segunda_quincena.ingresos_tardios}
@@ -108,6 +133,10 @@ const QuinzenalStatsCard = () => {
                 </div>
                 <div className="text-sm text-red-600">Cierres Prematuros</div>
               </div>
+            </div>
+            <div className="mt-4">
+              <h4 className="font-medium text-green-900 mb-2">Minutos por Sala:</h4>
+              <MinutosPorSala minutosPorSala={stats.segunda_quincena.minutos_totales_por_sala} />
             </div>
           </div>
 

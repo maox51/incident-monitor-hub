@@ -16,7 +16,6 @@ import MonitorPerformance from './dashboard/MonitorPerformance';
 import PeriodComparisonChart from './dashboard/PeriodComparisonChart';
 import UserStatisticsChart from './dashboard/UserStatisticsChart';
 import QuinzenalStatsCard from './dashboard/QuinzenalStatsCard';
-import { toast } from 'sonner';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
