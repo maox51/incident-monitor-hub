@@ -226,11 +226,22 @@ const AuthPage = () => {
         <div className="text-center space-y-6">
           <div className="relative group">
             <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-            <div className="relative h-20 w-20 bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 shadow-2xl">
+            <div className="relative h-20 w-20 bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto border border-white/20 shadow-2xl group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all duration-500 ease-out cursor-pointer">
+              {/* Bubble effects */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 overflow-hidden">
+                <div className="absolute w-3 h-3 bg-white/40 rounded-full animate-ping top-2 left-2"></div>
+                <div className="absolute w-2 h-2 bg-white/50 rounded-full animate-ping delay-150 top-4 right-3"></div>
+                <div className="absolute w-1 h-1 bg-white/60 rounded-full animate-ping delay-300 bottom-3 left-4"></div>
+                <div className="absolute w-2 h-2 bg-white/40 rounded-full animate-ping delay-500 bottom-2 right-2"></div>
+              </div>
+              
+              {/* Ripple effect */}
+              <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-all duration-300"></div>
+              
               <img 
                 src="/lovable-uploads/e838c224-34ca-4c7c-ae45-56034feffb0c.png" 
                 alt="ESVA Logo" 
-                className="h-12 w-12 object-contain"
+                className="h-12 w-12 object-contain relative z-10 group-hover:brightness-110 transition-all duration-300"
               />
             </div>
           </div>
