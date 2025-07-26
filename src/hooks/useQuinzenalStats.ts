@@ -135,6 +135,7 @@ export const useQuinzenalStats = () => {
       clasificacion_id: string;
       reportado_por: string;
       tiempo_minutos: number;
+      fecha_incidencia?: string;
     }
   ) => {
     try {
@@ -146,7 +147,7 @@ export const useQuinzenalStats = () => {
           p_sala_id: detalles.sala_id,
           p_tipo_incidencia: tipo,
           p_minutos: detalles.tiempo_minutos || 0,
-          p_fecha: new Date().toISOString().split('T')[0]
+          p_fecha: detalles.fecha_incidencia ? detalles.fecha_incidencia.split('T')[0] : new Date().toISOString().split('T')[0]
         });
 
       if (error) {

@@ -1,108 +1,117 @@
-
-import React, { useState } from 'react';
-import { Menu, X, BarChart3, AlertTriangle, FileText, Users, Calendar, Upload, MessageSquare } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  Home,
+  Calendar,
+  AlertTriangle,
+  Settings,
+  Users,
+  FileText,
+  LogOut,
+  Building2
+} from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+  setActiveTab: (tab: string) => void;
+  profile: any;
 }
 
-const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const Sidebar = ({ activeTab, setActiveTab, profile }: SidebarProps) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle },
-    { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar },
-    { id: 'reportes', label: 'Reportes', icon: FileText },
-    { id: 'chat', label: 'Mensajes', icon: MessageSquare },
-    { id: 'usuarios', label: 'Usuarios', icon: Users },
-    { id: 'importar', label: 'Importar Datos', icon: Upload },
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: Home,
+      description: 'Resumen general'
+    },
+    {
+      id: 'incidencias',
+      name: 'Nueva Incidencia',
+      icon: AlertTriangle,
+      description: 'Reportar una incidencia'
+    },
+    {
+      id: 'reportes',
+      name: 'Reportes',
+      icon: FileText,
+      description: 'Ver reportes'
+    },
+    ...(profile?.role === 'admin' ? [
+      {
+        id: 'admin',
+        name: 'Admin',
+        icon: Settings,
+        description: 'Administración de usuarios'
+      },
+      {
+        id: 'audit',
+        name: 'Audit Log',
+        icon: Calendar,
+        description: 'Registro de actividad'
+      }
+    ] : []),
+    ...(profile?.role === 'supervisor_monitoreo' || profile?.role === 'admin' ? [
+      {
+        id: 'borradores',
+        name: 'Borradores',
+        icon: AlertTriangle,
+        description: 'Incidencias en borrador'
+      }
+    ] : []),
+    ...(profile?.role === 'admin' || profile?.role === 'supervisor_monitoreo' || profile?.role === 'monitor' ? [
+      {
+        id: 'monitoreo-salas',
+        name: 'Monitoreo de Salas',
+        icon: Building2,
+        description: 'Registro de tiempos por sala'
+      }
+    ] : [])
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
-    <>
-      {/* Mobile menu button - Fixed positioning for better mobile UX */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-2 left-2 z-50 p-3 bg-white rounded-lg shadow-lg lg:hidden hover:bg-gray-50 transition-colors border border-gray-200"
-        aria-label="Toggle menu"
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
-
-      {/* Overlay for mobile - Enhanced for better mobile interaction */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden backdrop-blur-sm" 
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - Improved responsive behavior */}
-      <div className={cn(
-        "fixed left-0 top-0 h-full w-72 sm:w-80 md:w-64 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-40 flex flex-col",
-        isOpen ? "translate-x-0" : "-translate-x-full",
-        "lg:translate-x-0 lg:static lg:z-auto lg:w-64"
-      )}>
-        {/* Header - Better padding for mobile */}
-        <div className="p-4 sm:p-6 border-b border-slate-700">
-          <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-            <AlertTriangle className="text-orange-400 w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="truncate">Casino Monitor</span>
-          </h2>
-          <p className="text-slate-300 text-xs sm:text-sm mt-1">Sistema de Gestión</p>
-        </div>
-
-        {/* Navigation - Enhanced mobile scrolling */}
-        <nav className="flex-1 pt-4 sm:pt-6 overflow-y-auto overscroll-contain">
-          <div className="space-y-1 px-2 sm:px-0">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onTabChange(item.id);
-                    setIsOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 text-left transition-all duration-200 group relative rounded-lg sm:rounded-none mx-2 sm:mx-0",
-                    activeTab === item.id
-                      ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg"
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  )}
-                >
-                  {activeTab === item.id && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 rounded-r-full sm:rounded-none" />
-                  )}
-                  <Icon className={cn(
-                    "w-4 h-4 sm:w-5 sm:h-5 transition-colors flex-shrink-0",
-                    activeTab === item.id ? "text-white" : "group-hover:text-orange-400"
-                  )} />
-                  <span className="font-medium text-sm sm:text-base truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* Footer - Better mobile spacing */}
-        <div className="p-4 sm:p-6 border-t border-slate-700">
-          <div className="text-xs text-slate-400 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span>Sistema Activo</span>
-            </div>
-            <p>v2.0 - Casino Monitor Pro</p>
-          </div>
-        </div>
+    <div className="w-64 bg-gray-100 dark:bg-gray-900 h-screen fixed top-0 left-0 overflow-y-auto border-r dark:border-gray-800">
+      <div className="p-4">
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          Sistema de Incidencias
+        </h1>
       </div>
-
-      {/* Spacer for desktop layout */}
-      <div className="hidden lg:block lg:w-64 flex-shrink-0" />
-    </>
+      <nav className="py-4">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.id}
+            to={`/${item.id}`}
+            className={`flex items-center space-x-2 p-3 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 transition duration-200 ${activeTab === item.id ? 'bg-gray-200 dark:bg-gray-800' : ''
+              }`}
+            onClick={() => setActiveTab(item.id)}
+          >
+            <item.icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {item.name}
+            </span>
+          </NavLink>
+        ))}
+      </nav>
+      <div className="p-4 mt-auto">
+        <button
+          onClick={handleLogout}
+          className="flex items-center space-x-2 p-3 bg-red-100 dark:bg-red-800 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition duration-200 w-full"
+        >
+          <LogOut className="h-5 w-5 text-red-600 dark:text-red-400" />
+          <span className="text-sm font-medium text-red-700 dark:text-red-300">
+            Cerrar Sesión
+          </span>
+        </button>
+      </div>
+    </div>
   );
 };
 
