@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,21 +13,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
-interface Sala {
+type Sala = {
   id: string;
   nombre: string;
 }
 
-interface Clasificacion {
+type Clasificacion = {
   nombre: string;
 }
 
-interface SalaData {
+type SalaData = {
   nombre: string;
   id: string;
 }
 
-interface Incidencia {
+type Incidencia = {
   id: string;
   fecha_incidencia: string;
   tiempo_minutos: number;
@@ -58,6 +57,89 @@ interface DatosResumen {
   cierres: number;
 }
 
+// Funciones fetch separadas para evitar problemas de tipos
+async function fetchSalas() {
+  const { data, error } = await supabase
+    .from('salas')
+    .select('id, nombre')
+    .eq('activo', true)
+    .order('nombre');
+  
+  if (error) throw error;
+  return data || [];
+}
+
+async function fetchIncidenciasTiming(fechaInicio: Date, fechaFin: Date, salaFiltro: string) {
+  console.log('Fetching timing incidencias:', { fechaInicio, fechaFin, salaFiltro });
+  
+  // Get basic incidencias data using simplified query
+  const queryParams = {
+    select: 'id, fecha_incidencia, tiempo_minutos, clasificacion_id, sala_id',
+    filters: [
+      ['fecha_incidencia', 'gte', fechaInicio.toISOString().split('T')[0]],
+      ['fecha_incidencia', 'lte', fechaFin.toISOString().split('T')[0]],
+      ['tiempo_minutos', 'not.is', null],
+      ['tiempo_minutos', 'gt', 0],
+      ['aprobado', 'eq', true]
+    ]
+  };
+
+  if (salaFiltro !== 'todas') {
+    queryParams.filters.push(['sala_id', 'eq', salaFiltro]);
+  }
+
+  // Execute query with explicit typing
+  const { data: incidenciasData, error: incidenciasError } = await (supabase as any)
+    .from('incidencias')
+    .select(queryParams.select)
+    .gte('fecha_incidencia', fechaInicio.toISOString().split('T')[0])
+    .lte('fecha_incidencia', fechaFin.toISOString().split('T')[0])
+    .not('tiempo_minutos', 'is', null)
+    .gt('tiempo_minutos', 0)
+    .eq('aprobado', true);
+  
+  if (incidenciasError) {
+    console.error('Error fetching incidencias:', incidenciasError);
+    throw incidenciasError;
+  }
+
+  if (!incidenciasData || incidenciasData.length === 0) {
+    return [];
+  }
+
+  // Get clasificaciones
+  const { data: clasificaciones, error: clasificacionesError } = await supabase
+    .from('clasificaciones')
+    .select('id, nombre');
+
+  if (clasificacionesError) {
+    console.error('Error fetching clasificaciones:', clasificacionesError);
+    throw clasificacionesError;
+  }
+
+  // Get salas
+  const { data: salas, error: salasError } = await supabase
+    .from('salas')
+    .select('id, nombre');
+
+  if (salasError) {
+    console.error('Error fetching salas:', salasError);
+    throw salasError;
+  }
+
+  // Map data manually
+  const result = incidenciasData.map((inc: any) => ({
+    id: inc.id,
+    fecha_incidencia: inc.fecha_incidencia,
+    tiempo_minutos: inc.tiempo_minutos,
+    clasificacion: clasificaciones?.find((c: any) => c.id === inc.clasificacion_id) || null,
+    sala: salas?.find((s: any) => s.id === inc.sala_id) || null
+  }));
+
+  console.log('Timing incidencias data:', result);
+  return result;
+}
+
 const SalaTimingModule = () => {
   const [fechaInicio, setFechaInicio] = useState<Date>(startOfMonth(new Date()));
   const [fechaFin, setFechaFin] = useState<Date>(endOfMonth(new Date()));
@@ -69,53 +151,13 @@ const SalaTimingModule = () => {
   // Obtener salas disponibles
   const salasQuery = useQuery({
     queryKey: ['salas-activas'],
-    queryFn: async (): Promise<Sala[]> => {
-      const { data, error } = await supabase
-        .from('salas')
-        .select('id, nombre')
-        .eq('activo', true)
-        .order('nombre');
-      
-      if (error) throw error;
-      return data || [];
-    }
+    queryFn: fetchSalas
   });
 
   // Obtener incidencias de tiempo
   const incidenciasQuery = useQuery({
     queryKey: ['sala-timing-incidencias', fechaInicio.toISOString(), fechaFin.toISOString(), salaFiltro],
-    queryFn: async (): Promise<Incidencia[]> => {
-      console.log('Fetching timing incidencias:', { fechaInicio, fechaFin, salaFiltro });
-      
-      let query = supabase
-        .from('incidencias')
-        .select(`
-          id,
-          fecha_incidencia,
-          tiempo_minutos,
-          clasificacion:clasificaciones(nombre),
-          sala:salas(nombre, id)
-        `)
-        .gte('fecha_incidencia', fechaInicio.toISOString().split('T')[0])
-        .lte('fecha_incidencia', fechaFin.toISOString().split('T')[0])
-        .not('tiempo_minutos', 'is', null)
-        .gt('tiempo_minutos', 0)
-        .eq('aprobado', true);
-
-      if (salaFiltro !== 'todas') {
-        query = query.eq('sala_id', salaFiltro);
-      }
-
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching timing incidencias:', error);
-        throw error;
-      }
-
-      console.log('Timing incidencias data:', data);
-      return data || [];
-    }
+    queryFn: () => fetchIncidenciasTiming(fechaInicio, fechaFin, salaFiltro)
   });
 
   // Procesar datos para gráficos
@@ -301,7 +343,7 @@ const SalaTimingModule = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas las salas</SelectItem>
-                  {salasQuery.data?.map((sala: Sala) => (
+                  {(salasQuery.data as Sala[] || []).map((sala: Sala) => (
                     <SelectItem key={sala.id} value={sala.id}>
                       {sala.nombre}
                     </SelectItem>
