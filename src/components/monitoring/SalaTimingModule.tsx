@@ -14,24 +14,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
-interface IncidenciaData {
-  id: string;
-  fecha_incidencia: string;
-  tiempo_minutos: number;
-  clasificacion: {
-    nombre: string;
-  } | null;
-  sala: {
-    nombre: string;
-    id: string;
-  } | null;
-}
-
-interface SalaData {
-  id: string;
-  nombre: string;
-}
-
 const SalaTimingModule = () => {
   const [fechaInicio, setFechaInicio] = useState<Date>(startOfMonth(new Date()));
   const [fechaFin, setFechaFin] = useState<Date>(endOfMonth(new Date()));
@@ -43,7 +25,7 @@ const SalaTimingModule = () => {
   // Obtener salas disponibles
   const { data: salas } = useQuery({
     queryKey: ['salas-activas'],
-    queryFn: async (): Promise<SalaData[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('salas')
         .select('id, nombre')
@@ -58,7 +40,7 @@ const SalaTimingModule = () => {
   // Obtener incidencias de tiempo
   const { data: incidencias, isLoading, refetch } = useQuery({
     queryKey: ['sala-timing-incidencias', fechaInicio, fechaFin, salaFiltro],
-    queryFn: async (): Promise<IncidenciaData[]> => {
+    queryFn: async () => {
       console.log('Fetching timing incidencias:', { fechaInicio, fechaFin, salaFiltro });
       
       let query = supabase
@@ -88,17 +70,20 @@ const SalaTimingModule = () => {
       }
 
       console.log('Timing incidencias data:', data);
-      return (data as any[]) || [];
+      return data || [];
     }
   });
 
   // Procesar datos para gráficos
   const datosProc = useMemo(() => {
-    if (!incidencias) return { porSala: [], timeline: [], resumen: [] };
+    if (!incidencias || !Array.isArray(incidencias)) return { porSala: [], timeline: [], resumen: [] };
 
     // Filtrar incidencias de tiempo (ingresos tardíos y cierres prematuros)
-    const incidenciasTiempo = incidencias.filter(inc => {
-      const nombreClasif = inc.clasificacion?.nombre?.toLowerCase() || '';
+    const incidenciasTiempo = incidencias.filter((inc: any) => {
+      const clasificacion = inc.clasificacion;
+      if (!clasificacion || !clasificacion.nombre) return false;
+      
+      const nombreClasif = clasificacion.nombre.toLowerCase();
       return nombreClasif.includes('ingreso tardio') ||
              nombreClasif.includes('cierre prematuro') ||
              nombreClasif.includes('tardio') ||
@@ -108,10 +93,10 @@ const SalaTimingModule = () => {
     // Agrupar por sala
     const porSalaMap = new Map();
     
-    incidenciasTiempo.forEach(inc => {
+    incidenciasTiempo.forEach((inc: any) => {
       const salaNombre = inc.sala?.nombre || 'Sin Sala';
-      const esIngreso = inc.clasificacion?.nombre?.toLowerCase().includes('ingreso') || 
-                       inc.clasificacion?.nombre?.toLowerCase().includes('tardio');
+      const clasificacionNombre = inc.clasificacion?.nombre?.toLowerCase() || '';
+      const esIngreso = clasificacionNombre.includes('ingreso') || clasificacionNombre.includes('tardio');
       
       if (!porSalaMap.has(salaNombre)) {
         porSalaMap.set(salaNombre, {
@@ -138,11 +123,11 @@ const SalaTimingModule = () => {
       salaData.total_minutos += minutos;
     });
 
-    const porSala = Array.from(porSalaMap.values()).sort((a, b) => b.total_minutos - a.total_minutos);
+    const porSala = Array.from(porSalaMap.values()).sort((a: any, b: any) => b.total_minutos - a.total_minutos);
 
     // Timeline mensual
     const timelineMap = new Map();
-    incidenciasTiempo.forEach(inc => {
+    incidenciasTiempo.forEach((inc: any) => {
       const fecha = new Date(inc.fecha_incidencia);
       const clave = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}`;
       
@@ -157,10 +142,10 @@ const SalaTimingModule = () => {
       timelineMap.get(clave).total_minutos += inc.tiempo_minutos || 0;
     });
 
-    const timeline = Array.from(timelineMap.values()).sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+    const timeline = Array.from(timelineMap.values()).sort((a: any, b: any) => a.fecha.getTime() - b.fecha.getTime());
 
     // Datos para gráfico de torta
-    const resumen = porSala.map(item => ({
+    const resumen = porSala.map((item: any) => ({
       name: item.sala,
       value: item.total_minutos,
       ingresos: item.ingresos_tardios,
@@ -261,7 +246,7 @@ const SalaTimingModule = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas las salas</SelectItem>
-                  {salas?.map(sala => (
+                  {salas?.map((sala: any) => (
                     <SelectItem key={sala.id} value={sala.id}>
                       {sala.nombre}
                     </SelectItem>
@@ -299,15 +284,15 @@ const SalaTimingModule = () => {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{datosProc.porSala.reduce((acc, curr) => acc + curr.total_incidencias_ingresos, 0)}</p>
+              <p className="text-2xl font-bold text-blue-600">{datosProc.porSala.reduce((acc: number, curr: any) => acc + curr.total_incidencias_ingresos, 0)}</p>
               <p className="text-sm text-gray-600">Total Ingresos Tardíos</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{datosProc.porSala.reduce((acc, curr) => acc + curr.total_incidencias_cierres, 0)}</p>
+              <p className="text-2xl font-bold text-red-600">{datosProc.porSala.reduce((acc: number, curr: any) => acc + curr.total_incidencias_cierres, 0)}</p>
               <p className="text-sm text-gray-600">Total Cierres Prematuros</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{datosProc.porSala.reduce((acc, curr) => acc + curr.total_minutos, 0)}</p>
+              <p className="text-2xl font-bold text-purple-600">{datosProc.porSala.reduce((acc: number, curr: any) => acc + curr.total_minutos, 0)}</p>
               <p className="text-sm text-gray-600">Minutos Totales</p>
             </div>
             <div className="text-center">
@@ -340,7 +325,7 @@ const SalaTimingModule = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {datosProc.porSala.map((item, index) => (
+                    {datosProc.porSala.map((item: any, index: number) => (
                       <tr key={index} className="border-b hover:bg-gray-50">
                         <td className="p-2 font-medium">{item.sala}</td>
                         <td className="text-center p-2">
@@ -464,9 +449,9 @@ const SalaTimingModule = () => {
                       cx="50%"
                       cy="50%"
                       outerRadius={120}
-                      label={(entry) => `${entry.name}: ${entry.value}min`}
+                      label={(entry: any) => `${entry.name}: ${entry.value}min`}
                     >
-                      {datosProc.resumen.map((entry, index) => (
+                      {datosProc.resumen.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
                       ))}
                     </Pie>
