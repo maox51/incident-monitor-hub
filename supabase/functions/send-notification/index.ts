@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -25,12 +26,6 @@ const sanitizeText = (text: string): string => {
     .replace(/javascript:/gi, '') // Remover protocolo javascript
     .replace(/on\w+=/gi, '') // Remover event handlers
     .slice(0, 500); // Limitar longitud
-};
-
-// Función para validar email
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
 };
 
 // Rate limiting simple en memoria (en producción usar Redis)
@@ -144,22 +139,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Obtener administradores con notificaciones habilitadas
-    const { data: admins, error: adminsError } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        email,
-        full_name,
-        notification_settings(
-          email_notifications,
-          high_priority_alerts
-        )
-      `)
-      .eq('role', 'admin');
+    // Obtener administradores con notificaciones habilitadas usando la función optimizada
+    const { data: admins, error: adminsError } = await supabase.rpc('get_notification_admins');
 
     if (adminsError) {
-      console.error('Error fetching admins (no sensitive data logged)');
+      console.error('Error fetching notification admins (no sensitive data logged)');
       return new Response(
         JSON.stringify({ error: 'Error interno del servidor' }),
         { 
@@ -170,32 +154,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!admins || admins.length === 0) {
-      console.log('No administrators found in system');
-      return new Response(
-        JSON.stringify({ message: 'No hay administradores configurados' }),
-        { 
-          status: 200, 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
-        }
-      );
-    }
-
-    // Filtrar y validar administradores con notificaciones habilitadas
-    const validAdmins = admins.filter(admin => {
-      if (!admin.email || !isValidEmail(admin.email)) {
-        console.log(`Invalid email for admin ${admin.id}`);
-        return false;
-      }
-      
-      const settings = admin.notification_settings?.[0];
-      return settings ? 
-        (settings.email_notifications && settings.high_priority_alerts) : 
-        true; // Si no hay configuración, asumir que quiere notificaciones
-    });
-
-    console.log(`Found ${validAdmins.length} valid admins with notifications enabled`);
-
-    if (validAdmins.length === 0) {
+      console.log('No administrators found with notifications enabled');
       return new Response(
         JSON.stringify({ message: 'No hay administradores con notificaciones habilitadas' }),
         { 
@@ -204,6 +163,8 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    console.log(`Found ${admins.length} admins with notifications enabled`);
 
     // Verificar API key de Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -285,7 +246,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         body: JSON.stringify({
           from: 'Sistema Monitoreo <soporteit2@grupoesvasa.com>',
-          to: validAdmins.map(admin => admin.email),
+          to: admins.map((admin: any) => admin.email),
           subject: emailSubject,
           html: emailBody,
           tags: [
@@ -317,7 +278,7 @@ const handler = async (req: Request): Promise<Response> => {
             },
             body: JSON.stringify({
               from: 'Sistema Monitoreo <onboarding@resend.dev>',
-              to: validAdmins.map(admin => admin.email),
+              to: admins.map((admin: any) => admin.email),
               subject: emailSubject,
               html: emailBody,
               tags: [
@@ -342,9 +303,9 @@ const handler = async (req: Request): Promise<Response> => {
                 success: true,
                 message: 'Notificación enviada exitosamente (dominio alternativo)',
                 data: { id: emailResponse.id },
-                recipients_count: validAdmins.length,
+                recipients_count: admins.length,
                 email_sent: true,
-                note: 'Usa dominio verificado para mejor deliverabilidad'
+                note: 'Verifica tu dominio en Resend para mejor deliverabilidad'
               }),
               { 
                 status: 200,
@@ -365,7 +326,7 @@ const handler = async (req: Request): Promise<Response> => {
           success: true,
           message: 'Notificación enviada exitosamente',
           data: { id: emailResponse.id },
-          recipients_count: validAdmins.length,
+          recipients_count: admins.length,
           email_sent: true
         }),
         { 
@@ -376,29 +337,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     } catch (emailError) {
       console.error('Error sending email:', emailError);
-      
-      // Registrar intento fallido para auditoría
-      try {
-        await supabase
-          .from('notification_settings')
-          .upsert(
-            validAdmins.map(admin => ({
-              user_id: admin.id,
-              email_notifications: true,
-              high_priority_alerts: true,
-              updated_at: new Date().toISOString()
-            })),
-            { onConflict: 'user_id' }
-          );
-      } catch (logError) {
-        console.error('Error logging notification attempt');
-      }
 
       return new Response(
         JSON.stringify({
           success: false,
           error: 'Error enviando notificaciones por email',
-          recipients_count: validAdmins.length,
+          recipients_count: admins.length,
           email_sent: false
         }),
         { 
@@ -424,3 +368,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+
