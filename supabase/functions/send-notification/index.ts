@@ -188,7 +188,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Verificar API key de Resend
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const resendApiKey = Deno.env.get('re_Lgrr7btK_PUV4GWBJr1PAsXdTxJYiS41q');
     console.log('🔑 Resend API Key:', resendApiKey ? 'Present' : 'Missing');
     
     if (!resendApiKey) {
