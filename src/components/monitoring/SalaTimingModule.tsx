@@ -20,11 +20,16 @@ interface IncidenciaData {
   tiempo_minutos: number;
   clasificacion: {
     nombre: string;
-  };
+  } | null;
   sala: {
     nombre: string;
     id: string;
-  };
+  } | null;
+}
+
+interface SalaData {
+  id: string;
+  nombre: string;
 }
 
 const SalaTimingModule = () => {
@@ -38,7 +43,7 @@ const SalaTimingModule = () => {
   // Obtener salas disponibles
   const { data: salas } = useQuery({
     queryKey: ['salas-activas'],
-    queryFn: async () => {
+    queryFn: async (): Promise<SalaData[]> => {
       const { data, error } = await supabase
         .from('salas')
         .select('id, nombre')
@@ -46,14 +51,14 @@ const SalaTimingModule = () => {
         .order('nombre');
       
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
   // Obtener incidencias de tiempo
   const { data: incidencias, isLoading, refetch } = useQuery({
     queryKey: ['sala-timing-incidencias', fechaInicio, fechaFin, salaFiltro],
-    queryFn: async () => {
+    queryFn: async (): Promise<IncidenciaData[]> => {
       console.log('Fetching timing incidencias:', { fechaInicio, fechaFin, salaFiltro });
       
       let query = supabase
@@ -83,7 +88,7 @@ const SalaTimingModule = () => {
       }
 
       console.log('Timing incidencias data:', data);
-      return data as IncidenciaData[];
+      return (data as any[]) || [];
     }
   });
 
@@ -92,12 +97,13 @@ const SalaTimingModule = () => {
     if (!incidencias) return { porSala: [], timeline: [], resumen: [] };
 
     // Filtrar incidencias de tiempo (ingresos tardíos y cierres prematuros)
-    const incidenciasTiempo = incidencias.filter(inc => 
-      inc.clasificacion?.nombre?.toLowerCase().includes('ingreso tardio') ||
-      inc.clasificacion?.nombre?.toLowerCase().includes('cierre prematuro') ||
-      inc.clasificacion?.nombre?.toLowerCase().includes('tardio') ||
-      inc.clasificacion?.nombre?.toLowerCase().includes('prematuro')
-    );
+    const incidenciasTiempo = incidencias.filter(inc => {
+      const nombreClasif = inc.clasificacion?.nombre?.toLowerCase() || '';
+      return nombreClasif.includes('ingreso tardio') ||
+             nombreClasif.includes('cierre prematuro') ||
+             nombreClasif.includes('tardio') ||
+             nombreClasif.includes('prematuro');
+    });
 
     // Agrupar por sala
     const porSalaMap = new Map();
