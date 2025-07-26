@@ -3,10 +3,10 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, RefreshCw, Clock, Building2, BarChart3, Filter, Download } from 'lucide-react';
+import { CalendarIcon, RefreshCw, Clock, BarChart3 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
@@ -14,24 +14,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
-interface SalaStatsData {
-  sala_id: string;
-  sala_nombre: string;
-  año: number;
-  mes: number;
-  quincena: number;
-  minutos_ingresos_tardios: number;
-  minutos_cierres_prematuros: number;
-  total_incidencias_ingresos: number;
-  total_incidencias_cierres: number;
-  total_minutos: number;
+interface IncidenciaData {
+  id: string;
+  fecha_incidencia: string;
+  tiempo_minutos: number;
+  clasificacion: {
+    nombre: string;
+  };
+  sala: {
+    nombre: string;
+    id: string;
+  };
 }
 
 const SalaTimingModule = () => {
   const [fechaInicio, setFechaInicio] = useState<Date>(startOfMonth(new Date()));
   const [fechaFin, setFechaFin] = useState<Date>(endOfMonth(new Date()));
   const [salaFiltro, setSalaFiltro] = useState<string>('todas');
-  const [tipoVista, setTipoVista] = useState<'tabla' | 'barras' | 'lineas' | 'torta'>('barras');
+  const [tipoVista, setTipoVista] = useState<'tabla' | 'barras' | 'lineas' | 'torta'>('tabla');
   const [mostrarFechaInicio, setMostrarFechaInicio] = useState(false);
   const [mostrarFechaFin, setMostrarFechaFin] = useState(false);
 
@@ -50,90 +50,119 @@ const SalaTimingModule = () => {
     }
   });
 
-  // Obtener estadísticas de salas
-  const { data: estadisticas, isLoading, refetch } = useQuery({
-    queryKey: ['sala-timing-stats', fechaInicio, fechaFin, salaFiltro],
+  // Obtener incidencias de tiempo
+  const { data: incidencias, isLoading, refetch } = useQuery({
+    queryKey: ['sala-timing-incidencias', fechaInicio, fechaFin, salaFiltro],
     queryFn: async () => {
-      console.log('Fetching sala timing stats:', { fechaInicio, fechaFin, salaFiltro });
+      console.log('Fetching timing incidencias:', { fechaInicio, fechaFin, salaFiltro });
       
-      // Obtener todos los datos quincenales en el rango de fechas
-      const { data, error } = await supabase.rpc('obtener_estadisticas_quincenales_sala');
+      let query = supabase
+        .from('incidencias')
+        .select(`
+          id,
+          fecha_incidencia,
+          tiempo_minutos,
+          clasificacion:clasificaciones(nombre),
+          sala:salas(nombre, id)
+        `)
+        .gte('fecha_incidencia', fechaInicio.toISOString().split('T')[0])
+        .lte('fecha_incidencia', fechaFin.toISOString().split('T')[0])
+        .not('tiempo_minutos', 'is', null)
+        .gt('tiempo_minutos', 0)
+        .eq('aprobado', true);
+
+      if (salaFiltro !== 'todas') {
+        query = query.eq('sala_id', salaFiltro);
+      }
+
+      const { data, error } = await query;
       
       if (error) {
-        console.error('Error fetching timing stats:', error);
+        console.error('Error fetching timing incidencias:', error);
         throw error;
       }
 
-      // Filtrar por fechas y sala
-      const filteredData = data?.filter((item: SalaStatsData) => {
-        const fechaItem = new Date(item.año, item.mes - 1, item.quincena === 1 ? 1 : 16);
-        const dentroRango = fechaItem >= fechaInicio && fechaItem <= fechaFin;
-        const cumpleSala = salaFiltro === 'todas' || item.sala_id === salaFiltro;
-        
-        return dentroRango && cumpleSala;
-      }) || [];
-
-      console.log('Filtered data:', filteredData);
-      return filteredData;
+      console.log('Timing incidencias data:', data);
+      return data as IncidenciaData[];
     }
   });
 
   // Procesar datos para gráficos
   const datosProc = useMemo(() => {
-    if (!estadisticas) return { porSala: [], timeline: [], resumen: [] };
+    if (!incidencias) return { porSala: [], timeline: [], resumen: [] };
+
+    // Filtrar incidencias de tiempo (ingresos tardíos y cierres prematuros)
+    const incidenciasTiempo = incidencias.filter(inc => 
+      inc.clasificacion?.nombre?.toLowerCase().includes('ingreso tardio') ||
+      inc.clasificacion?.nombre?.toLowerCase().includes('cierre prematuro') ||
+      inc.clasificacion?.nombre?.toLowerCase().includes('tardio') ||
+      inc.clasificacion?.nombre?.toLowerCase().includes('prematuro')
+    );
 
     // Agrupar por sala
-    const porSala = estadisticas.reduce((acc: any, item: SalaStatsData) => {
-      const existing = acc.find((x: any) => x.sala === item.sala_nombre);
-      if (existing) {
-        existing.ingresos_tardios += item.minutos_ingresos_tardios;
-        existing.cierres_prematuros += item.minutos_cierres_prematuros;
-        existing.total_minutos += item.total_minutos;
-        existing.total_incidencias_ingresos += item.total_incidencias_ingresos;
-        existing.total_incidencias_cierres += item.total_incidencias_cierres;
-      } else {
-        acc.push({
-          sala: item.sala_nombre,
-          ingresos_tardios: item.minutos_ingresos_tardios,
-          cierres_prematuros: item.minutos_cierres_prematuros,
-          total_minutos: item.total_minutos,
-          total_incidencias_ingresos: item.total_incidencias_ingresos,
-          total_incidencias_cierres: item.total_incidencias_cierres
+    const porSalaMap = new Map();
+    
+    incidenciasTiempo.forEach(inc => {
+      const salaNombre = inc.sala?.nombre || 'Sin Sala';
+      const esIngreso = inc.clasificacion?.nombre?.toLowerCase().includes('ingreso') || 
+                       inc.clasificacion?.nombre?.toLowerCase().includes('tardio');
+      
+      if (!porSalaMap.has(salaNombre)) {
+        porSalaMap.set(salaNombre, {
+          sala: salaNombre,
+          ingresos_tardios: 0,
+          cierres_prematuros: 0,
+          total_incidencias_ingresos: 0,
+          total_incidencias_cierres: 0,
+          total_minutos: 0
         });
       }
-      return acc;
-    }, []);
+      
+      const salaData = porSalaMap.get(salaNombre);
+      const minutos = inc.tiempo_minutos || 0;
+      
+      if (esIngreso) {
+        salaData.ingresos_tardios += minutos;
+        salaData.total_incidencias_ingresos += 1;
+      } else {
+        salaData.cierres_prematuros += minutos;
+        salaData.total_incidencias_cierres += 1;
+      }
+      
+      salaData.total_minutos += minutos;
+    });
+
+    const porSala = Array.from(porSalaMap.values()).sort((a, b) => b.total_minutos - a.total_minutos);
 
     // Timeline mensual
-    const timeline = estadisticas.reduce((acc: any, item: SalaStatsData) => {
-      const clave = `${item.año}-${item.mes.toString().padStart(2, '0')}`;
-      const existing = acc.find((x: any) => x.periodo === clave);
-      if (existing) {
-        existing.total_minutos += item.total_minutos;
-      } else {
-        acc.push({
+    const timelineMap = new Map();
+    incidenciasTiempo.forEach(inc => {
+      const fecha = new Date(inc.fecha_incidencia);
+      const clave = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}`;
+      
+      if (!timelineMap.has(clave)) {
+        timelineMap.set(clave, {
           periodo: clave,
-          total_minutos: item.total_minutos,
-          fecha: new Date(item.año, item.mes - 1, 1)
+          total_minutos: 0,
+          fecha: new Date(fecha.getFullYear(), fecha.getMonth(), 1)
         });
       }
-      return acc;
-    }, []);
+      
+      timelineMap.get(clave).total_minutos += inc.tiempo_minutos || 0;
+    });
+
+    const timeline = Array.from(timelineMap.values()).sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
 
     // Datos para gráfico de torta
-    const resumen = porSala.map((item: any) => ({
+    const resumen = porSala.map(item => ({
       name: item.sala,
       value: item.total_minutos,
       ingresos: item.ingresos_tardios,
       cierres: item.cierres_prematuros
     }));
 
-    return { 
-      porSala: porSala.sort((a: any, b: any) => b.total_minutos - a.total_minutos), 
-      timeline: timeline.sort((a: any, b: any) => a.fecha - b.fecha),
-      resumen 
-    };
-  }, [estadisticas]);
+    return { porSala, timeline, resumen };
+  }, [incidencias]);
 
   const colores = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f', '#ffbb28', '#ff8042'];
 
@@ -143,13 +172,13 @@ const SalaTimingModule = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Registro de Tiempos por Sala
+            Monitoreo de Tiempos por Sala
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-            <span className="ml-2">Cargando estadísticas...</span>
+            <span className="ml-2">Cargando datos...</span>
           </div>
         </CardContent>
       </Card>
@@ -163,7 +192,7 @@ const SalaTimingModule = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Registro de Tiempos por Sala
+            Monitoreo de Tiempos por Sala
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -259,6 +288,30 @@ const SalaTimingModule = () => {
         </CardContent>
       </Card>
 
+      {/* Resumen de datos */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{datosProc.porSala.reduce((acc, curr) => acc + curr.total_incidencias_ingresos, 0)}</p>
+              <p className="text-sm text-gray-600">Total Ingresos Tardíos</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{datosProc.porSala.reduce((acc, curr) => acc + curr.total_incidencias_cierres, 0)}</p>
+              <p className="text-sm text-gray-600">Total Cierres Prematuros</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{datosProc.porSala.reduce((acc, curr) => acc + curr.total_minutos, 0)}</p>
+              <p className="text-sm text-gray-600">Minutos Totales</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{datosProc.porSala.length}</p>
+              <p className="text-sm text-gray-600">Salas Afectadas</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Contenido Principal */}
       {tipoVista === 'tabla' && (
         <Card>
@@ -266,44 +319,48 @@ const SalaTimingModule = () => {
             <CardTitle>Resumen por Sala</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Sala</th>
-                    <th className="text-center p-2">Ingresos Tardíos</th>
-                    <th className="text-center p-2">Cierres Prematuros</th>
-                    <th className="text-center p-2">Total Minutos</th>
-                    <th className="text-center p-2">Total Incidencias</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {datosProc.porSala.map((item: any, index: number) => (
-                    <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium">{item.sala}</td>
-                      <td className="text-center p-2">
-                        <Badge variant="outline" className="text-blue-700">
-                          {item.ingresos_tardios} min ({item.total_incidencias_ingresos})
-                        </Badge>
-                      </td>
-                      <td className="text-center p-2">
-                        <Badge variant="outline" className="text-red-700">
-                          {item.cierres_prematuros} min ({item.total_incidencias_cierres})
-                        </Badge>
-                      </td>
-                      <td className="text-center p-2">
-                        <Badge variant="outline" className="text-gray-700 font-bold">
-                          {item.total_minutos} min
-                        </Badge>
-                      </td>
-                      <td className="text-center p-2">
-                        {item.total_incidencias_ingresos + item.total_incidencias_cierres}
-                      </td>
+            {datosProc.porSala.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No se encontraron datos de tiempo para el período seleccionado</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Sala</th>
+                      <th className="text-center p-2">Ingresos Tardíos</th>
+                      <th className="text-center p-2">Cierres Prematuros</th>
+                      <th className="text-center p-2">Total Minutos</th>
+                      <th className="text-center p-2">Total Incidencias</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {datosProc.porSala.map((item, index) => (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="p-2 font-medium">{item.sala}</td>
+                        <td className="text-center p-2">
+                          <Badge variant="outline" className="text-blue-700">
+                            {item.ingresos_tardios} min ({item.total_incidencias_ingresos})
+                          </Badge>
+                        </td>
+                        <td className="text-center p-2">
+                          <Badge variant="outline" className="text-red-700">
+                            {item.cierres_prematuros} min ({item.total_incidencias_cierres})
+                          </Badge>
+                        </td>
+                        <td className="text-center p-2">
+                          <Badge variant="outline" className="text-gray-700 font-bold">
+                            {item.total_minutos} min
+                          </Badge>
+                        </td>
+                        <td className="text-center p-2">
+                          {item.total_incidencias_ingresos + item.total_incidencias_cierres}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -314,30 +371,34 @@ const SalaTimingModule = () => {
             <CardTitle>Minutos Acumulados por Sala</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{
-                ingresos_tardios: {
-                  label: "Ingresos Tardíos",
-                  color: "#3b82f6"
-                },
-                cierres_prematuros: {
-                  label: "Cierres Prematuros", 
-                  color: "#ef4444"
-                }
-              }}
-              className="h-[400px]"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={datosProc.porSala}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="sala" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="ingresos_tardios" fill="#3b82f6" name="Ingresos Tardíos (min)" />
-                  <Bar dataKey="cierres_prematuros" fill="#ef4444" name="Cierres Prematuros (min)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            {datosProc.porSala.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No hay datos para mostrar</p>
+            ) : (
+              <ChartContainer
+                config={{
+                  ingresos_tardios: {
+                    label: "Ingresos Tardíos",
+                    color: "#3b82f6"
+                  },
+                  cierres_prematuros: {
+                    label: "Cierres Prematuros", 
+                    color: "#ef4444"
+                  }
+                }}
+                className="h-[400px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={datosProc.porSala}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="sala" angle={-45} textAnchor="end" height={80} />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="ingresos_tardios" fill="#3b82f6" name="Ingresos Tardíos (min)" />
+                    <Bar dataKey="cierres_prematuros" fill="#ef4444" name="Cierres Prematuros (min)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
       )}
@@ -348,25 +409,29 @@ const SalaTimingModule = () => {
             <CardTitle>Evolución Temporal de Minutos</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{
-                total_minutos: {
-                  label: "Total Minutos",
-                  color: "#8884d8"
-                }
-              }}
-              className="h-[400px]"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={datosProc.timeline}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="periodo" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line type="monotone" dataKey="total_minutos" stroke="#8884d8" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            {datosProc.timeline.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No hay datos temporales para mostrar</p>
+            ) : (
+              <ChartContainer
+                config={{
+                  total_minutos: {
+                    label: "Total Minutos",
+                    color: "#8884d8"
+                  }
+                }}
+                className="h-[400px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={datosProc.timeline}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="periodo" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey="total_minutos" stroke="#8884d8" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
       )}
@@ -377,29 +442,33 @@ const SalaTimingModule = () => {
             <CardTitle>Distribución de Minutos por Sala</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{}}
-              className="h-[400px]"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={datosProc.resumen}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    label={(entry) => `${entry.name}: ${entry.value}min`}
-                  >
-                    {datosProc.resumen.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            {datosProc.resumen.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No hay datos para distribución</p>
+            ) : (
+              <ChartContainer
+                config={{}}
+                className="h-[400px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={datosProc.resumen}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      label={(entry) => `${entry.name}: ${entry.value}min`}
+                    >
+                      {datosProc.resumen.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
       )}

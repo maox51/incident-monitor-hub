@@ -17,7 +17,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!profile) {
-      // En lugar de router.push, simplemente no renderizar
       return;
     }
   }, [profile]);
