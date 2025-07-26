@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -58,6 +57,9 @@ const isRateLimited = (incidenciaId: string): boolean => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log('🚀 send-notification function called');
+  console.log('Method:', req.method);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -68,6 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     // Validar método HTTP
     if (req.method !== 'POST') {
+      console.log('❌ Invalid method:', req.method);
       return new Response(
         JSON.stringify({ error: 'Método no permitido' }),
         { 
@@ -78,14 +81,29 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Inicializar cliente Supabase
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('🔑 Supabase URL:', supabaseUrl ? 'Present' : 'Missing');
+    console.log('🔑 Service Key:', supabaseServiceKey ? 'Present' : 'Missing');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Missing Supabase configuration');
+      return new Response(
+        JSON.stringify({ error: 'Configuración de Supabase faltante' }),
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Validar y parsear datos de entrada
     try {
       const body = await req.json();
+      console.log('📥 Request body:', JSON.stringify(body, null, 2));
       
       // Validar campos requeridos
       if (!body.incidencia_id || !body.titulo || !body.prioridad) {
@@ -102,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
         reportado_por: sanitizeText(body.reportado_por || ''),
       };
     } catch (error) {
-      console.error('Error parsing request body:', error);
+      console.error('❌ Error parsing request body:', error);
       return new Response(
         JSON.stringify({ error: 'Datos de entrada inválidos' }),
         { 
@@ -112,11 +130,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    console.log('Processing notification for incident:', notificationData.incidencia_id);
+    console.log('📝 Processing notification for incident:', notificationData.incidencia_id);
+    console.log('🎯 Priority:', notificationData.prioridad);
 
     // Verificar rate limiting
     if (isRateLimited(notificationData.incidencia_id)) {
-      console.log('Rate limit exceeded for incident:', notificationData.incidencia_id);
+      console.log('⏰ Rate limit exceeded for incident:', notificationData.incidencia_id);
       return new Response(
         JSON.stringify({ message: 'Rate limit exceeded' }),
         { 
@@ -129,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Validar prioridad - Solo enviar para alta y crítica
     const validPriorities = ['alta', 'critica'];
     if (!validPriorities.includes(notificationData.prioridad.toLowerCase())) {
-      console.log('Priority not high enough for notification:', notificationData.prioridad);
+      console.log('⚠️ Priority not high enough for notification:', notificationData.prioridad);
       return new Response(
         JSON.stringify({ message: 'Prioridad no requiere notificación' }),
         { 
@@ -139,11 +158,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Obtener administradores con notificaciones habilitadas usando la función optimizada
+    // Obtener administradores con notificaciones habilitadas
+    console.log('🔍 Fetching notification admins...');
     const { data: admins, error: adminsError } = await supabase.rpc('get_notification_admins');
 
     if (adminsError) {
-      console.error('Error fetching notification admins (no sensitive data logged)');
+      console.error('❌ Error fetching notification admins:', adminsError);
       return new Response(
         JSON.stringify({ error: 'Error interno del servidor' }),
         { 
@@ -153,8 +173,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log('👥 Found admins:', admins ? admins.length : 0);
+    console.log('📧 Admin details:', JSON.stringify(admins, null, 2));
+
     if (!admins || admins.length === 0) {
-      console.log('No administrators found with notifications enabled');
+      console.log('⚠️ No administrators found with notifications enabled');
       return new Response(
         JSON.stringify({ message: 'No hay administradores con notificaciones habilitadas' }),
         { 
@@ -164,12 +187,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Found ${admins.length} admins with notifications enabled`);
-
     // Verificar API key de Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    console.log('🔑 Resend API Key:', resendApiKey ? 'Present' : 'Missing');
+    
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY not configured');
+      console.error('❌ RESEND_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Servicio de email no configurado' }),
         { 
@@ -236,7 +259,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Enviar email usando Resend
     try {
-      console.log('Attempting to send email via Resend...');
+      console.log('📧 Attempting to send email via Resend...');
+      console.log('📧 Recipients:', admins.map((admin: any) => admin.email));
       
       const resendResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -245,7 +269,7 @@ const handler = async (req: Request): Promise<Response> => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Sistema Monitoreo <soporteit2@grupoesvasa.com>',
+          from: 'Sistema Monitoreo <onboarding@resend.dev>',
           to: admins.map((admin: any) => admin.email),
           subject: emailSubject,
           html: emailBody,
@@ -262,64 +286,29 @@ const handler = async (req: Request): Promise<Response> => {
         }),
       });
 
+      console.log('📧 Resend response status:', resendResponse.status);
+      
       if (!resendResponse.ok) {
         const errorText = await resendResponse.text();
-        console.error('Resend API error:', resendResponse.status);
+        console.error('❌ Resend API error:', resendResponse.status, errorText);
         
-        // Si es error de dominio no verificado, intentar con dominio por defecto
-        if (errorText.includes('domain') || errorText.includes('verified')) {
-          console.log('Trying with default verified domain...');
-          
-          const fallbackResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${resendApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'Sistema Monitoreo <onboarding@resend.dev>',
-              to: admins.map((admin: any) => admin.email),
-              subject: emailSubject,
-              html: emailBody,
-              tags: [
-                {
-                  name: 'category',
-                  value: 'incident-notification'
-                },
-                {
-                  name: 'priority',
-                  value: notificationData.prioridad
-                }
-              ]
-            }),
-          });
-
-          if (fallbackResponse.ok) {
-            const emailResponse = await fallbackResponse.json();
-            console.log('Email sent successfully with fallback domain');
-            
-            return new Response(
-              JSON.stringify({
-                success: true,
-                message: 'Notificación enviada exitosamente (dominio alternativo)',
-                data: { id: emailResponse.id },
-                recipients_count: admins.length,
-                email_sent: true,
-                note: 'Verifica tu dominio en Resend para mejor deliverabilidad'
-              }),
-              { 
-                status: 200,
-                headers: { 'Content-Type': 'application/json', ...corsHeaders }
-              }
-            );
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Error enviando notificaciones por email',
+            details: errorText,
+            recipients_count: admins.length,
+            email_sent: false
+          }),
+          { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
           }
-        }
-        
-        throw new Error(`Resend API error: ${resendResponse.status}`);
+        );
       }
 
       const emailResponse = await resendResponse.json();
-      console.log('Email sent successfully');
+      console.log('✅ Email sent successfully:', emailResponse);
       
       return new Response(
         JSON.stringify({
@@ -327,6 +316,7 @@ const handler = async (req: Request): Promise<Response> => {
           message: 'Notificación enviada exitosamente',
           data: { id: emailResponse.id },
           recipients_count: admins.length,
+          recipients: admins.map((admin: any) => admin.email),
           email_sent: true
         }),
         { 
@@ -336,12 +326,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
 
     } catch (emailError) {
-      console.error('Error sending email:', emailError);
+      console.error('❌ Error sending email:', emailError);
 
       return new Response(
         JSON.stringify({
           success: false,
           error: 'Error enviando notificaciones por email',
+          details: emailError.message,
           recipients_count: admins.length,
           email_sent: false
         }),
@@ -353,10 +344,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
   } catch (error: any) {
-    console.error('Unexpected error in send-notification function');
+    console.error('❌ Unexpected error in send-notification function:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Error interno del servidor',
+        details: error.message,
         success: false
       }),
       { 
@@ -368,4 +360,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
