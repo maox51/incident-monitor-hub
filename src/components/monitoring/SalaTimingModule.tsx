@@ -14,6 +14,50 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
+interface Sala {
+  id: string;
+  nombre: string;
+}
+
+interface Clasificacion {
+  nombre: string;
+}
+
+interface SalaData {
+  nombre: string;
+  id: string;
+}
+
+interface Incidencia {
+  id: string;
+  fecha_incidencia: string;
+  tiempo_minutos: number;
+  clasificacion: Clasificacion | null;
+  sala: SalaData | null;
+}
+
+interface DatosSala {
+  sala: string;
+  ingresos_tardios: number;
+  cierres_prematuros: number;
+  total_incidencias_ingresos: number;
+  total_incidencias_cierres: number;
+  total_minutos: number;
+}
+
+interface DatosTimeline {
+  periodo: string;
+  total_minutos: number;
+  fecha: Date;
+}
+
+interface DatosResumen {
+  name: string;
+  value: number;
+  ingresos: number;
+  cierres: number;
+}
+
 const SalaTimingModule = () => {
   const [fechaInicio, setFechaInicio] = useState<Date>(startOfMonth(new Date()));
   const [fechaFin, setFechaFin] = useState<Date>(endOfMonth(new Date()));
@@ -23,9 +67,9 @@ const SalaTimingModule = () => {
   const [mostrarFechaFin, setMostrarFechaFin] = useState(false);
 
   // Obtener salas disponibles
-  const { data: salas } = useQuery({
+  const salasQuery = useQuery({
     queryKey: ['salas-activas'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Sala[]> => {
       const { data, error } = await supabase
         .from('salas')
         .select('id, nombre')
@@ -38,9 +82,9 @@ const SalaTimingModule = () => {
   });
 
   // Obtener incidencias de tiempo
-  const { data: incidencias, isLoading, refetch } = useQuery({
-    queryKey: ['sala-timing-incidencias', fechaInicio, fechaFin, salaFiltro],
-    queryFn: async () => {
+  const incidenciasQuery = useQuery({
+    queryKey: ['sala-timing-incidencias', fechaInicio.toISOString(), fechaFin.toISOString(), salaFiltro],
+    queryFn: async (): Promise<Incidencia[]> => {
       console.log('Fetching timing incidencias:', { fechaInicio, fechaFin, salaFiltro });
       
       let query = supabase
@@ -76,10 +120,16 @@ const SalaTimingModule = () => {
 
   // Procesar datos para gráficos
   const datosProc = useMemo(() => {
-    if (!incidencias || !Array.isArray(incidencias)) return { porSala: [], timeline: [], resumen: [] };
+    const porSala: DatosSala[] = [];
+    const timeline: DatosTimeline[] = [];
+    const resumen: DatosResumen[] = [];
+
+    if (!incidenciasQuery.data || !Array.isArray(incidenciasQuery.data)) {
+      return { porSala, timeline, resumen };
+    }
 
     // Filtrar incidencias de tiempo (ingresos tardíos y cierres prematuros)
-    const incidenciasTiempo = incidencias.filter((inc: any) => {
+    const incidenciasTiempo = incidenciasQuery.data.filter((inc: Incidencia) => {
       const clasificacion = inc.clasificacion;
       if (!clasificacion || !clasificacion.nombre) return false;
       
@@ -91,9 +141,9 @@ const SalaTimingModule = () => {
     });
 
     // Agrupar por sala
-    const porSalaMap = new Map();
+    const porSalaMap = new Map<string, DatosSala>();
     
-    incidenciasTiempo.forEach((inc: any) => {
+    incidenciasTiempo.forEach((inc: Incidencia) => {
       const salaNombre = inc.sala?.nombre || 'Sin Sala';
       const clasificacionNombre = inc.clasificacion?.nombre?.toLowerCase() || '';
       const esIngreso = clasificacionNombre.includes('ingreso') || clasificacionNombre.includes('tardio');
@@ -109,7 +159,7 @@ const SalaTimingModule = () => {
         });
       }
       
-      const salaData = porSalaMap.get(salaNombre);
+      const salaData = porSalaMap.get(salaNombre)!;
       const minutos = inc.tiempo_minutos || 0;
       
       if (esIngreso) {
@@ -123,11 +173,11 @@ const SalaTimingModule = () => {
       salaData.total_minutos += minutos;
     });
 
-    const porSala = Array.from(porSalaMap.values()).sort((a: any, b: any) => b.total_minutos - a.total_minutos);
+    const porSalaResult = Array.from(porSalaMap.values()).sort((a, b) => b.total_minutos - a.total_minutos);
 
     // Timeline mensual
-    const timelineMap = new Map();
-    incidenciasTiempo.forEach((inc: any) => {
+    const timelineMap = new Map<string, DatosTimeline>();
+    incidenciasTiempo.forEach((inc: Incidencia) => {
       const fecha = new Date(inc.fecha_incidencia);
       const clave = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}`;
       
@@ -139,25 +189,30 @@ const SalaTimingModule = () => {
         });
       }
       
-      timelineMap.get(clave).total_minutos += inc.tiempo_minutos || 0;
+      const timelineData = timelineMap.get(clave)!;
+      timelineData.total_minutos += inc.tiempo_minutos || 0;
     });
 
-    const timeline = Array.from(timelineMap.values()).sort((a: any, b: any) => a.fecha.getTime() - b.fecha.getTime());
+    const timelineResult = Array.from(timelineMap.values()).sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
 
     // Datos para gráfico de torta
-    const resumen = porSala.map((item: any) => ({
+    const resumenResult = porSalaResult.map((item) => ({
       name: item.sala,
       value: item.total_minutos,
       ingresos: item.ingresos_tardios,
       cierres: item.cierres_prematuros
     }));
 
-    return { porSala, timeline, resumen };
-  }, [incidencias]);
+    return { 
+      porSala: porSalaResult, 
+      timeline: timelineResult, 
+      resumen: resumenResult 
+    };
+  }, [incidenciasQuery.data]);
 
   const colores = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f', '#ffbb28', '#ff8042'];
 
-  if (isLoading) {
+  if (incidenciasQuery.isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -246,7 +301,7 @@ const SalaTimingModule = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas las salas</SelectItem>
-                  {salas?.map((sala: any) => (
+                  {salasQuery.data?.map((sala: Sala) => (
                     <SelectItem key={sala.id} value={sala.id}>
                       {sala.nombre}
                     </SelectItem>
@@ -258,7 +313,7 @@ const SalaTimingModule = () => {
             {/* Tipo de Vista */}
             <div className="flex gap-2 items-center">
               <span className="text-sm font-medium">Vista:</span>
-              <Select value={tipoVista} onValueChange={(value: any) => setTipoVista(value)}>
+              <Select value={tipoVista} onValueChange={(value: 'tabla' | 'barras' | 'lineas' | 'torta') => setTipoVista(value)}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -271,7 +326,7 @@ const SalaTimingModule = () => {
               </Select>
             </div>
 
-            <Button onClick={() => refetch()} variant="outline" size="sm">
+            <Button onClick={() => incidenciasQuery.refetch()} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualizar
             </Button>
@@ -284,15 +339,15 @@ const SalaTimingModule = () => {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{datosProc.porSala.reduce((acc: number, curr: any) => acc + curr.total_incidencias_ingresos, 0)}</p>
+              <p className="text-2xl font-bold text-blue-600">{datosProc.porSala.reduce((acc: number, curr: DatosSala) => acc + curr.total_incidencias_ingresos, 0)}</p>
               <p className="text-sm text-gray-600">Total Ingresos Tardíos</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{datosProc.porSala.reduce((acc: number, curr: any) => acc + curr.total_incidencias_cierres, 0)}</p>
+              <p className="text-2xl font-bold text-red-600">{datosProc.porSala.reduce((acc: number, curr: DatosSala) => acc + curr.total_incidencias_cierres, 0)}</p>
               <p className="text-sm text-gray-600">Total Cierres Prematuros</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{datosProc.porSala.reduce((acc: number, curr: any) => acc + curr.total_minutos, 0)}</p>
+              <p className="text-2xl font-bold text-purple-600">{datosProc.porSala.reduce((acc: number, curr: DatosSala) => acc + curr.total_minutos, 0)}</p>
               <p className="text-sm text-gray-600">Minutos Totales</p>
             </div>
             <div className="text-center">
@@ -325,7 +380,7 @@ const SalaTimingModule = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {datosProc.porSala.map((item: any, index: number) => (
+                    {datosProc.porSala.map((item: DatosSala, index: number) => (
                       <tr key={index} className="border-b hover:bg-gray-50">
                         <td className="p-2 font-medium">{item.sala}</td>
                         <td className="text-center p-2">
@@ -449,9 +504,9 @@ const SalaTimingModule = () => {
                       cx="50%"
                       cy="50%"
                       outerRadius={120}
-                      label={(entry: any) => `${entry.name}: ${entry.value}min`}
+                      label={(entry: DatosResumen) => `${entry.name}: ${entry.value}min`}
                     >
-                      {datosProc.resumen.map((entry: any, index: number) => (
+                      {datosProc.resumen.map((entry: DatosResumen, index: number) => (
                         <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />
                       ))}
                     </Pie>
