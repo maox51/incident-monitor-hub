@@ -1,26 +1,26 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import IncidenciaForm from './incidencias/IncidenciaForm';
-import ReportesView from './reports/ReportesView';
+import IncidenciaForm from './IncidenciaForm';
+import ReportesView from './ReportesView';
 import UserManagement from './admin/UserManagement';
 import AuditLog from './admin/AuditLog';
-import BorradoresView from './incidencias/BorradoresView';
+import BorradoresView from './supervisor/BorradoresView';
 import QuinzenalStatsCard from './dashboard/QuinzenalStatsCard';
 import PeriodComparisonCard from './dashboard/PeriodComparisonCard';
 import SalaTimingModule from './monitoring/SalaTimingModule';
 
 const Dashboard = () => {
   const { profile } = useAuth();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     if (!profile) {
-      router.push('/login');
+      // En lugar de router.push, simplemente no renderizar
+      return;
     }
-  }, [profile, router]);
+  }, [profile]);
 
   if (!profile) {
     return <div>Cargando...</div>;
