@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { usePageAudit } from '@/hooks/usePageAudit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Shield, Search, Calendar, User, Activity, Filter, Download } from 'lucide-react';
+import { Shield, Search, Calendar, User, Activity, Filter, Download, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -31,6 +32,13 @@ const AuditLog = () => {
   const [userFilter, setUserFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
+
+  // Auditoría automática del log de auditoría
+  usePageAudit('audit_log', {
+    viewType: 'security_review',
+    filters: { searchTerm, actionFilter, userFilter },
+    currentPage
+  });
 
   // Obtener logs de auditoría
   const { data: auditLogs, isLoading } = useQuery({
@@ -88,6 +96,41 @@ const AuditLog = () => {
       if (error) throw error;
       const uniqueUsers = [...new Set(data.map(item => item.user_email))];
       return uniqueUsers;
+    },
+  });
+
+  // Query para estadísticas de auditoría y problemas de IP
+  const { data: auditStats } = useQuery({
+    queryKey: ['audit-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_actions')
+        .select('ip_address, user_agent, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
+      if (error) throw error;
+      
+      const total = data.length;
+      const withoutIP = data.filter(log => !log.ip_address).length;
+      const mobileAccess = data.filter(log => {
+        try {
+          const userAgent = JSON.parse(log.user_agent || '{}');
+          return userAgent.deviceType === 'mobile';
+        } catch {
+          return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(log.user_agent || '');
+        }
+      }).length;
+      
+      const ipCaptureProblem = withoutIP / total > 0.3; // Más del 30% sin IP es problemático
+      
+      return {
+        total,
+        withoutIP,
+        mobileAccess,
+        ipCaptureProblem,
+        ipCaptureRate: ((total - withoutIP) / total * 100).toFixed(1)
+      };
     },
   });
 
@@ -163,6 +206,69 @@ const AuditLog = () => {
 
   return (
     <div className="space-y-6">
+      {/* Panel de diagnóstico de auditoría */}
+      {auditStats && (
+        <Card className={`border-2 ${auditStats.ipCaptureProblem ? 'border-orange-500 bg-orange-50' : 'border-green-500 bg-green-50'}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              {auditStats.ipCaptureProblem ? (
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+              ) : (
+                <Shield className="h-6 w-6 text-green-600" />
+              )}
+              Estado del Sistema de Auditoría
+            </CardTitle>
+            <CardDescription>
+              Análisis de la calidad de los datos de auditoría y problemas detectados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{auditStats.total}</div>
+                <div className="text-sm text-gray-600">Acciones Recientes</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-2xl font-bold ${auditStats.ipCaptureProblem ? 'text-orange-600' : 'text-green-600'}`}>
+                  {auditStats.ipCaptureRate}%
+                </div>
+                <div className="text-sm text-gray-600">Captura de IP</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{auditStats.mobileAccess}</div>
+                <div className="text-sm text-gray-600">Accesos Móviles</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-2xl font-bold ${auditStats.withoutIP > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {auditStats.withoutIP}
+                </div>
+                <div className="text-sm text-gray-600">Sin IP Registrada</div>
+              </div>
+            </div>
+            
+            {auditStats.ipCaptureProblem && (
+              <div className="mt-4 p-4 bg-orange-100 border border-orange-300 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-orange-800">Problema Detectado: Captura de IP Deficiente</h4>
+                    <p className="text-sm text-orange-700 mt-1">
+                      Se ha detectado que más del 30% de las acciones no tienen IP registrada. 
+                      Esto puede deberse a problemas de conectividad en dispositivos móviles o filtros de red.
+                    </p>
+                    <div className="mt-2">
+                      <span className="text-xs text-orange-600 font-medium">
+                        Recomendación: Revisar configuración de red y servicios de IP externa.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

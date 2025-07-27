@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageAudit } from '@/hooks/usePageAudit';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatsCard } from "@/components/ui/stats-card";
 import { useQuery } from "@tanstack/react-query";
@@ -28,6 +29,18 @@ import UserStatisticsChart from './dashboard/UserStatisticsChart';
 const Dashboard = () => {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Auditoría automática del dashboard
+  usePageAudit('dashboard', {
+    activeTab,
+    userRole: profile?.role,
+    dashboardFeatures: {
+      totalIncidencias: true,
+      alertasCriticas: true,
+      eventosHoy: true,
+      monitoresActivos: true
+    }
+  });
 
   useEffect(() => {
     if (!profile) {
