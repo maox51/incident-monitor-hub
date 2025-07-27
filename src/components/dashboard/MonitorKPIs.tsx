@@ -35,10 +35,33 @@ const MonitorKPIs = () => {
     queryFn: async () => {
       const { data: incidencias, error } = await supabase
         .from("incidencias")
-        .select("*")
+        .select("reportado_por, prioridad, created_at, estado")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
+
+      if (!incidencias || incidencias.length === 0) {
+        return [];
+      }
+
+      // Obtener perfiles de usuarios únicos
+      const uniqueUserIds = [...new Set(incidencias.map(inc => inc.reportado_por))];
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", uniqueUserIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        return [];
+      }
+
+      // Crear mapa de perfiles
+      const profilesMap = new Map();
+      profiles?.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
 
       // Procesar datos para generar KPIs por monitor
       const monitorStats: { [key: string]: any } = {};
@@ -46,12 +69,15 @@ const MonitorKPIs = () => {
       const semanaAnterior = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
       
       incidencias?.forEach(inc => {
-        const monitor = inc.reportado_por;
+        const userId = inc.reportado_por;
+        const profile = profilesMap.get(userId);
+        const userName = profile?.full_name || profile?.email || `Usuario ${userId.substring(0, 8)}`;
         const fechaIncidencia = new Date(inc.created_at);
         
-        if (!monitorStats[monitor]) {
-          monitorStats[monitor] = {
-            monitor_name: monitor,
+        if (!monitorStats[userId]) {
+          monitorStats[userId] = {
+            monitor_name: userName,
+            user_id: userId,
             total_incidencias: 0,
             incidencias_criticas: 0,
             incidencias_altas: 0,
@@ -65,21 +91,21 @@ const MonitorKPIs = () => {
           };
         }
         
-        monitorStats[monitor].total_incidencias++;
+        monitorStats[userId].total_incidencias++;
         
-        if (inc.prioridad === 'critica') monitorStats[monitor].incidencias_criticas++;
-        if (inc.prioridad === 'alta') monitorStats[monitor].incidencias_altas++;
+        if (inc.prioridad === 'critica') monitorStats[userId].incidencias_criticas++;
+        if (inc.prioridad === 'alta') monitorStats[userId].incidencias_altas++;
         
         // Calcular tendencia semanal
         if (fechaIncidencia >= semanaAnterior) {
-          monitorStats[monitor].incidencias_esta_semana++;
+          monitorStats[userId].incidencias_esta_semana++;
         } else {
-          monitorStats[monitor].incidencias_semana_anterior++;
+          monitorStats[userId].incidencias_semana_anterior++;
         }
         
         // Actualizar última actividad
-        if (fechaIncidencia > new Date(monitorStats[monitor].last_activity)) {
-          monitorStats[monitor].last_activity = inc.created_at;
+        if (fechaIncidencia > new Date(monitorStats[userId].last_activity)) {
+          monitorStats[userId].last_activity = inc.created_at;
         }
       });
 
