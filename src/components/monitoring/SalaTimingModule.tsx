@@ -129,7 +129,9 @@ const SalaTimingModule = () => {
   // Obtener conteos quincenales
   const conteosQuery = useQuery({
     queryKey: ['conteos-quincenales', añoSeleccionado, mesSeleccionado, salaFiltro],
-    queryFn: () => fetchConteosQuincenales(añoSeleccionado, mesSeleccionado, salaFiltro)
+    queryFn: () => fetchConteosQuincenales(añoSeleccionado, mesSeleccionado, salaFiltro),
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Siempre refrescar los datos
   });
 
   // Obtener datos históricos para timeline

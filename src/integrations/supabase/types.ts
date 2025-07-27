@@ -779,6 +779,15 @@ export type Database = {
         Args: { fecha_objetivo?: string }
         Returns: string
       }
+      get_notification_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          role: string
+        }[]
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -831,6 +840,10 @@ export type Database = {
           total_incidencias_cierres: number
           total_minutos: number
         }[]
+      }
+      recalcular_conteos_quincenales: {
+        Args: { p_año?: number; p_mes?: number }
+        Returns: string
       }
       user_can_access_chat_room: {
         Args: { _user_id: string; _room_id: string }
