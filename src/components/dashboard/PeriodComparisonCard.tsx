@@ -36,17 +36,16 @@ const PeriodComparisonCard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500">No hay datos disponibles</p>
+          <p className="text-muted-foreground">No hay datos disponibles</p>
         </CardContent>
       </Card>
     );
   }
 
-  const getTrendColor = (value: number) => {
-    if (value > 0) return 'text-destructive';
-    if (value < 0) return 'text-green-600';
-    return 'text-muted-foreground';
-  };
+  // Verificar que tenemos datos válidos
+  const mesActual = comparison?.mesActual || { nombre: 'Mes actual', stats: { total: 0, criticas: 0 } };
+  const mesAnterior = comparison?.mesAnterior || { nombre: 'Mes anterior', stats: { total: 0, criticas: 0 } };
+  const tendencias = comparison?.tendencias || { total: 0, criticas: 0 };
 
   const getTrendBadgeVariant = (value: number) => {
     if (value > 0) return 'destructive';
@@ -73,19 +72,19 @@ const PeriodComparisonCard = () => {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-primary/5 rounded-lg p-4 text-center">
             <p className="text-sm font-medium text-muted-foreground mb-1">
-              {comparison.mesActual.nombre}
+              {mesActual.nombre}
             </p>
             <p className="text-3xl font-bold text-primary mb-1">
-              {comparison.mesActual.stats.total}
+              {mesActual.stats?.total || 0}
             </p>
             <p className="text-xs text-muted-foreground">incidencias</p>
           </div>
           <div className="bg-secondary/10 rounded-lg p-4 text-center">
             <p className="text-sm font-medium text-muted-foreground mb-1">
-              {comparison.mesAnterior.nombre}
+              {mesAnterior.nombre}
             </p>
             <p className="text-3xl font-bold text-secondary-foreground mb-1">
-              {comparison.mesAnterior.stats.total}
+              {mesAnterior.stats?.total || 0}
             </p>
             <p className="text-xs text-muted-foreground">incidencias</p>
           </div>
@@ -98,9 +97,9 @@ const PeriodComparisonCard = () => {
               <BarChart3 className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Tendencia Total</span>
             </div>
-            <Badge variant={getTrendBadgeVariant(comparison.tendencias.total)} className="gap-1">
-              {getTrendIcon(comparison.tendencias.total)}
-              {comparison.tendencias.total > 0 ? '+' : ''}{comparison.tendencias.total}%
+            <Badge variant={getTrendBadgeVariant(tendencias.total)} className="gap-1">
+              {getTrendIcon(tendencias.total)}
+              {tendencias.total > 0 ? '+' : ''}{tendencias.total}%
             </Badge>
           </div>
           
@@ -109,9 +108,9 @@ const PeriodComparisonCard = () => {
               <AlertTriangle className="w-4 h-4 text-orange-500" />
               <span className="text-sm font-medium">Incidencias Críticas</span>
             </div>
-            <Badge variant={getTrendBadgeVariant(comparison.tendencias.criticas)} className="gap-1">
-              {getTrendIcon(comparison.tendencias.criticas)}
-              {comparison.tendencias.criticas > 0 ? '+' : ''}{comparison.tendencias.criticas}%
+            <Badge variant={getTrendBadgeVariant(tendencias.criticas)} className="gap-1">
+              {getTrendIcon(tendencias.criticas)}
+              {tendencias.criticas > 0 ? '+' : ''}{tendencias.criticas}%
             </Badge>
           </div>
         </div>
@@ -121,13 +120,13 @@ const PeriodComparisonCard = () => {
           <div className="text-center">
             <p className="text-xs text-muted-foreground">Críticas Actuales</p>
             <p className="text-lg font-semibold text-orange-600">
-              {comparison.mesActual.stats.criticas || 0}
+              {mesActual.stats?.criticas || 0}
             </p>
           </div>
           <div className="text-center">
             <p className="text-xs text-muted-foreground">Críticas Anteriores</p>
             <p className="text-lg font-semibold text-muted-foreground">
-              {comparison.mesAnterior.stats.criticas || 0}
+              {mesAnterior.stats?.criticas || 0}
             </p>
           </div>
         </div>
