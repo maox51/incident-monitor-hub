@@ -81,8 +81,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
@@ -96,15 +100,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(async () => {
-            await fetchProfile(session.user.id);
-            // Log successful login after profile is fetched
-            if (event === 'SIGNED_IN') {
+          // Fetch profile primero
+          await fetchProfile(session.user.id);
+          
+          // Log successful login después de obtener el perfil
+          if (event === 'SIGNED_IN') {
+            setTimeout(async () => {
               try {
                 const { data: profileData } = await supabase
                   .from('profiles')
@@ -113,15 +121,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                   .single();
                 
                 if (profileData) {
-                  await logLogin(profileData.email, profileData.role);
+                  console.log(`Usuario autenticado: ${profileData.email} con rol: ${profileData.role}`);
+                  await logLogin(profileData.email, profileData.role, {
+                    userId: session.user.id,
+                    authEvent: event,
+                    sessionId: session.access_token.slice(-10) // Últimos 10 caracteres para identificar sesión
+                  });
+                } else {
+                  console.warn('No se encontró perfil para el usuario autenticado');
+                  await logLogin(session.user.email || 'unknown', 'unknown', {
+                    userId: session.user.id,
+                    authEvent: event,
+                    profileNotFound: true
+                  });
                 }
               } catch (error) {
                 console.error('Error logging login audit:', error);
+                // Intentar logging básico como fallback
+                await logLogin(session.user.email || 'unknown', 'unknown', {
+                  userId: session.user.id,
+                  authEvent: event,
+                  error: 'profile_fetch_failed'
+                });
               }
-            }
-          }, 100);
+            }, 100);
+          }
         } else {
-          // Log logout if user was previously authenticated
+          // Log logout si el usuario estaba previamente autenticado
           if (event === 'SIGNED_OUT' && user?.email) {
             try {
               await logLogout(user.email);
@@ -135,7 +161,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const validatePassword = (password: string) => {
