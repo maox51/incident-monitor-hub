@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageAudit } from '@/hooks/usePageAudit';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,49 +10,48 @@ import {
   Users, 
   AlertTriangle, 
   Calendar,
-  Activity,
-  TrendingUp,
-  Clock,
-  CheckCircle
+  Activity
 } from "lucide-react";
-import IncidenciaForm from './IncidenciaForm';
-import ReportesView from './ReportesView';
-import UserManagement from './admin/UserManagement';
-import AuditLog from './admin/AuditLog';
-import BorradoresView from './supervisor/BorradoresView';
-import QuinzenalStatsCard from './dashboard/QuinzenalStatsCard';
-import PeriodComparisonCard from './dashboard/PeriodComparisonCard';
-import SalaTimingModule from './monitoring/SalaTimingModule';
-import MonitorKPIs from './dashboard/MonitorKPIs';
-import UserStatisticsChart from './dashboard/UserStatisticsChart';
+
+// Lazy load components to improve performance
+const IncidenciaForm = React.lazy(() => import('./IncidenciaForm'));
+const ReportesView = React.lazy(() => import('./ReportesView'));
+const UserManagement = React.lazy(() => import('./admin/UserManagement'));
+const AuditLog = React.lazy(() => import('./admin/AuditLog'));
+const BorradoresView = React.lazy(() => import('./supervisor/BorradoresView'));
+const QuinzenalStatsCard = React.lazy(() => import('./dashboard/QuinzenalStatsCard'));
+const PeriodComparisonCard = React.lazy(() => import('./dashboard/PeriodComparisonCard'));
+const SalaTimingModule = React.lazy(() => import('./monitoring/SalaTimingModule'));
+const MonitorKPIs = React.lazy(() => import('./dashboard/MonitorKPIs'));
+const UserStatisticsChart = React.lazy(() => import('./dashboard/UserStatisticsChart'));
 
 const Dashboard = () => {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { logPageView } = usePageAudit();
 
-  // Auditoría automática del dashboard
-  usePageAudit('dashboard', {
-    activeTab,
-    userRole: profile?.role,
-    dashboardFeatures: {
-      totalIncidencias: true,
-      alertasCriticas: true,
-      eventosHoy: true,
-      monitoresActivos: true
+  // Auditoría optimizada del dashboard
+  React.useEffect(() => {
+    if (profile) {
+      logPageView('dashboard', {
+        activeTab,
+        userRole: profile.role
+      });
     }
-  });
-
-  useEffect(() => {
-    if (!profile) {
-      return;
-    }
-  }, [profile]);
+  }, [activeTab, profile?.role, logPageView]);
 
   if (!profile) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando perfil...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Queries para estadísticas del dashboard
+  // Queries optimizadas con cache
   const { data: totalIncidencias } = useQuery({
     queryKey: ["total-incidencias"],
     queryFn: async () => {
@@ -63,6 +62,8 @@ const Dashboard = () => {
       if (error) throw error;
       return count || 0;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: alertasCriticas } = useQuery({
@@ -76,6 +77,8 @@ const Dashboard = () => {
       if (error) throw error;
       return count || 0;
     },
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
   });
 
   const { data: eventosHoy } = useQuery({
@@ -91,6 +94,8 @@ const Dashboard = () => {
       if (error) throw error;
       return count || 0;
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    cacheTime: 5 * 60 * 1000,
   });
 
   const { data: monitoresActivos } = useQuery({
@@ -104,6 +109,8 @@ const Dashboard = () => {
       const uniqueMonitors = new Set(data?.map(inc => inc.reportado_por) || []);
       return uniqueMonitors.size;
     },
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
   });
 
   const renderContent = () => {
@@ -145,31 +152,67 @@ const Dashboard = () => {
 
             {/* Gráficos y estadísticas quincenales */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <QuinzenalStatsCard />
-              <PeriodComparisonCard />
+              <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+                <QuinzenalStatsCard />
+              </React.Suspense>
+              <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+                <PeriodComparisonCard />
+              </React.Suspense>
             </div>
 
             {/* Estadísticas detalladas */}
             <div className="grid grid-cols-1 gap-6">
-              <UserStatisticsChart />
-              <MonitorKPIs />
+              <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+                <UserStatisticsChart />
+              </React.Suspense>
+              <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+                <MonitorKPIs />
+              </React.Suspense>
             </div>
           </div>
         );
       case 'incidencias':
-        return <IncidenciaForm />;
+        return (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <IncidenciaForm />
+          </React.Suspense>
+        );
       case 'reportes':
-        return <ReportesView />;
+        return (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <ReportesView />
+          </React.Suspense>
+        );
       case 'admin':
-        return profile?.role === 'admin' ? <UserManagement /> : <div>No tienes permisos para acceder a esta sección.</div>;
+        return profile?.role === 'admin' ? (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <UserManagement />
+          </React.Suspense>
+        ) : (
+          <div>No tienes permisos para acceder a esta sección.</div>
+        );
       case 'audit':
-        return profile?.role === 'admin' ? <AuditLog /> : <div>No tienes permisos para acceder a esta sección.</div>;
+        return profile?.role === 'admin' ? (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <AuditLog />
+          </React.Suspense>
+        ) : (
+          <div>No tienes permisos para acceder a esta sección.</div>
+        );
       case 'borradores':
-        return (profile?.role === 'supervisor_monitoreo' || profile?.role === 'admin') ? 
-          <BorradoresView /> : 
-          <div>No tienes permisos para acceder a esta sección.</div>;
+        return (profile?.role === 'supervisor_monitoreo' || profile?.role === 'admin') ? (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <BorradoresView />
+          </React.Suspense>
+        ) : (
+          <div>No tienes permisos para acceder a esta sección.</div>
+        );
       case 'monitoreo-salas':
-        return <SalaTimingModule />;
+        return (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <SalaTimingModule />
+          </React.Suspense>
+        );
       default:
         return <div>Sección no encontrada</div>;
     }
@@ -178,57 +221,35 @@ const Dashboard = () => {
   return (
     <div className="w-full space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        {/* Tabs responsive */}
         <div className="border-b border-border">
           <div className="flex overflow-x-auto">
             <TabsList className="inline-flex h-10 items-center justify-start rounded-none bg-transparent p-0 gap-0 flex-nowrap min-w-max">
-              <TabsTrigger 
-                value="dashboard" 
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-              >
+              <TabsTrigger value="dashboard" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                 Dashboard
               </TabsTrigger>
-              <TabsTrigger 
-                value="incidencias"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-              >
+              <TabsTrigger value="incidencias" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                 Incidencias
               </TabsTrigger>
-              <TabsTrigger 
-                value="reportes"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-              >
+              <TabsTrigger value="reportes" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                 Reportes
               </TabsTrigger>
               {(profile?.role === 'admin' || profile?.role === 'supervisor_monitoreo') && (
-                <TabsTrigger 
-                  value="borradores"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                >
+                <TabsTrigger value="borradores" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                   Borradores
                 </TabsTrigger>
               )}
               {profile?.role === 'admin' && (
-                <TabsTrigger 
-                  value="admin"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                >
+                <TabsTrigger value="admin" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                   Admin
                 </TabsTrigger>
               )}
               {profile?.role === 'admin' && (
-                <TabsTrigger 
-                  value="audit"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                >
+                <TabsTrigger value="audit" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                   Audit Log
                 </TabsTrigger>
               )}
               {(profile?.role === 'admin' || profile?.role === 'supervisor_monitoreo' || profile?.role === 'monitor') && (
-                <TabsTrigger 
-                  value="monitoreo-salas"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                >
+                <TabsTrigger value="monitoreo-salas" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                   Monitoreo de Salas
                 </TabsTrigger>
               )}

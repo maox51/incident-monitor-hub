@@ -57,11 +57,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const { logLogin, logLogout, logAuthError } = useAuthAudit();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+    if (profileLoading) return null;
+    
+    setProfileLoading(true);
     try {
       console.log('Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -70,101 +75,125 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        setProfile(null);
-        return;
+        return null;
       }
 
-      console.log('Profile fetched:', data);
-      setProfile(data);
+      if (!data) {
+        console.warn('No profile found for user:', userId);
+        return null;
+      }
+
+      console.log('Profile fetched successfully:', data);
+      return data;
     } catch (error) {
       console.error('Error in fetchProfile:', error);
-      setProfile(null);
+      return null;
+    } finally {
+      setProfileLoading(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    let sessionTimeout: NodeJS.Timeout;
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!mounted) return;
       
-      console.log('Initial session:', session);
+      console.log('Auth state change:', event, session?.user?.id);
+      
+      // Clear any existing timeout
+      if (sessionTimeout) {
+        clearTimeout(sessionTimeout);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        console.log('Auth state change:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch profile primero
-          await fetchProfile(session.user.id);
+      if (session?.user && event !== 'TOKEN_REFRESHED') {
+        try {
+          const profileData = await fetchProfile(session.user.id);
+          if (mounted) {
+            setProfile(profileData);
+          }
           
-          // Log successful login después de obtener el perfil
-          if (event === 'SIGNED_IN') {
-            setTimeout(async () => {
-              try {
-                const { data: profileData } = await supabase
-                  .from('profiles')
-                  .select('email, role')
-                  .eq('id', session.user.id)
-                  .single();
-                
-                if (profileData) {
-                  console.log(`Usuario autenticado: ${profileData.email} con rol: ${profileData.role}`);
-                  await logLogin(profileData.email, profileData.role, {
-                    userId: session.user.id,
-                    authEvent: event,
-                    sessionId: session.access_token.slice(-10) // Últimos 10 caracteres para identificar sesión
-                  });
-                } else {
-                  console.warn('No se encontró perfil para el usuario autenticado');
-                  await logLogin(session.user.email || 'unknown', 'unknown', {
-                    userId: session.user.id,
-                    authEvent: event,
-                    profileNotFound: true
-                  });
-                }
-              } catch (error) {
-                console.error('Error logging login audit:', error);
-                // Intentar logging básico como fallback
-                await logLogin(session.user.email || 'unknown', 'unknown', {
-                  userId: session.user.id,
-                  authEvent: event,
-                  error: 'profile_fetch_failed'
-                });
-              }
-            }, 100);
+          // Log successful login only for actual login events
+          if (event === 'SIGNED_IN' && profileData) {
+            await logLogin(profileData.email, profileData.role, {
+              userId: session.user.id,
+              authEvent: event,
+              sessionId: session.access_token.slice(-10)
+            });
           }
-        } else {
-          // Log logout si el usuario estaba previamente autenticado
-          if (event === 'SIGNED_OUT' && user?.email) {
-            try {
-              await logLogout(user.email);
-            } catch (error) {
-              console.error('Error logging logout audit:', error);
-            }
+        } catch (error) {
+          console.error('Error handling auth state change:', error);
+          if (mounted) {
+            setProfile(null);
           }
+        }
+      } else {
+        if (mounted) {
           setProfile(null);
         }
-        setLoading(false);
+        
+        // Log logout if user was previously authenticated
+        if (event === 'SIGNED_OUT' && user?.email) {
+          try {
+            await logLogout(user.email);
+          } catch (error) {
+            console.error('Error logging logout:', error);
+          }
+        }
       }
-    );
+      
+      // Set loading to false after a short delay to ensure all operations complete
+      if (mounted) {
+        sessionTimeout = setTimeout(() => {
+          if (mounted) {
+            setLoading(false);
+          }
+        }, 100);
+      }
+    };
+
+    // Get initial session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+        
+        if (session) {
+          await handleAuthStateChange('INITIAL_SESSION', session);
+        } else {
+          if (mounted) {
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     return () => {
       mounted = false;
+      if (sessionTimeout) {
+        clearTimeout(sessionTimeout);
+      }
       subscription.unsubscribe();
     };
   }, []);
@@ -214,7 +243,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signInWithUsername = async (username: string, password: string) => {
     try {
-      // Buscar el usuario por nombre completo o email
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('email')
@@ -260,10 +288,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signOut = async () => {
-    const currentEmail = user?.email || profile?.email;
     await supabase.auth.signOut();
-    
-    // The logout will be logged automatically by the auth state change listener
     setProfile(null);
   };
 

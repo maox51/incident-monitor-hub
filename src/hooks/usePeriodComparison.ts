@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
@@ -101,6 +100,10 @@ export const usePeriodComparison = () => {
         }
       };
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
@@ -134,7 +137,6 @@ const calcularTendencia = (actual: number, anterior: number) => {
   return Math.round(((actual - anterior) / anterior) * 100);
 };
 
-// Nueva función para analizar reincidencias por SALA
 const analizarReincidenciasPorSala = (datos: any[]) => {
   const reincidencias: any = {};
   
@@ -164,7 +166,6 @@ const analizarReincidenciasPorSala = (datos: any[]) => {
 };
 
 const encontrarMejorSala = (actuales: any[], anteriores: any[]) => {
-  // Encontrar la sala con mayor reducción de incidencias
   const mejoras = actuales.map(actual => {
     const anterior = anteriores.find(a => a.sala === actual.sala);
     if (!anterior) return null;
@@ -181,7 +182,6 @@ const encontrarMejorSala = (actuales: any[], anteriores: any[]) => {
 };
 
 const encontrarPeorSala = (actuales: any[], anteriores: any[]) => {
-  // Encontrar la sala con mayor aumento de incidencias
   const empeoramientos = actuales.map(actual => {
     const anterior = anteriores.find(a => a.sala === actual.sala) || { count: 0 };
     const aumento = actual.count - anterior.count;

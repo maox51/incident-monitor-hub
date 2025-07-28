@@ -1,11 +1,25 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageAudit } from "@/hooks/usePageAudit";
+import { useEffect } from "react";
 import Index from "@/pages/Index";
 import AuthPage from "@/components/AuthPage";
 import NotFound from "@/pages/NotFound";
 
 const AppContent = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const { logPageView } = usePageAudit();
+
+  useEffect(() => {
+    if (!loading && user && profile) {
+      logPageView('app_load', {
+        userRole: profile.role,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [loading, user, profile, logPageView]);
 
   if (loading) {
     return (
@@ -18,7 +32,7 @@ const AppContent = () => {
     );
   }
 
-  if (!user) {
+  if (!user || !profile) {
     return <AuthPage />;
   }
 
