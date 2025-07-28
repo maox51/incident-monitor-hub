@@ -222,7 +222,7 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <div style="text-align: center; margin-bottom: 20px;">
-            <a href="https://monitoreo.esva.vercel.app" 
+            <a href="https://monitoreoesva.vercel.app" 
                style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
               Ver Sistema de Monitoreo
             </a>
