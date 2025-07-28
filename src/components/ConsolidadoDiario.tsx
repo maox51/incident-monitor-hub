@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,25 @@ interface ConsolidadoDetallado {
 }
 
 const ConsolidadoDiario = () => {
+  const { isAdmin, isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento } = useAuth();
+  
+  // Mapeo de roles a nombres de áreas (mismo que en ReportesView)
+  const roleAreaMapping = useMemo(() => ({
+    rrhh: "Recursos Humanos",
+    finanzas: "Finanzas", 
+    supervisor_salas: "Salas",
+    mantenimiento: "Mantenimiento"
+  }), []);
+
+  // Obtener el área correspondiente al rol del usuario
+  const userAreaName = useMemo(() => {
+    if (isRRHH) return roleAreaMapping.rrhh;
+    if (isFinanzas) return roleAreaMapping.finanzas;
+    if (isSupervisorSalas) return roleAreaMapping.supervisor_salas;
+    if (isMantenimiento) return roleAreaMapping.mantenimiento;
+    return null;
+  }, [isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento, roleAreaMapping]);
+
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -85,9 +105,19 @@ const ConsolidadoDiario = () => {
       // Convertir el JSON a nuestro tipo esperado
       const consolidadoData = typeof data === 'string' ? JSON.parse(data) : data;
       
-      return {
-        id: consolidadoData.id || '',
-        fecha_reporte: consolidadoData.fecha_reporte || fechaSeleccionada,
+      // Filtrar incidencias por área si el usuario no es admin
+      let incidenciasDetalle = Array.isArray(consolidadoData.incidencias_detalle) 
+        ? consolidadoData.incidencias_detalle 
+        : [];
+
+      if (!isAdmin && userAreaName) {
+        incidenciasDetalle = incidenciasDetalle.filter(incidencia => 
+          incidencia.area === userAreaName
+        );
+      }
+
+      // Recalcular estadísticas si se filtraron incidencias
+      let stats = {
         total_incidencias: consolidadoData.total_incidencias || 0,
         incidencias_criticas: consolidadoData.incidencias_criticas || 0,
         incidencias_altas: consolidadoData.incidencias_altas || 0,
@@ -95,9 +125,26 @@ const ConsolidadoDiario = () => {
         incidencias_bajas: consolidadoData.incidencias_bajas || 0,
         areas_afectadas: consolidadoData.areas_afectadas || 0,
         salas_afectadas: consolidadoData.salas_afectadas || 0,
-        incidencias_detalle: Array.isArray(consolidadoData.incidencias_detalle) 
-          ? consolidadoData.incidencias_detalle 
-          : [],
+      };
+
+      if (!isAdmin && userAreaName && incidenciasDetalle.length !== consolidadoData.total_incidencias) {
+        // Recalcular estadísticas basándose en incidencias filtradas
+        stats = {
+          total_incidencias: incidenciasDetalle.length,
+          incidencias_criticas: incidenciasDetalle.filter(i => i.prioridad === 'critica').length,
+          incidencias_altas: incidenciasDetalle.filter(i => i.prioridad === 'alta').length,
+          incidencias_medias: incidenciasDetalle.filter(i => i.prioridad === 'media').length,
+          incidencias_bajas: incidenciasDetalle.filter(i => i.prioridad === 'baja').length,
+          areas_afectadas: [...new Set(incidenciasDetalle.map(i => i.area))].length,
+          salas_afectadas: [...new Set(incidenciasDetalle.map(i => i.sala).filter(Boolean))].length,
+        };
+      }
+      
+      return {
+        id: consolidadoData.id || '',
+        fecha_reporte: consolidadoData.fecha_reporte || fechaSeleccionada,
+        ...stats,
+        incidencias_detalle: incidenciasDetalle,
         estadisticas_multimedia: consolidadoData.estadisticas_multimedia || {
           resumen_multimedia: {
             total_imagenes: 0,

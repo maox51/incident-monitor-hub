@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,25 @@ import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "sonner";
 
 const ReportesView = () => {
+  const { isAdmin, isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento } = useAuth();
+  
+  // Mapeo de roles a nombres de áreas
+  const roleAreaMapping = useMemo(() => ({
+    rrhh: "Recursos Humanos",
+    finanzas: "Finanzas", 
+    supervisor_salas: "Salas",
+    mantenimiento: "Mantenimiento"
+  }), []);
+
+  // Obtener el área correspondiente al rol del usuario
+  const userAreaName = useMemo(() => {
+    if (isRRHH) return roleAreaMapping.rrhh;
+    if (isFinanzas) return roleAreaMapping.finanzas;
+    if (isSupervisorSalas) return roleAreaMapping.supervisor_salas;
+    if (isMantenimiento) return roleAreaMapping.mantenimiento;
+    return null;
+  }, [isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento, roleAreaMapping]);
+
   const [filtros, setFiltros] = useState({
     fechaInicio: "",
     fechaFin: "",
@@ -89,8 +109,17 @@ const ReportesView = () => {
         throw error;
       }
 
-      console.log("Filtered incidencias:", data);
-      return data || [];
+      let filteredData = data || [];
+
+      // Filtrar por área según el rol del usuario (solo si no es admin)
+      if (!isAdmin && userAreaName) {
+        filteredData = filteredData.filter(incidencia => 
+          incidencia.areas?.nombre === userAreaName
+        );
+      }
+
+      console.log("Filtered incidencias:", filteredData);
+      return filteredData;
     },
   });
 
@@ -202,12 +231,20 @@ const ReportesView = () => {
 
             <div className="space-y-2">
               <Label>Área</Label>
-              <Select value={filtros.area_id} onValueChange={(value) => handleFiltroChange("area_id", value)}>
+              <Select 
+                value={filtros.area_id} 
+                onValueChange={(value) => handleFiltroChange("area_id", value)}
+                disabled={!isAdmin && !!userAreaName} // Deshabilitar si no es admin y tiene área específica
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas las áreas" />
+                  <SelectValue placeholder={
+                    !isAdmin && userAreaName 
+                      ? `Área: ${userAreaName}` 
+                      : "Todas las áreas"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las áreas</SelectItem>
+                  {isAdmin && <SelectItem value="all">Todas las áreas</SelectItem>}
                   {areas?.map((area) => (
                     <SelectItem key={area.id} value={area.id}>
                       {area.nombre}
@@ -215,6 +252,11 @@ const ReportesView = () => {
                   ))}
                 </SelectContent>
               </Select>
+              {!isAdmin && userAreaName && (
+                <p className="text-xs text-gray-500">
+                  Solo puedes ver incidencias de tu área: {userAreaName}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

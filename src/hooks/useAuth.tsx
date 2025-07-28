@@ -27,6 +27,7 @@ interface AuthContextType {
   isRRHH: boolean;
   isSupervisorSalas: boolean;
   isFinanzas: boolean;
+  isMantenimiento: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithUsername: (username: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
@@ -234,6 +235,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isRRHH = profile?.role === 'rrhh';
   const isSupervisorSalas = profile?.role === 'supervisor_salas';
   const isFinanzas = profile?.role === 'finanzas';
+  const isMantenimiento = profile?.role === 'mantenimiento';
 
   const value = {
     user,
@@ -246,6 +248,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isRRHH,
     isSupervisorSalas,
     isFinanzas,
+    isMantenimiento,
     signIn,
     signInWithUsername,
     signUp,

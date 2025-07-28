@@ -16,14 +16,14 @@ import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Index = () => {
-  const { isAdmin, isMonitor, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas } = useAuth();
+  const { isAdmin, isMonitor, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMantenimiento } = useAuth();
   const [activeTab, setActiveTab] = useState(() => {
     // Si es supervisor, mostrar borradores por defecto
     if (isSupervisorMonitoreo && !isAdmin) return "borradores";
     // Si es monitor, mostrar nueva incidencia
     if (isMonitor && !isAdmin && !isSupervisorMonitoreo) return "nueva-incidencia";
     // Si es RRHH, finanzas o supervisor de salas, mostrar reportes por defecto
-    if ((isRRHH || isFinanzas || isSupervisorSalas) && !isAdmin) return "reportes";
+    if ((isRRHH || isFinanzas || isSupervisorSalas || isMantenimiento) && !isAdmin) return "reportes";
     // Si es admin, mostrar dashboard
     return "dashboard";
   });
@@ -32,8 +32,8 @@ const Index = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
-    { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas'] },
-    { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas'] },
+    { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
+    { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
     { id: 'usuarios', label: 'Usuarios', icon: Users, roles: ['admin'] },
     { id: 'importar', label: 'Importar Datos', icon: Upload, roles: ['admin'] },
   ];
@@ -46,6 +46,7 @@ const Index = () => {
   if (isRRHH) userRoles.push('rrhh');
   if (isSupervisorSalas) userRoles.push('supervisor_salas');
   if (isFinanzas) userRoles.push('finanzas');
+  if (isMantenimiento) userRoles.push('mantenimiento');
 
   // Filtrar items del menú según los roles del usuario
   const filteredMenuItems = menuItems.filter(item => 
@@ -76,7 +77,7 @@ const Index = () => {
   }
 
   // Los roles específicos (RRHH, finanzas, supervisor_salas) ven solo reportes y consolidados
-  if ((isRRHH || isFinanzas || isSupervisorSalas) && !isAdmin) {
+  if ((isRRHH || isFinanzas || isSupervisorSalas || isMantenimiento) && !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <Header />
