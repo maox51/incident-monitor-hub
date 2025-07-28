@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePageAudit } from '@/hooks/usePageAudit';
@@ -34,11 +34,16 @@ const AuditLog = () => {
   const itemsPerPage = 50;
 
   // Auditoría automática del log de auditoría
-  usePageAudit('audit_log', {
-    viewType: 'security_review',
-    filters: { searchTerm, actionFilter, userFilter },
-    currentPage
-  });
+  const { logPageView } = usePageAudit();
+  
+  // Log page view when component mounts or filters change
+  useEffect(() => {
+    logPageView('audit_log', {
+      viewType: 'security_review',
+      filters: { searchTerm, actionFilter, userFilter },
+      currentPage
+    });
+  }, [logPageView, searchTerm, actionFilter, userFilter, currentPage]);
 
   // Obtener logs de auditoría
   const { data: auditLogs, isLoading } = useQuery({

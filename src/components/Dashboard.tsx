@@ -63,7 +63,7 @@ const Dashboard = () => {
       return count || 0;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: alertasCriticas } = useQuery({
@@ -78,7 +78,7 @@ const Dashboard = () => {
       return count || 0;
     },
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: eventosHoy } = useQuery({
@@ -95,7 +95,7 @@ const Dashboard = () => {
       return count || 0;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
-    cacheTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const { data: monitoresActivos } = useQuery({
@@ -110,7 +110,7 @@ const Dashboard = () => {
       return uniqueMonitors.size;
     },
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const renderContent = () => {
