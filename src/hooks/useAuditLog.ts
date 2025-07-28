@@ -83,8 +83,14 @@ export const useAuditLog = () => {
       // Obtener información del navegador mejorada
       const userAgent = getEnhancedUserAgent();
       
-      // Obtener IP con múltiples fallbacks
-      const ipAddress = await getClientIP();
+      // Intentar obtener IP, pero no bloquear el logging si falla
+      let ipAddress: string | null = null;
+      try {
+        ipAddress = await getClientIP();
+      } catch (ipError) {
+        console.warn('Failed to get IP for audit log, continuing without it:', ipError);
+        ipAddress = 'unknown';
+      }
 
       // Enriquecer los detalles con información adicional
       const enrichedDetails = {
@@ -115,6 +121,19 @@ export const useAuditLog = () => {
 
       if (error) {
         console.error('Error logging action:', error);
+        // Still try to log a simplified version if the main logging fails
+        try {
+          await supabase.rpc('log_user_action', {
+            p_action_type: actionType,
+            p_resource_type: resourceType,
+            p_resource_id: resourceId,
+            p_details: JSON.stringify({ error: 'fallback_log', timestamp: new Date().toISOString() }),
+            p_ip_address: 'unknown',
+            p_user_agent: 'unknown'
+          });
+        } catch (fallbackError) {
+          console.error('Fallback logging also failed:', fallbackError);
+        }
         return null;
       }
 
@@ -122,6 +141,19 @@ export const useAuditLog = () => {
       return data;
     } catch (error) {
       console.error('Error in audit log:', error);
+      // Final fallback - try simple logging
+      try {
+        await supabase.rpc('log_user_action', {
+          p_action_type: `fallback_${actionType}`,
+          p_resource_type: resourceType,
+          p_resource_id: resourceId,
+          p_details: JSON.stringify({ error: 'main_log_failed', timestamp: new Date().toISOString() }),
+          p_ip_address: 'unknown',
+          p_user_agent: 'unknown'
+        });
+      } catch (finalError) {
+        console.error('All logging attempts failed:', finalError);
+      }
       return null;
     }
   };

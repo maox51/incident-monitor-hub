@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { useAuthAudit } from './usePageAudit';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -56,6 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const { logLogin, logLogout, logAuthError } = useAuthAudit();
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -99,10 +101,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
+          setTimeout(async () => {
+            await fetchProfile(session.user.id);
+            // Log successful login after profile is fetched
+            if (event === 'SIGNED_IN') {
+              try {
+                const { data: profileData } = await supabase
+                  .from('profiles')
+                  .select('email, role')
+                  .eq('id', session.user.id)
+                  .single();
+                
+                if (profileData) {
+                  await logLogin(profileData.email, profileData.role);
+                }
+              } catch (error) {
+                console.error('Error logging login audit:', error);
+              }
+            }
+          }, 100);
         } else {
+          // Log logout if user was previously authenticated
+          if (event === 'SIGNED_OUT' && user?.email) {
+            try {
+              await logLogout(user.email);
+            } catch (error) {
+              console.error('Error logging logout audit:', error);
+            }
+          }
           setProfile(null);
         }
         setLoading(false);
@@ -143,8 +169,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email,
         password,
       });
+      
+      if (error) {
+        await logAuthError(error.message, email);
+      }
+      
       return { error };
-    } catch (error) {
+    } catch (error: any) {
+      await logAuthError(error?.message || 'Unknown error', email);
       return { error };
     }
   };
@@ -159,12 +191,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .limit(1);
 
       if (profileError || !profiles || profiles.length === 0) {
+        await logAuthError('Usuario no encontrado', username);
         return { error: { message: 'Usuario no encontrado' } };
       }
 
       const email = profiles[0].email;
       return await signIn(email, password);
-    } catch (error) {
+    } catch (error: any) {
+      await logAuthError(error?.message || 'Unknown error', username);
       return { error };
     }
   };
@@ -195,7 +229,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signOut = async () => {
+    const currentEmail = user?.email || profile?.email;
     await supabase.auth.signOut();
+    
+    // The logout will be logged automatically by the auth state change listener
     setProfile(null);
   };
 
