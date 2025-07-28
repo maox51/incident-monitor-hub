@@ -11,13 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, UserPlus, Edit, Trash2, Shield, Mail, Key, Building } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, UserPlus, Edit, Trash2, Shield, Mail, Key, Building, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Database } from '@/integrations/supabase/types';
+import { Database as DatabaseType } from '@/integrations/supabase/types';
+import BackupManagement from './BackupManagement';
 
-type AppRole = Database['public']['Enums']['app_role'];
+type AppRole = DatabaseType['public']['Enums']['app_role'];
 
 interface Profile {
   id: string;
@@ -273,8 +275,8 @@ const UserManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
-          <p className="text-gray-600">Administra los usuarios del sistema y sus permisos</p>
+          <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+          <p className="text-gray-600">Gestiona usuarios, permisos y backups del sistema</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="px-3 py-1">
@@ -282,6 +284,20 @@ const UserManagement = () => {
           </Badge>
         </div>
       </div>
+
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Gestión de Usuarios
+          </TabsTrigger>
+          <TabsTrigger value="backups" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Backups del Sistema
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6 mt-6">
 
       {/* Filtros */}
       <Card>
@@ -609,6 +625,12 @@ const UserManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+
+        <TabsContent value="backups" className="mt-6">
+          <BackupManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
