@@ -57,13 +57,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
   const { logLogin, logLogout, logAuthError } = useAuthAudit();
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
-    if (profileLoading) return null;
-    
-    setProfileLoading(true);
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -88,65 +84,58 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       console.error('Error in fetchProfile:', error);
       return null;
-    } finally {
-      setProfileLoading(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    let sessionTimeout: NodeJS.Timeout;
 
-    const handleAuthStateChange = async (event: string, session: Session | null) => {
+    const handleAuthStateChange = (event: string, session: Session | null) => {
       if (!mounted) return;
       
       console.log('Auth state change:', event, session?.user?.id);
       
-      // Clear any existing timeout
-      if (sessionTimeout) {
-        clearTimeout(sessionTimeout);
-      }
-      
+      // Update auth state immediately
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user && event !== 'TOKEN_REFRESHED') {
-        try {
-          const profileData = await fetchProfile(session.user.id);
+        // Fetch profile asynchronously without blocking
+        fetchProfile(session.user.id).then(profileData => {
           if (mounted) {
             setProfile(profileData);
+            
+            // Log login asynchronously without blocking UI
+            if (event === 'SIGNED_IN' && profileData) {
+              setTimeout(() => {
+                logLogin(profileData.email, profileData.role, {
+                  userId: session.user.id,
+                  authEvent: event,
+                  sessionId: session.access_token.slice(-10)
+                }).catch(console.error);
+              }, 0);
+            }
           }
-          
-          // Log successful login only for actual login events
-          if (event === 'SIGNED_IN' && profileData) {
-            await logLogin(profileData.email, profileData.role, {
-              userId: session.user.id,
-              authEvent: event,
-              sessionId: session.access_token.slice(-10)
-            });
-          }
-        } catch (error) {
-          console.error('Error handling auth state change:', error);
+        }).catch(error => {
+          console.error('Error fetching profile:', error);
           if (mounted) {
             setProfile(null);
           }
-        }
+        });
       } else {
         if (mounted) {
           setProfile(null);
         }
         
-        // Log logout if user was previously authenticated
+        // Log logout asynchronously
         if (event === 'SIGNED_OUT' && user?.email) {
-          try {
-            await logLogout(user.email);
-          } catch (error) {
-            console.error('Error logging logout:', error);
-          }
+          setTimeout(() => {
+            logLogout(user.email).catch(console.error);
+          }, 0);
         }
       }
       
-      // Set loading to false immediately for all events
+      // Always set loading to false immediately
       if (mounted) {
         setLoading(false);
       }
@@ -166,7 +155,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         if (session) {
-          await handleAuthStateChange('INITIAL_SESSION', session);
+          handleAuthStateChange('INITIAL_SESSION', session);
         } else {
           if (mounted) {
             setLoading(false);
@@ -180,25 +169,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     };
 
-    initializeAuth();
-
-    // Listen for auth changes
+    // Listen for auth changes first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Fallback timeout to prevent infinite loading
+    // Then initialize
+    initializeAuth();
+
+    // Shorter fallback timeout for better UX
     const fallbackTimeout = setTimeout(() => {
-      if (mounted) {
+      if (mounted && loading) {
         console.warn('Auth fallback timeout triggered');
         setLoading(false);
       }
-    }, 8000);
+    }, 5000);
 
     return () => {
       mounted = false;
       clearTimeout(fallbackTimeout);
-      if (sessionTimeout) {
-        clearTimeout(sessionTimeout);
-      }
       subscription.unsubscribe();
     };
   }, []);
