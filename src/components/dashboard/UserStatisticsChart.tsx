@@ -106,7 +106,7 @@ const UserStatisticsChart = () => {
             {/* Lista de monitores */}
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {userStats.slice(0, 10).map((user, index) => (
-                <div key={user.nombre} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div key={`${user.nombre}-${index}`} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <div className="flex items-center gap-2">
                     <span className="text-xs bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center">
                       {index + 1}

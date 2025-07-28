@@ -7,10 +7,11 @@ import UserManagement from "@/components/admin/UserManagement";
 import ConsolidadoDiario from "@/components/ConsolidadoDiario";
 import ImportDataModule from "@/components/ImportDataModule";
 import BorradoresView from "@/components/supervisor/BorradoresView";
+import SalaTimingModule from "@/components/monitoring/SalaTimingModule";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock } from "lucide-react";
+import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MonitorSpeaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -34,6 +35,7 @@ const Index = () => {
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
     { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
+    { id: 'monitoreo-salas', label: 'Monitoreo de Salas', icon: MonitorSpeaker, roles: ['admin', 'rrhh'] },
     { id: 'usuarios', label: 'Usuarios', icon: Users, roles: ['admin'] },
     { id: 'importar', label: 'Importar Datos', icon: Upload, roles: ['admin'] },
   ];
@@ -161,6 +163,7 @@ const Index = () => {
 
           {activeTab === "reportes" && <ReportesView />}
           {activeTab === "consolidado" && <ConsolidadoDiario />}
+          {activeTab === "monitoreo-salas" && <SalaTimingModule />}
         </div>
       </div>
     );
@@ -277,6 +280,12 @@ const Index = () => {
         return (
           <ProtectedRoute requireAdmin>
             <UserManagement />
+          </ProtectedRoute>
+        );
+      case "monitoreo-salas":
+        return (
+          <ProtectedRoute requireAdmin={false}>
+            <SalaTimingModule />
           </ProtectedRoute>
         );
       case "importar":

@@ -18,6 +18,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 interface MonitorKPI {
   monitor_name: string;
+  user_id: string;
   total_incidencias: number;
   incidencias_criticas: number;
   incidencias_altas: number;
@@ -261,7 +262,7 @@ const MonitorKPIs = () => {
             {topPerformers.map((monitor, index) => {
               const performance = getPerformanceLevel(monitor.eficiencia_score);
               return (
-                <div key={monitor.monitor_name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={`${monitor.monitor_name}-${monitor.user_id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${performance.color}`}>
                       {index + 1}
@@ -309,7 +310,7 @@ const MonitorKPIs = () => {
                   const ultimaActividad = new Date(monitor.last_activity).toLocaleDateString();
                   
                   return (
-                    <tr key={monitor.monitor_name} className="border-b hover:bg-gray-50">
+                    <tr key={`${monitor.monitor_name}-${monitor.user_id}`} className="border-b hover:bg-gray-50">
                       <td className="p-2 font-medium">{monitor.monitor_name}</td>
                       <td className="text-center p-2">{monitor.total_incidencias}</td>
                       <td className="text-center p-2">

@@ -146,13 +146,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       }
       
-      // Set loading to false after a short delay to ensure all operations complete
+      // Set loading to false immediately for all events
       if (mounted) {
-        sessionTimeout = setTimeout(() => {
-          if (mounted) {
-            setLoading(false);
-          }
-        }, 100);
+        setLoading(false);
       }
     };
 
@@ -189,8 +185,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
+    // Fallback timeout to prevent infinite loading
+    const fallbackTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Auth fallback timeout triggered');
+        setLoading(false);
+      }
+    }, 8000);
+
     return () => {
       mounted = false;
+      clearTimeout(fallbackTimeout);
       if (sessionTimeout) {
         clearTimeout(sessionTimeout);
       }
