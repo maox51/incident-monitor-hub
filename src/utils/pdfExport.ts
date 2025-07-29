@@ -205,7 +205,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   yPosition = addSection('RESUMEN DETALLADO DE INCIDENCIAS', yPosition);
   
   const tableData = incidencias.map(inc => [
-    inc.id.slice(0, 8),
+    //inc.id.slice(0, 8),
     inc.titulo.length > 25 ? inc.titulo.substring(0, 22) + '...' : inc.titulo,
     inc.areas?.nombre || 'N/A',
     inc.prioridad.toUpperCase(),
