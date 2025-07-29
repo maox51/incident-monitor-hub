@@ -350,7 +350,7 @@ const SalaTimingModule = () => {
                   <SelectItem value="tabla">Tabla</SelectItem>
                   <SelectItem value="barras">Barras</SelectItem>
                   <SelectItem value="lineas">Líneas</SelectItem>
-                  <SelectItem value="torta">Torta</SelectItem>
+                  <SelectItem value="torta">Pastel</SelectItem>
                   <SelectItem value="timeline">Timeline</SelectItem>
                 </SelectContent>
               </Select>

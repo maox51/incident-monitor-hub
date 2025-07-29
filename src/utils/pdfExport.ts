@@ -70,7 +70,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     // Subtítulo
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Reporte Ejecutivo de Incidencias Operacionales', pageWidth / 2, 32, { align: 'center' });
+    doc.text('Reporte ejecutivo de incidencias', pageWidth / 2, 32, { align: 'center' });
     
     // Línea decorativa
     doc.setDrawColor(...colors.accent);
@@ -95,7 +95,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     const fechaGeneracion = format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es });
     doc.text(`Generado: ${fechaGeneracion}`, margin, footerY);
     doc.text(`Página ${currentPage}`, pageWidth / 2, footerY, { align: 'center' });
-    doc.text('Sistema de Gestión v2.0', pageWidth - margin, footerY, { align: 'right' });
+    doc.text('Sistema de monitoreo', pageWidth - margin, footerY, { align: 'right' });
   };
   
   // Función para crear nueva página
@@ -147,8 +147,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     ['Fecha de generación:', format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })],
     ['Período analizado:', filtros.fechaInicio && filtros.fechaFin ? 
       `${format(new Date(filtros.fechaInicio), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(filtros.fechaFin), 'dd/MM/yyyy', { locale: es })}` : 
-      'Todos los períodos'],
-    ['Estado del sistema:', 'Operativo']
+      'Todos los períodos']
   ];
   
   // Crear tabla para información del reporte
@@ -203,7 +202,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   
   // Tabla resumen de incidencias
   yPosition = checkSpace(yPosition, 80);
-  yPosition = addSection('RESUMEN EJECUTIVO DE INCIDENCIAS', yPosition);
+  yPosition = addSection('RESUMEN DETALLADO DE INCIDENCIAS', yPosition);
   
   const tableData = incidencias.map(inc => [
     inc.id.slice(0, 8),
@@ -215,7 +214,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   ]);
   
   autoTable(doc, {
-    head: [['ID', 'Título', 'Área', 'Prioridad', 'Fecha', 'Imgs']],
+    head: [['Título', 'Área', 'Prioridad', 'Fecha', 'Imgs']],
     body: tableData,
     startY: yPosition,
     styles: {
@@ -273,7 +272,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     
     // Información principal
     const detallesInfo = [
-      ['ID', inc.id],
+      //['ID', inc.id],
       ['Área', inc.areas?.nombre || 'No especificada'],
       ['Clasificación', inc.clasificaciones?.nombre || 'No clasificada'],
       ['Prioridad', inc.prioridad.toUpperCase()],

@@ -205,7 +205,7 @@ const ConsolidadoDiario = () => {
     }
 
     try {
-      toast.loading("Generando PDF local...");
+      //toast.loading("Generando PDF local...");
       
       const { generarConsolidadoPDF } = await import('@/utils/consolidadoPdfGenerator');
       const pdfBlob = await generarConsolidadoPDF(consolidado);
