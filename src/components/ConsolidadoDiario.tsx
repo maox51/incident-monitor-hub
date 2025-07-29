@@ -77,9 +77,14 @@ const ConsolidadoDiario = () => {
     return null;
   }, [isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento, roleAreaMapping]);
 
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(() => {
+    // Asegurar que siempre se use la zona horaria local
+    const hoy = new Date();
+    const año = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    return `${año}-${mes}-${dia}`;
+  });
 
   // Obtener consolidado detallado con tipo de retorno correcto - SOLO INCIDENCIAS APROBADAS
   const { data: consolidado, isLoading, refetch } = useQuery({
@@ -158,14 +163,24 @@ const ConsolidadoDiario = () => {
 
   const generarConsolidado = async () => {
     try {
+      console.log("Generando consolidado para fecha:", fechaSeleccionada);
+      
       const { data, error } = await supabase.functions.invoke('daily-consolidation', {
-        body: { fecha: fechaSeleccionada }
+        body: { fecha: fechaSeleccionada, automatico: false }
       });
 
       if (error) throw error;
 
-      toast.success("Consolidado generado exitosamente");
-      refetch();
+      console.log("Respuesta del consolidado:", data);
+      
+      if (data.success) {
+        toast.success(`Consolidado generado: ${data.estadisticas.total_incidencias} incidencias procesadas`);
+      } else {
+        toast.error(data.mensaje || "Error al generar el consolidado");
+      }
+      
+      // Forzar la recarga de datos después de generar
+      setTimeout(() => refetch(), 1000);
     } catch (error) {
       console.error("Error generating consolidado:", error);
       toast.error("Error al generar el consolidado");
