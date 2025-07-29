@@ -255,8 +255,9 @@ const handler = async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Sistema Monitoreo <onboarding@resend.dev>",
-          to: ["malbertortega@gmail.com"],
+          //from: "Sistema Monitoreo <onboarding@resend.dev>",
+          from: "Sistema Monitoreo <soporteit2@grupoesvasa.com>",
+          to: admins.map((admin: any) => admin.email),
           subject: emailSubject,
           html: emailBody,
           tags: [
