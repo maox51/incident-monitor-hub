@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePageAudit } from "@/hooks/usePageAudit";
 import { useEffect } from "react";
 import Index from "@/pages/Index";
+import Solicitudes from "@/pages/Solicitudes";
 import AuthPage from "@/components/AuthPage";
 import NotFound from "@/pages/NotFound";
 
@@ -40,6 +41,7 @@ const AppContent = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/solicitudes" element={<Solicitudes />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

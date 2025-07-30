@@ -652,6 +652,62 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitudes: {
+        Row: {
+          aceptada_por: string | null
+          area_id: string
+          cerrada_por: string | null
+          created_at: string
+          descripcion: string
+          estado: string
+          fecha_aceptacion: string | null
+          fecha_cierre: string | null
+          fecha_creacion: string
+          id: string
+          solicitante_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aceptada_por?: string | null
+          area_id: string
+          cerrada_por?: string | null
+          created_at?: string
+          descripcion: string
+          estado?: string
+          fecha_aceptacion?: string | null
+          fecha_cierre?: string | null
+          fecha_creacion?: string
+          id?: string
+          solicitante_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aceptada_por?: string | null
+          area_id?: string
+          cerrada_por?: string | null
+          created_at?: string
+          descripcion?: string
+          estado?: string
+          fecha_aceptacion?: string | null
+          fecha_cierre?: string | null
+          fecha_creacion?: string
+          id?: string
+          solicitante_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_actions: {
         Row: {
           action_type: string
@@ -786,6 +842,10 @@ export type Database = {
       aprobar_incidencia: {
         Args: { incidencia_id: string; nuevo_estado: string }
         Returns: boolean
+      }
+      calcular_dias_pendientes: {
+        Args: { p_solicitud_id: string }
+        Returns: number
       }
       create_group_chat: {
         Args: {

@@ -8,10 +8,11 @@ import ConsolidadoDiario from "@/components/ConsolidadoDiario";
 import ImportDataModule from "@/components/ImportDataModule";
 import BorradoresView from "@/components/supervisor/BorradoresView";
 import SalaTimingModule from "@/components/monitoring/SalaTimingModule";
+import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MonitorSpeaker } from "lucide-react";
+import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MonitorSpeaker, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -32,6 +33,7 @@ const Index = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
+    { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento'] },
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
     { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
@@ -164,6 +166,7 @@ const Index = () => {
           {activeTab === "reportes" && <ReportesView />}
           {activeTab === "consolidado" && <ConsolidadoDiario />}
           {activeTab === "monitoreo-salas" && <SalaTimingModule />}
+          {activeTab === "solicitudes" && <SolicitudesView />}
         </div>
       </div>
     );
@@ -254,6 +257,7 @@ const Index = () => {
 
           {activeTab === "borradores" && <BorradoresView />}
           {activeTab === "nueva-incidencia" && <IncidenciaForm />}
+          {activeTab === "solicitudes" && <SolicitudesView />}
         </div>
       </div>
     );
@@ -270,6 +274,8 @@ const Index = () => {
         );
       case "nueva-incidencia":
         return <IncidenciaForm />;
+      case "solicitudes":
+        return <SolicitudesView />;
       case "borradores":
         return <BorradoresView />;
       case "consolidado":

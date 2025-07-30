@@ -10,7 +10,8 @@ import {
   Shield,
   AlertTriangle,
   FileCheck,
-  Clock
+  Clock,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       label: 'Incidencias', 
       icon: AlertTriangle, 
       roles: ['admin', 'supervisor_monitoreo', 'monitor'] 
+    },
+    { 
+      id: 'solicitudes', 
+      label: 'Solicitudes', 
+      icon: MessageSquare, 
+      roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas'] 
     },
     { 
       id: 'reportes', 
