@@ -18,7 +18,9 @@ export interface Solicitud {
   cerrada_por?: string;
   dias_pendientes?: number;
   area?: { nombre: string };
+  areas?: { nombre: string };
   solicitante?: { full_name: string };
+  profiles?: { full_name: string };
 }
 
 export interface CrearSolicitudData {
@@ -41,8 +43,8 @@ export const useSolicitudes = () => {
           .from('solicitudes')
           .select(`
             *,
-            area:areas(nombre),
-            solicitante:profiles!solicitudes_solicitante_id_fkey(full_name)
+            areas!solicitudes_area_id_fkey(nombre),
+            profiles!solicitudes_solicitante_id_fkey(full_name)
           `)
           .order('fecha_creacion', { ascending: false });
 
