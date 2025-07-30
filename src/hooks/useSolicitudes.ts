@@ -36,30 +36,45 @@ export const useSolicitudes = () => {
   const { data: solicitudes = [], isLoading } = useQuery({
     queryKey: ['solicitudes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('solicitudes')
-        .select(`
-          *,
-          area:areas(nombre),
-          solicitante:profiles!solicitudes_solicitante_id_fkey(full_name)
-        `)
-        .order('fecha_creacion', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('solicitudes')
+          .select(`
+            *,
+            area:areas(nombre),
+            solicitante:profiles!solicitudes_solicitante_id_fkey(full_name)
+          `)
+          .order('fecha_creacion', { ascending: false });
 
-      if (error) throw error;
+        if (error) {
+          console.error('Error fetching solicitudes:', error);
+          throw error;
+        }
 
-      // Calcular días pendientes para cada solicitud
-      const solicitudesConDias = await Promise.all(
-        data.map(async (solicitud: any) => {
-          if (solicitud.estado === 'pendiente') {
-            const { data: diasData } = await supabase
-              .rpc('calcular_dias_pendientes', { p_solicitud_id: solicitud.id });
-            return { ...solicitud, dias_pendientes: diasData || 0 };
-          }
-          return { ...solicitud, dias_pendientes: 0 };
-        })
-      );
+        if (!data) return [];
 
-      return solicitudesConDias;
+        // Calcular días pendientes para cada solicitud
+        const solicitudesConDias = await Promise.all(
+          data.map(async (solicitud: any) => {
+            if (solicitud.estado === 'pendiente') {
+              try {
+                const { data: diasData } = await supabase
+                  .rpc('calcular_dias_pendientes', { p_solicitud_id: solicitud.id });
+                return { ...solicitud, dias_pendientes: diasData || 0 };
+              } catch (error) {
+                console.error('Error calculating days:', error);
+                return { ...solicitud, dias_pendientes: 0 };
+              }
+            }
+            return { ...solicitud, dias_pendientes: 0 };
+          })
+        );
+
+        return solicitudesConDias;
+      } catch (error) {
+        console.error('Error in solicitudes query:', error);
+        return [];
+      }
     },
   });
 
@@ -71,11 +86,13 @@ export const useSolicitudes = () => {
       const { data, error } = await supabase
         .from('solicitudes')
         .insert({
-          ...datos,
+          titulo: datos.titulo,
+          descripcion: datos.descripcion,
+          area_id: datos.area_id,
           solicitante_id: user.id,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -109,7 +126,7 @@ export const useSolicitudes = () => {
         })
         .eq('id', solicitudId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -139,7 +156,7 @@ export const useSolicitudes = () => {
         .update({ estado: 'en_ejecucion' })
         .eq('id', solicitudId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -165,7 +182,7 @@ export const useSolicitudes = () => {
         })
         .eq('id', solicitudId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
