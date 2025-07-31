@@ -94,15 +94,13 @@ export const useSolicitudes = () => {
               }
             }
 
-            // Calcular horas transcurridas para solicitudes en ejecución o cerradas
-            if (solicitud.estado === 'en_ejecucion' || solicitud.estado === 'cerrada') {
-              try {
-                const { data: horasData } = await supabase
-                  .rpc('calcular_horas_solicitud', { p_solicitud_id: solicitud.id });
-                horasTranscurridas = horasData || 0;
-              } catch (error) {
-                console.error('Error calculating hours:', error);
-              }
+            // Calcular horas transcurridas para todas las solicitudes (desde creación hasta cierre)
+            try {
+              const { data: horasData } = await supabase
+                .rpc('calcular_horas_solicitud', { p_solicitud_id: solicitud.id });
+              horasTranscurridas = horasData || 0;
+            } catch (error) {
+              console.error('Error calculating hours:', error);
             }
 
             return { 
@@ -165,7 +163,6 @@ export const useSolicitudes = () => {
         .update({
           estado: 'en_ejecucion',
           fecha_aceptacion: new Date().toISOString(),
-          fecha_inicio_ejecucion: new Date().toISOString(),
           aceptada_por: user?.id,
         })
         .eq('id', solicitudId)

@@ -52,7 +52,7 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
 
   const canManageSolicitud = user?.id !== solicitud.solicitante_id;
   const showDiasPendientes = solicitud.estado === 'pendiente' && solicitud.dias_pendientes && solicitud.dias_pendientes > 0;
-  const showHorasTranscurridas = (solicitud.estado === 'en_ejecucion' || solicitud.estado === 'cerrada') && solicitud.horas_transcurridas && solicitud.horas_transcurridas > 0;
+  const showHorasTranscurridas = solicitud.horas_transcurridas && solicitud.horas_transcurridas > 0;
 
   const handleAceptar = async () => {
     try {
