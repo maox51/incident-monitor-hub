@@ -16,6 +16,9 @@ export interface Solicitud {
   aceptada_por?: string;
   fecha_cierre?: string;
   cerrada_por?: string;
+  fecha_inicio_ejecucion?: string;
+  progreso_ejecucion?: string;
+  horas_transcurridas?: number;
   dias_pendientes?: number;
   area?: { nombre: string };
   areas?: { nombre: string };
@@ -34,19 +37,39 @@ export const useSolicitudes = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Obtener todas las solicitudes
+  // Obtener todas las solicitudes con filtrado por área del usuario
   const { data: solicitudes = [], isLoading } = useQuery({
-    queryKey: ['solicitudes'],
+    queryKey: ['solicitudes', user?.id],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        if (!user?.id) return [];
+
+        // Obtener áreas asignadas al usuario
+        const { data: userAreas, error: areasError } = await supabase
+          .from('user_area_assignments')
+          .select('area_id')
+          .eq('user_id', user.id);
+
+        if (areasError) {
+          console.error('Error fetching user areas:', areasError);
+        }
+
+        const userAreaIds = userAreas?.map(ua => ua.area_id) || [];
+
+        let query = supabase
           .from('solicitudes')
           .select(`
             *,
             areas!solicitudes_area_id_fkey(nombre),
             profiles!solicitudes_solicitante_id_fkey(full_name)
-          `)
-          .order('fecha_creacion', { ascending: false });
+          `);
+
+        // Filtrar por áreas si el usuario tiene áreas asignadas
+        if (userAreaIds.length > 0) {
+          query = query.in('area_id', userAreaIds);
+        }
+
+        const { data, error } = await query.order('fecha_creacion', { ascending: false });
 
         if (error) {
           console.error('Error fetching solicitudes:', error);
@@ -55,24 +78,42 @@ export const useSolicitudes = () => {
 
         if (!data) return [];
 
-        // Calcular días pendientes para cada solicitud
-        const solicitudesConDias = await Promise.all(
+        // Calcular días pendientes y horas transcurridas para cada solicitud
+        const solicitudesConTiempo = await Promise.all(
           data.map(async (solicitud: any) => {
+            let diasPendientes = 0;
+            let horasTranscurridas = 0;
+
             if (solicitud.estado === 'pendiente') {
               try {
                 const { data: diasData } = await supabase
                   .rpc('calcular_dias_pendientes', { p_solicitud_id: solicitud.id });
-                return { ...solicitud, dias_pendientes: diasData || 0 };
+                diasPendientes = diasData || 0;
               } catch (error) {
                 console.error('Error calculating days:', error);
-                return { ...solicitud, dias_pendientes: 0 };
               }
             }
-            return { ...solicitud, dias_pendientes: 0 };
+
+            // Calcular horas transcurridas para solicitudes en ejecución o cerradas
+            if (solicitud.estado === 'en_ejecucion' || solicitud.estado === 'cerrada') {
+              try {
+                const { data: horasData } = await supabase
+                  .rpc('calcular_horas_solicitud', { p_solicitud_id: solicitud.id });
+                horasTranscurridas = horasData || 0;
+              } catch (error) {
+                console.error('Error calculating hours:', error);
+              }
+            }
+
+            return { 
+              ...solicitud, 
+              dias_pendientes: diasPendientes,
+              horas_transcurridas: horasTranscurridas
+            };
           })
         );
 
-        return solicitudesConDias;
+        return solicitudesConTiempo;
       } catch (error) {
         console.error('Error in solicitudes query:', error);
         return [];
@@ -116,14 +157,15 @@ export const useSolicitudes = () => {
     },
   });
 
-  // Aceptar solicitud
+  // Aceptar solicitud - cambia automáticamente a "en ejecución" 
   const aceptarSolicitud = useMutation({
     mutationFn: async (solicitudId: string) => {
       const { data, error } = await supabase
         .from('solicitudes')
         .update({
-          estado: 'aceptada',
+          estado: 'en_ejecucion',
           fecha_aceptacion: new Date().toISOString(),
+          fecha_inicio_ejecucion: new Date().toISOString(),
           aceptada_por: user?.id,
         })
         .eq('id', solicitudId)
@@ -137,7 +179,7 @@ export const useSolicitudes = () => {
       queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
       toast({
         title: 'Solicitud aceptada',
-        description: 'La solicitud ha sido aceptada exitosamente.',
+        description: 'La solicitud está ahora en ejecución.',
       });
     },
     onError: (error) => {
@@ -150,12 +192,16 @@ export const useSolicitudes = () => {
     },
   });
 
-  // Cambiar estado a "en ejecución"
-  const iniciarEjecucion = useMutation({
-    mutationFn: async (solicitudId: string) => {
+  // Actualizar progreso de ejecución
+  const actualizarProgreso = useMutation({
+    mutationFn: async ({ solicitudId, progreso }: { solicitudId: string; progreso: string }) => {
+      if (progreso.length < 100) {
+        throw new Error('El progreso debe tener al menos 100 caracteres');
+      }
+
       const { data, error } = await supabase
         .from('solicitudes')
-        .update({ estado: 'en_ejecucion' })
+        .update({ progreso_ejecucion: progreso })
         .eq('id', solicitudId)
         .select()
         .maybeSingle();
@@ -166,8 +212,15 @@ export const useSolicitudes = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
       toast({
-        title: 'Solicitud en ejecución',
-        description: 'La solicitud está ahora en ejecución.',
+        title: 'Progreso actualizado',
+        description: 'El progreso de la solicitud ha sido actualizado.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Hubo un error al actualizar el progreso.',
+        variant: 'destructive',
       });
     },
   });
@@ -213,8 +266,8 @@ export const useSolicitudes = () => {
     isCreating: crearSolicitud.isPending,
     aceptarSolicitud: aceptarSolicitud.mutateAsync,
     isAccepting: aceptarSolicitud.isPending,
-    iniciarEjecucion: iniciarEjecucion.mutateAsync,
-    isStarting: iniciarEjecucion.isPending,
+    actualizarProgreso: actualizarProgreso.mutateAsync,
+    isUpdatingProgress: actualizarProgreso.isPending,
     cerrarSolicitud: cerrarSolicitud.mutateAsync,
     isClosing: cerrarSolicitud.isPending,
   };

@@ -663,7 +663,10 @@ export type Database = {
           fecha_aceptacion: string | null
           fecha_cierre: string | null
           fecha_creacion: string
+          fecha_inicio_ejecucion: string | null
+          horas_transcurridas: number | null
           id: string
+          progreso_ejecucion: string | null
           solicitante_id: string
           titulo: string
           updated_at: string
@@ -678,7 +681,10 @@ export type Database = {
           fecha_aceptacion?: string | null
           fecha_cierre?: string | null
           fecha_creacion?: string
+          fecha_inicio_ejecucion?: string | null
+          horas_transcurridas?: number | null
           id?: string
+          progreso_ejecucion?: string | null
           solicitante_id: string
           titulo: string
           updated_at?: string
@@ -693,7 +699,10 @@ export type Database = {
           fecha_aceptacion?: string | null
           fecha_cierre?: string | null
           fecha_creacion?: string
+          fecha_inicio_ejecucion?: string | null
+          horas_transcurridas?: number | null
           id?: string
+          progreso_ejecucion?: string | null
           solicitante_id?: string
           titulo?: string
           updated_at?: string
@@ -786,6 +795,42 @@ export type Database = {
           },
         ]
       }
+      user_area_assignments: {
+        Row: {
+          area_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          area_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          area_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_area_assignments_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_area_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -851,6 +896,10 @@ export type Database = {
         Returns: boolean
       }
       calcular_dias_pendientes: {
+        Args: { p_solicitud_id: string }
+        Returns: number
+      }
+      calcular_horas_solicitud: {
         Args: { p_solicitud_id: string }
         Returns: number
       }

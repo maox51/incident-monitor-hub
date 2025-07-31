@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, User, Building } from 'lucide-react';
+import { Clock, User, Building, Edit, Timer } from 'lucide-react';
 import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
 import { useAuth } from '@/hooks/useAuth';
+import { ProgresoEjecucionDialog } from './ProgresoEjecucionDialog';
+import { CerrarSolicitudDialog } from './CerrarSolicitudDialog';
 
 interface SolicitudCardProps {
   solicitud: Solicitud;
@@ -43,32 +46,19 @@ const getEstadoColor = (estado: string) => {
 
 export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
   const { user } = useAuth();
-  const { aceptarSolicitud, iniciarEjecucion, cerrarSolicitud, isAccepting, isStarting, isClosing } = useSolicitudes();
+  const { aceptarSolicitud, isAccepting } = useSolicitudes();
+  const [showProgresoDialog, setShowProgresoDialog] = useState(false);
+  const [showCerrarDialog, setShowCerrarDialog] = useState(false);
 
   const canManageSolicitud = user?.id !== solicitud.solicitante_id;
   const showDiasPendientes = solicitud.estado === 'pendiente' && solicitud.dias_pendientes && solicitud.dias_pendientes > 0;
+  const showHorasTranscurridas = (solicitud.estado === 'en_ejecucion' || solicitud.estado === 'cerrada') && solicitud.horas_transcurridas && solicitud.horas_transcurridas > 0;
 
   const handleAceptar = async () => {
     try {
       await aceptarSolicitud(solicitud.id);
     } catch (error) {
       console.error('Error al aceptar solicitud:', error);
-    }
-  };
-
-  const handleIniciarEjecucion = async () => {
-    try {
-      await iniciarEjecucion(solicitud.id);
-    } catch (error) {
-      console.error('Error al iniciar ejecución:', error);
-    }
-  };
-
-  const handleCerrar = async () => {
-    try {
-      await cerrarSolicitud(solicitud.id);
-    } catch (error) {
-      console.error('Error al cerrar solicitud:', error);
     }
   };
 
@@ -107,7 +97,24 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
               <Clock className="w-4 h-4" />
               <span>{format(new Date(solicitud.fecha_creacion), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
             </div>
+            {showHorasTranscurridas && (
+              <div className="flex items-center gap-1">
+                <Timer className="w-4 h-4" />
+                <span className="font-medium text-blue-600">
+                  {solicitud.horas_transcurridas?.toFixed(2)} horas
+                </span>
+              </div>
+            )}
           </div>
+
+          {solicitud.progreso_ejecucion && (
+            <div className="bg-muted p-3 rounded-md mt-3">
+              <h5 className="text-sm font-medium mb-1">Progreso de ejecución:</h5>
+              <p className="text-sm text-muted-foreground line-clamp-3">
+                {solicitud.progreso_ejecucion}
+              </p>
+            </div>
+          )}
 
           {canManageSolicitud && (
             <div className="flex gap-2 mt-4">
@@ -117,34 +124,46 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
                   onClick={handleAceptar}
                   disabled={isAccepting}
                 >
-                  {isAccepting ? 'Aceptando...' : 'Aceptar'}
+                  {isAccepting ? 'Aceptando...' : 'Aceptar y Comenzar'}
                 </Button>
               )}
               
-              {solicitud.estado === 'aceptada' && (
-                <Button 
-                  size="sm" 
-                  onClick={handleIniciarEjecucion}
-                  disabled={isStarting}
-                >
-                  {isStarting ? 'Iniciando...' : 'Iniciar Ejecución'}
-                </Button>
-              )}
-              
-              {(solicitud.estado === 'aceptada' || solicitud.estado === 'en_ejecucion') && (
+              {solicitud.estado === 'en_ejecucion' && (
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={handleCerrar}
-                  disabled={isClosing}
+                  onClick={() => setShowProgresoDialog(true)}
                 >
-                  {isClosing ? 'Cerrando...' : 'Cerrar'}
+                  <Edit className="w-4 h-4 mr-1" />
+                  Actualizar Progreso
+                </Button>
+              )}
+              
+              {solicitud.estado === 'en_ejecucion' && (
+                <Button 
+                  size="sm" 
+                  variant="destructive"
+                  onClick={() => setShowCerrarDialog(true)}
+                >
+                  Cerrar Solicitud
                 </Button>
               )}
             </div>
           )}
         </div>
       </CardContent>
+
+      <ProgresoEjecucionDialog
+        solicitud={solicitud}
+        isOpen={showProgresoDialog}
+        onClose={() => setShowProgresoDialog(false)}
+      />
+
+      <CerrarSolicitudDialog
+        solicitud={solicitud}
+        isOpen={showCerrarDialog}
+        onClose={() => setShowCerrarDialog(false)}
+      />
     </Card>
   );
 };
