@@ -25,7 +25,6 @@ export const SolicitudesView = () => {
   }
 
   const solicitudesPendientes = solicitudes.filter(s => s.estado === 'pendiente');
-  const solicitudesAceptadas = solicitudes.filter(s => s.estado === 'aceptada');
   const solicitudesEnEjecucion = solicitudes.filter(s => s.estado === 'en_ejecucion');
   const solicitudesCerradas = solicitudes.filter(s => s.estado === 'cerrada');
 
@@ -43,7 +42,7 @@ export const SolicitudesView = () => {
       </div>
 
       {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
@@ -51,16 +50,6 @@ export const SolicitudesView = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{solicitudesPendientes.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aceptadas</CardTitle>
-            <FileText className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{solicitudesAceptadas.length}</div>
           </CardContent>
         </Card>
 
@@ -87,10 +76,9 @@ export const SolicitudesView = () => {
 
       {/* Tabs para diferentes estados */}
       <Tabs defaultValue="todas" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="todas">Todas</TabsTrigger>
           <TabsTrigger value="pendientes">Pendientes</TabsTrigger>
-          <TabsTrigger value="aceptadas">Aceptadas</TabsTrigger>
           <TabsTrigger value="en_ejecucion">En Ejecución</TabsTrigger>
           <TabsTrigger value="cerradas">Cerradas</TabsTrigger>
         </TabsList>
@@ -121,13 +109,6 @@ export const SolicitudesView = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="aceptadas" className="space-y-4">
-          <div className="grid gap-4">
-            {solicitudesAceptadas.map((solicitud) => (
-              <SolicitudCard key={solicitud.id} solicitud={solicitud} />
-            ))}
-          </div>
-        </TabsContent>
 
         <TabsContent value="en_ejecucion" className="space-y-4">
           <div className="grid gap-4">
