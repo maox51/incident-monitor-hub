@@ -350,7 +350,7 @@ const MonitorKPIs = () => {
       {productividadData && productividadData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Productividad Semanal</CardTitle>
+            <CardTitle>Historico Semanal</CardTitle>
             <CardDescription>Incidencias reportadas por día de la semana</CardDescription>
           </CardHeader>
           <CardContent>
