@@ -24,7 +24,7 @@ export interface IncidenciaData {
 export const useIncidenciaForm = () => {
   const { user, profile } = useAuth();
   const { logAction } = useAuditLog();
-  const { getSuggestedArea } = useSmartAreaSelection();
+  const { getSuggestedArea, getSuggestedAreasMultiple } = useSmartAreaSelection();
   
   const [formData, setFormData] = useState<IncidenciaData>({
     titulo: "",
@@ -42,23 +42,30 @@ export const useIncidenciaForm = () => {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleInputChange = useCallback((field: string, value: string | number | string[]) => {
-    setFormData(prev => {
-      const newData = { ...prev, [field]: value };
-      
-      // Si se cambian las clasificaciones, aplicar selección inteligente
-      if (field === "clasificacion_ids" && Array.isArray(value) && value.length > 0) {
-        // Usar la primera clasificación para determinar el área y prioridad
-        const smartSelection = getSuggestedArea(value[0]);
-        if (smartSelection) {
-          newData.area_id = smartSelection.areaId;
-          newData.prioridad = smartSelection.prioridad as any;
-        }
+  const handleInputChange = useCallback(async (field: string, value: string | number | string[]) => {
+    if (field === "clasificacion_ids" && Array.isArray(value) && value.length > 0) {
+      // Obtener múltiples áreas sugeridas para todas las clasificaciones seleccionadas
+      const areasMultiples = await getSuggestedAreasMultiple(value);
+      if (areasMultiples.length > 0) {
+        // Usar la primera área con mayor prioridad
+        const areaPrincipal = areasMultiples[0];
+        
+        setFormData(prev => ({
+          ...prev,
+          [field]: value,
+          area_id: areaPrincipal.areaId,
+          prioridad: areaPrincipal.prioridad as any
+        }));
+        
+        // Log para mostrar las áreas sugeridas
+        console.log('Áreas sugeridas para las clasificaciones:', areasMultiples.map(a => a.areaNombre).join(', '));
+        return;
       }
-      
-      return newData;
-    });
-  }, [getSuggestedArea]);
+    }
+    
+    // Para otros campos, aplicar lógica simple
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, [getSuggestedAreasMultiple]);
 
   const handleImageUpload = useCallback(async (files: FileList) => {
     if (!files || files.length === 0) return;

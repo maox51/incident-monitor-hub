@@ -60,5 +60,26 @@ export const useSmartAreaSelection = () => {
     };
   };
 
-  return { getSuggestedArea, loadAreaMappings };
+  // Nueva función para obtener múltiples áreas sugeridas basadas en múltiples clasificaciones
+  const getSuggestedAreasMultiple = async (clasificacionIds: string[]): Promise<{ areaId: string; prioridad: string; areaNombre: string }[]> => {
+    try {
+      const { data, error } = await supabase
+        .rpc('obtener_areas_sugeridas_multiple', { 
+          clasificacion_ids: clasificacionIds 
+        });
+
+      if (error) throw error;
+
+      return data?.map((item: any) => ({
+        areaId: item.area_id,
+        prioridad: item.prioridad_sugerida,
+        areaNombre: item.area_nombre
+      })) || [];
+    } catch (error) {
+      console.error('Error getting multiple suggested areas:', error);
+      return [];
+    }
+  };
+
+  return { getSuggestedArea, getSuggestedAreasMultiple, loadAreaMappings };
 };

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatHorasATradicional } from '@/utils/timeFormatter';
 
 interface CerrarSolicitudDialogProps {
   solicitud: Solicitud;
@@ -38,7 +39,7 @@ export const CerrarSolicitudDialog = ({ solicitud, isOpen, onClose }: CerrarSoli
               <p><strong>Inicio de ejecución:</strong> {format(new Date(solicitud.fecha_inicio_ejecucion), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
             )}
             {solicitud.horas_transcurridas && (
-              <p><strong>Tiempo transcurrido:</strong> {solicitud.horas_transcurridas.toFixed(2)} horas</p>
+              <p><strong>Tiempo transcurrido:</strong> {formatHorasATradicional(solicitud.horas_transcurridas)}</p>
             )}
           </div>
 

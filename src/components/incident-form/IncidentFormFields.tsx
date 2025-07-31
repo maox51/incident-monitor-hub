@@ -41,7 +41,7 @@ interface IncidentFormFieldsProps {
   areas?: Area[];
   clasificaciones?: Clasificacion[];
   salas?: Sala[];
-  onInputChange: (field: string, value: string | number | string[]) => void;
+  onInputChange: (field: string, value: string | number | string[]) => Promise<void> | void;
 }
 
 const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputChange }: IncidentFormFieldsProps) => {
@@ -57,18 +57,18 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
     clasificacion.nombre.toLowerCase().includes('cierre')
   );
 
-  const handleClasificacionToggle = (clasificacionId: string) => {
+  const handleClasificacionToggle = async (clasificacionId: string) => {
     const currentIds = formData.clasificacion_ids;
     const newIds = currentIds.includes(clasificacionId)
       ? currentIds.filter(id => id !== clasificacionId)
       : [...currentIds, clasificacionId];
     
-    onInputChange("clasificacion_ids", newIds);
+    await onInputChange("clasificacion_ids", newIds);
   };
 
-  const removeClasificacion = (clasificacionId: string) => {
+  const removeClasificacion = async (clasificacionId: string) => {
     const newIds = formData.clasificacion_ids.filter(id => id !== clasificacionId);
-    onInputChange("clasificacion_ids", newIds);
+    await onInputChange("clasificacion_ids", newIds);
   };
 
   return (

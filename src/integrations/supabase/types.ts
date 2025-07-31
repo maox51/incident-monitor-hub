@@ -920,6 +920,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      formatear_tiempo_tradicional: {
+        Args: { minutos_totales: number }
+        Returns: string
+      }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string
@@ -962,6 +966,14 @@ export type Database = {
       mark_messages_as_read: {
         Args: { _room_id: string; _user_id: string }
         Returns: number
+      }
+      obtener_areas_sugeridas_multiple: {
+        Args: { clasificacion_ids: string[] }
+        Returns: {
+          area_id: string
+          prioridad_sugerida: string
+          area_nombre: string
+        }[]
       }
       obtener_consolidado_con_medios: {
         Args: { fecha_consolidado: string }
@@ -1008,6 +1020,7 @@ export type Database = {
         | "supervisor_salas"
         | "finanzas"
         | "mantenimiento"
+        | "tecnico"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1143,6 +1156,7 @@ export const Constants = {
         "supervisor_salas",
         "finanzas",
         "mantenimiento",
+        "tecnico",
       ],
     },
   },

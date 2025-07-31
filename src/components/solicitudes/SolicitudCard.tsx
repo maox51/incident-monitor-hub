@@ -9,6 +9,7 @@ import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
 import { useAuth } from '@/hooks/useAuth';
 import { ProgresoEjecucionDialog } from './ProgresoEjecucionDialog';
 import { CerrarSolicitudDialog } from './CerrarSolicitudDialog';
+import { formatHorasATradicional } from '@/utils/timeFormatter';
 
 interface SolicitudCardProps {
   solicitud: Solicitud;
@@ -101,7 +102,7 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
               <div className="flex items-center gap-1">
                 <Timer className="w-4 h-4" />
                 <span className="font-medium text-blue-600">
-                  {solicitud.horas_transcurridas?.toFixed(2)} horas
+                  {formatHorasATradicional(solicitud.horas_transcurridas || 0)}
                 </span>
               </div>
             )}
