@@ -80,8 +80,7 @@ const ReportesView = () => {
           *,
           areas(nombre, descripcion),
           clasificaciones(nombre, color),
-          imagenes_incidencias(id, url_imagen, nombre_archivo),
-          profiles!incidencias_reportado_por_profiles_fkey(full_name)
+          imagenes_incidencias(id, url_imagen, nombre_archivo)
         `)
         .eq("estado", "aprobado") // Solo incidencias aprobadas
         .order("created_at", { ascending: false });
@@ -151,7 +150,7 @@ const ReportesView = () => {
         `"${inc.areas?.nombre || ''}"`,
         `"${inc.clasificaciones?.nombre || ''}"`,
         `"${inc.prioridad}"`,
-        `"${inc.profiles?.full_name || inc.reportado_por}"`,
+        `"${inc.reportado_por}"`,
         `"${format(new Date(inc.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}"`,
         `"${inc.descripcion}"`
       ].join(","))
@@ -364,7 +363,7 @@ const ReportesView = () => {
                       </div>
                       <div className="text-right text-sm text-gray-500">
                         <p>{format(new Date(incidencia.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
-                        <p>Por: {incidencia.profiles?.full_name || incidencia.reportado_por}</p>
+                        <p>Por: {incidencia.reportado_por}</p>
                       </div>
                     </div>
                     

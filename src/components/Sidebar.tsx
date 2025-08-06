@@ -68,6 +68,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       roles: ['admin', 'supervisor_monitoreo', 'monitor'] 
     },
     { 
+      id: 'estado-maquinas', 
+      label: 'Estado Máquinas', 
+      icon: MessageSquare, 
+      roles: ['admin', 'tecnico'] 
+    },
+    { 
       id: 'admin', 
       label: 'Admin', 
       icon: Users, 

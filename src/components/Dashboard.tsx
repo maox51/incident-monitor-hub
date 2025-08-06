@@ -22,6 +22,7 @@ const BorradoresView = React.lazy(() => import('./supervisor/BorradoresView'));
 const QuinzenalStatsCard = React.lazy(() => import('./dashboard/QuinzenalStatsCard'));
 const PeriodComparisonCard = React.lazy(() => import('./dashboard/PeriodComparisonCard'));
 const SalaTimingModule = React.lazy(() => import('./monitoring/SalaTimingModule'));
+const EstadoMaquinasModule = React.lazy(() => import('./monitoring/EstadoMaquinasModule'));
 const MonitorKPIs = React.lazy(() => import('./dashboard/MonitorKPIs'));
 const UserStatisticsChart = React.lazy(() => import('./dashboard/UserStatisticsChart'));
 
@@ -213,6 +214,14 @@ const Dashboard = () => {
             <SalaTimingModule />
           </React.Suspense>
         );
+      case 'estado-maquinas':
+        return (profile?.role === 'admin' || profile?.role === 'tecnico') ? (
+          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
+            <EstadoMaquinasModule />
+          </React.Suspense>
+        ) : (
+          <div>No tienes permisos para acceder a esta sección.</div>
+        );
       default:
         return <div>Sección no encontrada</div>;
     }
@@ -251,6 +260,11 @@ const Dashboard = () => {
               {(profile?.role === 'admin' || profile?.role === 'supervisor_monitoreo' || profile?.role === 'monitor') && (
                 <TabsTrigger value="monitoreo-salas" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
                   Monitoreo de Salas
+                </TabsTrigger>
+              )}
+              {(profile?.role === 'admin' || profile?.role === 'tecnico') && (
+                <TabsTrigger value="estado-maquinas" className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-b-2 border-b-transparent px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none">
+                  Estado Máquinas
                 </TabsTrigger>
               )}
             </TabsList>

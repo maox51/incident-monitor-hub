@@ -54,7 +54,9 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
     clasificacion.nombre.toLowerCase().includes('tardío') ||
     clasificacion.nombre.toLowerCase().includes('prematuro') ||
     clasificacion.nombre.toLowerCase().includes('ingreso') ||
-    clasificacion.nombre.toLowerCase().includes('cierre')
+    clasificacion.nombre.toLowerCase().includes('cierre') ||
+    (clasificacion.nombre.toLowerCase().includes('maquina') && 
+     clasificacion.nombre.toLowerCase().includes('apagada'))
   );
 
   const handleClasificacionToggle = async (clasificacionId: string) => {
@@ -248,7 +250,10 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
         <div className="space-y-2 bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
           <Label htmlFor="tiempo_minutos" className="flex items-center gap-2 text-orange-700">
             <Clock className="w-4 h-4" />
-            Tiempo en Minutos *
+            {selectedClasificaciones.some(c => c.nombre.toLowerCase().includes('maquina') && c.nombre.toLowerCase().includes('apagada'))
+              ? 'Número de Máquinas Apagadas *'
+              : 'Tiempo en Minutos *'
+            }
           </Label>
           <Input
             id="tiempo_minutos"
@@ -256,12 +261,18 @@ const IncidentFormFields = ({ formData, areas, clasificaciones, salas, onInputCh
             min="1"
             value={formData.tiempo_minutos || ''}
             onChange={(e) => onInputChange("tiempo_minutos", parseInt(e.target.value) || 0)}
-            placeholder="Ingresa el tiempo en minutos"
+            placeholder={selectedClasificaciones.some(c => c.nombre.toLowerCase().includes('maquina') && c.nombre.toLowerCase().includes('apagada'))
+              ? 'Ej: 5 máquinas'
+              : 'Ingresa el tiempo en minutos'
+            }
             className="bg-white border-yellow-300 w-full max-w-xs"
             required={requiresTimeField}
           />
           <p className="text-xs text-orange-600">
-            Este campo es requerido para incidencias de ingresos tardíos o cierres prematuros
+            {selectedClasificaciones.some(c => c.nombre.toLowerCase().includes('maquina') && c.nombre.toLowerCase().includes('apagada'))
+              ? 'Indique cuántas máquinas están apagadas'
+              : 'Este campo es requerido para incidencias de ingresos tardíos o cierres prematuros'
+            }
           </p>
         </div>
       )}
