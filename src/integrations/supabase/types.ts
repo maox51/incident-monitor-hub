@@ -261,6 +261,50 @@ export type Database = {
         }
         Relationships: []
       }
+      conteos_quincenales_maquinas: {
+        Row: {
+          año: number
+          created_at: string
+          id: string
+          mes: number
+          quincena: number
+          sala_id: string
+          total_incidencias_maquinas: number
+          total_maquinas_apagadas: number
+          updated_at: string
+        }
+        Insert: {
+          año: number
+          created_at?: string
+          id?: string
+          mes: number
+          quincena: number
+          sala_id: string
+          total_incidencias_maquinas?: number
+          total_maquinas_apagadas?: number
+          updated_at?: string
+        }
+        Update: {
+          año?: number
+          created_at?: string
+          id?: string
+          mes?: number
+          quincena?: number
+          sala_id?: string
+          total_incidencias_maquinas?: number
+          total_maquinas_apagadas?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteos_quincenales_maquinas_sala_id_fkey"
+            columns: ["sala_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conteos_quincenales_sala: {
         Row: {
           año: number
@@ -874,6 +918,14 @@ export type Database = {
       }
     }
     Functions: {
+      actualizar_conteo_quincenal_maquinas: {
+        Args: {
+          p_sala_id: string
+          p_cantidad_maquinas: number
+          p_fecha?: string
+        }
+        Returns: boolean
+      }
       actualizar_conteo_quincenal_sala: {
         Args: {
           p_sala_id: string
@@ -979,9 +1031,25 @@ export type Database = {
         Args: { fecha_consolidado: string }
         Returns: Json
       }
+      obtener_conteo_quincenal_maquinas: {
+        Args: { p_sala_id: string; p_fecha?: string }
+        Returns: string
+      }
       obtener_conteo_quincenal_sala: {
         Args: { p_sala_id: string; p_fecha?: string }
         Returns: string
+      }
+      obtener_estadisticas_quincenales_maquinas: {
+        Args: { p_año?: number; p_mes?: number }
+        Returns: {
+          sala_id: string
+          sala_nombre: string
+          año: number
+          mes: number
+          quincena: number
+          total_maquinas_apagadas: number
+          total_incidencias_maquinas: number
+        }[]
       }
       obtener_estadisticas_quincenales_sala: {
         Args: { p_año?: number; p_mes?: number }
