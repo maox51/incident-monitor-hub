@@ -80,8 +80,7 @@ const ReportesView = () => {
           *,
           areas(nombre, descripcion),
           clasificaciones(nombre, color),
-          imagenes_incidencias(id, url_imagen, nombre_archivo),
-          profiles!reportado_por(full_name, email)
+          imagenes_incidencias(id, url_imagen, nombre_archivo)
         `)
         .eq("estado", "aprobado") // Solo incidencias aprobadas
         .order("created_at", { ascending: false });
@@ -119,8 +118,35 @@ const ReportesView = () => {
         );
       }
 
-      console.log("Filtered incidencias:", filteredData);
-      return filteredData;
+      // Obtener información de perfiles para los usuarios reportadores
+      const uniqueUserIds = [...new Set(filteredData
+        .map(inc => inc.reportado_por)
+        .filter(id => id && id.length === 36))] as string[]; // Solo UUIDs válidos
+
+      let profilesMap: Record<string, any> = {};
+      
+      if (uniqueUserIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", uniqueUserIds);
+          
+        if (profilesData) {
+          profilesMap = profilesData.reduce((acc, profile) => {
+            acc[profile.id] = profile;
+            return acc;
+          }, {} as Record<string, any>);
+        }
+      }
+
+      // Enriquecer datos con información de perfiles
+      const enrichedData = filteredData.map(incidencia => ({
+        ...incidencia,
+        reportado_por_profile: profilesMap[incidencia.reportado_por] || null
+      }));
+
+      console.log("Filtered incidencias:", enrichedData);
+      return enrichedData;
     },
   });
 
@@ -151,7 +177,7 @@ const ReportesView = () => {
         `"${inc.areas?.nombre || ''}"`,
         `"${inc.clasificaciones?.nombre || ''}"`,
         `"${inc.prioridad}"`,
-        `"${inc.profiles?.full_name || inc.profiles?.email || inc.reportado_por}"`,
+        `"${inc.reportado_por_profile?.full_name || inc.reportado_por_profile?.email || inc.reportado_por}"`,
         `"${format(new Date(inc.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}"`,
         `"${inc.descripcion}"`
       ].join(","))
@@ -364,7 +390,7 @@ const ReportesView = () => {
                       </div>
                       <div className="text-right text-sm text-gray-500">
                         <p>{format(new Date(incidencia.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
-                        <p>Por: {incidencia.profiles?.full_name || incidencia.profiles?.email || incidencia.reportado_por}</p>
+                        <p>Por: {incidencia.reportado_por_profile?.full_name || incidencia.reportado_por_profile?.email || incidencia.reportado_por}</p>
                       </div>
                     </div>
                     
