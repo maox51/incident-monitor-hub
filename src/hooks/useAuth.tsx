@@ -30,6 +30,8 @@ interface AuthContextType {
   isFinanzas: boolean;
   isMantenimiento: boolean;
   isTecnico: boolean;
+  isLector: boolean;
+  isGestorSolicitudes: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithUsername: (username: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
@@ -323,6 +325,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isFinanzas = profile?.role === 'finanzas';
   const isMantenimiento = profile?.role === 'mantenimiento';
   const isTecnico = profile?.role === 'tecnico';
+  const isLector = profile?.role === 'lector';
+  const isGestorSolicitudes = profile?.role === 'gestor_solicitudes';
 
   const value = {
     user,
@@ -337,6 +341,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isFinanzas,
     isMantenimiento,
     isTecnico,
+    isLector,
+    isGestorSolicitudes,
     signIn,
     signInWithUsername,
     signUp,

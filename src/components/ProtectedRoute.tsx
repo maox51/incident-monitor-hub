@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requireAdmin = false, requireSupervisor = false }: ProtectedRouteProps) => {
-  const { user, profile, loading, isAdmin, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMonitor } = useAuth();
+  const { user, profile, loading, isAdmin, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMonitor, isLector, isGestorSolicitudes } = useAuth();
 
   if (loading) {
     return (
@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireSupervisor = fa
   }
 
   // Verificar si el usuario tiene algún rol válido
-  const hasValidRole = isAdmin || isSupervisorMonitoreo || isRRHH || isSupervisorSalas || isFinanzas || isMonitor;
+  const hasValidRole = isAdmin || isSupervisorMonitoreo || isRRHH || isSupervisorSalas || isFinanzas || isMonitor || isLector || isGestorSolicitudes;
   
   if (!hasValidRole) {
     return (

@@ -18,8 +18,12 @@ import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Index = () => {
-  const { isAdmin, isMonitor, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMantenimiento } = useAuth();
+  const { isAdmin, isMonitor, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMantenimiento, isLector, isGestorSolicitudes } = useAuth();
   const [activeTab, setActiveTab] = useState(() => {
+    // Si es gestor de solicitudes, mostrar solicitudes por defecto
+    if (isGestorSolicitudes && !isAdmin) return "solicitudes";
+    // Si es lector, mostrar reportes por defecto
+    if (isLector && !isAdmin) return "reportes";
     // Si es supervisor, mostrar borradores por defecto
     if (isSupervisorMonitoreo && !isAdmin) return "borradores";
     // Si es monitor, mostrar nueva incidencia
@@ -33,11 +37,11 @@ const Index = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
-    { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento'] },
+    { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento', 'gestor_solicitudes'] },
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
-    { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
-    { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento'] },
-    { id: 'monitoreo-salas', label: 'Monitoreo de Salas', icon: MonitorSpeaker, roles: ['admin', 'rrhh'] },
+    { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
+    { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
+    { id: 'monitoreo-salas', label: 'Monitoreo de Salas', icon: MonitorSpeaker, roles: ['admin', 'rrhh', 'lector'] },
     { id: 'usuarios', label: 'Usuarios', icon: Users, roles: ['admin'] },
     { id: 'importar', label: 'Importar Datos', icon: Upload, roles: ['admin'] },
   ];
@@ -51,6 +55,8 @@ const Index = () => {
   if (isSupervisorSalas) userRoles.push('supervisor_salas');
   if (isFinanzas) userRoles.push('finanzas');
   if (isMantenimiento) userRoles.push('mantenimiento');
+  if (isLector) userRoles.push('lector');
+  if (isGestorSolicitudes) userRoles.push('gestor_solicitudes');
 
   // Filtrar items del menú según los roles del usuario
   const filteredMenuItems = menuItems.filter(item => 
@@ -75,6 +81,120 @@ const Index = () => {
           </div>
 
           <IncidenciaForm />
+        </div>
+      </div>
+    );
+  }
+
+  // El gestor de solicitudes solo ve el módulo de solicitudes
+  if (isGestorSolicitudes && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Header />
+        
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
+          <div className="text-center mb-4 sm:mb-6 md:mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
+              <MessageSquare className="text-blue-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
+              <span>Sistema de Solicitudes - Grupo ESVASA</span>
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
+              Gestión y seguimiento de solicitudes por área
+            </p>
+          </div>
+
+          <SolicitudesView />
+        </div>
+      </div>
+    );
+  }
+
+  // El rol lector puede ver reportes, consolidados y monitoreo (sin crear/editar)
+  if (isLector && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Header />
+        
+        {/* Navigation Bar - Responsive */}
+        <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+          <div className="container mx-auto px-2 sm:px-4">
+            {/* Mobile Navigation */}
+            <div className="flex items-center justify-between py-3 md:hidden">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {filteredMenuItems.find(item => item.id === activeTab)?.label || 'Reportes'}
+              </h2>
+              
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-64">
+                  <div className="py-4">
+                    <h3 className="font-semibold text-gray-900 mb-4">Navegación</h3>
+                    <div className="space-y-2">
+                      {filteredMenuItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                              activeTab === item.id
+                                ? "bg-blue-100 text-blue-700 font-medium"
+                                : "text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                            <span className="text-sm">{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-1 py-2">
+              {filteredMenuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === item.id
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
+          <div className="text-center mb-4 sm:mb-6 md:mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
+              <FileText className="text-blue-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
+              <span>Sistema de Consultas - Grupo ESVASA</span>
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
+              Consulta de reportes y estadísticas de monitoreo
+            </p>
+          </div>
+
+          {activeTab === "reportes" && <ReportesView />}
+          {activeTab === "consolidado" && <ConsolidadoDiario />}
+          {activeTab === "monitoreo-salas" && <SalaTimingModule />}
         </div>
       </div>
     );
