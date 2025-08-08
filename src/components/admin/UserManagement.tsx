@@ -202,7 +202,7 @@ const UserManagement = () => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
     // Cargar áreas del usuario si es un rol que las necesita
-    if (['finanzas', 'rrhh', 'supervisor_salas'].includes(user.role)) {
+    if (['finanzas', 'rrhh', 'supervisor_salas', 'gestor_solicitudes'].includes(user.role)) {
       queryClient.invalidateQueries({ queryKey: ['user-area-access', user.id] });
     }
   };
@@ -227,7 +227,7 @@ const UserManagement = () => {
       role: formData.get('role') as AppRole,
     };
 
-    const requiresAreaAccess = ['finanzas', 'rrhh', 'supervisor_salas'].includes(updates.role);
+    const requiresAreaAccess = ['finanzas', 'rrhh', 'supervisor_salas', 'gestor_solicitudes'].includes(updates.role);
     
     updateUserMutation.mutate({ 
       userId: selectedUser.id, 
@@ -258,6 +258,14 @@ const UserManagement = () => {
         return <Badge className="gap-1 bg-purple-600"><Building className="h-3 w-3" />Supervisor de Salas</Badge>;
       case 'finanzas':
         return <Badge className="gap-1 bg-green-600"><Building className="h-3 w-3" />Finanzas</Badge>;
+      case 'mantenimiento':
+        return <Badge className="gap-1 bg-orange-600"><Building className="h-3 w-3" />Mantenimiento</Badge>;
+      case 'tecnico':
+        return <Badge className="gap-1 bg-blue-600"><Building className="h-3 w-3" />Técnico</Badge>;
+      case 'lector':
+        return <Badge className="gap-1 bg-gray-600"><Users className="h-3 w-3" />Lector</Badge>;
+      case 'gestor_solicitudes':
+        return <Badge className="gap-1 bg-indigo-600"><Building className="h-3 w-3" />Gestor de Solicitudes</Badge>;
       default:
         return <Badge variant="outline">Sin rol</Badge>;
     }
@@ -322,15 +330,19 @@ const UserManagement = () => {
                 <SelectTrigger className="max-w-sm">
                   <SelectValue placeholder="Seleccionar rol" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los roles</SelectItem>
-                  <SelectItem value="admin">Administradores</SelectItem>
-                  <SelectItem value="monitor">Monitores</SelectItem>
-                  <SelectItem value="supervisor_monitoreo">Supervisor de Monitoreo</SelectItem>
-                  <SelectItem value="rrhh">RRHH</SelectItem>
-                  <SelectItem value="supervisor_salas">Supervisor de Salas</SelectItem>
-                  <SelectItem value="finanzas">Finanzas</SelectItem>
-                </SelectContent>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los roles</SelectItem>
+                    <SelectItem value="admin">Administradores</SelectItem>
+                    <SelectItem value="monitor">Monitores</SelectItem>
+                    <SelectItem value="supervisor_monitoreo">Supervisor de Monitoreo</SelectItem>
+                    <SelectItem value="rrhh">RRHH</SelectItem>
+                    <SelectItem value="supervisor_salas">Supervisor de Salas</SelectItem>
+                    <SelectItem value="finanzas">Finanzas</SelectItem>
+                    <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                    <SelectItem value="tecnico">Técnico</SelectItem>
+                    <SelectItem value="lector">Lector</SelectItem>
+                    <SelectItem value="gestor_solicitudes">Gestor de Solicitudes</SelectItem>
+                  </SelectContent>
               </Select>
             </div>
           </div>
@@ -467,7 +479,7 @@ const UserManagement = () => {
                   name="role" 
                   defaultValue={selectedUser?.role}
                   onValueChange={(value) => {
-                    const requiresAreaAccess = ['finanzas', 'rrhh', 'supervisor_salas'].includes(value);
+                    const requiresAreaAccess = ['finanzas', 'rrhh', 'supervisor_salas', 'gestor_solicitudes'].includes(value);
                     if (!requiresAreaAccess) {
                       setSelectedAreas([]);
                     } else {
@@ -487,12 +499,16 @@ const UserManagement = () => {
                     <SelectItem value="rrhh">RRHH</SelectItem>
                     <SelectItem value="supervisor_salas">Supervisor de Salas</SelectItem>
                     <SelectItem value="finanzas">Finanzas</SelectItem>
+                    <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                    <SelectItem value="tecnico">Técnico</SelectItem>
+                    <SelectItem value="lector">Lector</SelectItem>
+                    <SelectItem value="gestor_solicitudes">Gestor de Solicitudes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               {/* Selector de áreas para roles específicos */}
-              {selectedUser && ['finanzas', 'rrhh', 'supervisor_salas'].includes(selectedUser.role) && (
+              {selectedUser && ['finanzas', 'rrhh', 'supervisor_salas', 'gestor_solicitudes'].includes(selectedUser.role) && (
                 <div className="space-y-2">
                   <Label>Áreas de Acceso</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
