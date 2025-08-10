@@ -44,10 +44,10 @@ const ReportesView = () => {
 
   // Obtener áreas para el filtro
   const { data: areas } = useQuery({
-    queryKey: ["areas"],
+    queryKey: ["departamentos"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("areas")
+        .from("departamentos")
         .select("*")
         .eq("activo", true)
         .order("nombre");
@@ -78,7 +78,7 @@ const ReportesView = () => {
         .from("incidencias")
         .select(`
           *,
-          areas(nombre, descripcion),
+          departamentos:departamentos!inner(nombre, descripcion),
           clasificaciones(nombre, color),
           imagenes_incidencias(id, url_imagen, nombre_archivo)
         `)
@@ -114,7 +114,7 @@ const ReportesView = () => {
       // Filtrar por área según el rol del usuario (solo si no es admin)
       if (!isAdmin && userAreaName) {
         filteredData = filteredData.filter(incidencia => 
-          incidencia.areas?.nombre === userAreaName
+          incidencia.departamentos?.nombre === userAreaName
         );
       }
 
@@ -174,7 +174,7 @@ const ReportesView = () => {
       ["Título", "Área", "Clasificación", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
       ...incidencias.map(inc => [
         `"${inc.titulo}"`,
-        `"${inc.areas?.nombre || ''}"`,
+        `"${inc.departamentos?.nombre || ''}"`,
         `"${inc.clasificaciones?.nombre || ''}"`,
         `"${inc.prioridad}"`,
         `"${inc.reportado_por_profile?.full_name || inc.reportado_por_profile?.email || inc.reportado_por}"`,
@@ -372,7 +372,7 @@ const ReportesView = () => {
                         <h3 className="font-semibold text-lg mb-2">{incidencia.titulo}</h3>
                         <div className="flex flex-wrap gap-2 mb-3">
                           <Badge variant="outline">
-                            {incidencia.areas?.nombre}
+                            {incidencia.departamentos?.nombre}
                           </Badge>
                           <Badge 
                             variant="outline"

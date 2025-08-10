@@ -14,7 +14,31 @@ export type Database = {
   }
   public: {
     Tables: {
-      areas: {
+      acciones_sistema: {
+        Row: {
+          codigo: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      areas_old: {
         Row: {
           activo: boolean
           created_at: string
@@ -177,7 +201,7 @@ export type Database = {
             foreignKeyName: "clasificacion_area_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
           {
@@ -219,7 +243,7 @@ export type Database = {
             foreignKeyName: "clasificacion_area_mapping_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
           {
@@ -354,6 +378,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      departamentos: {
+        Row: {
+          activo: boolean
+          codigo: string | null
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       fcm_tokens: {
         Row: {
@@ -519,7 +573,7 @@ export type Database = {
             foreignKeyName: "incidencias_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
           {
@@ -537,6 +591,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      modulos_sistema: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_settings: {
         Row: {
@@ -565,35 +649,118 @@ export type Database = {
         }
         Relationships: []
       }
+      permisos_sistema: {
+        Row: {
+          accion_id: string
+          activo: boolean
+          created_at: string
+          departamento_id: string | null
+          id: string
+          modulo_id: string
+          rol_id: string
+          updated_at: string
+        }
+        Insert: {
+          accion_id: string
+          activo?: boolean
+          created_at?: string
+          departamento_id?: string | null
+          id?: string
+          modulo_id: string
+          rol_id: string
+          updated_at?: string
+        }
+        Update: {
+          accion_id?: string
+          activo?: boolean
+          created_at?: string
+          departamento_id?: string | null
+          id?: string
+          modulo_id?: string
+          rol_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permisos_sistema_accion_id_fkey"
+            columns: ["accion_id"]
+            isOneToOne: false
+            referencedRelation: "acciones_sistema"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permisos_sistema_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permisos_sistema_modulo_id_fkey"
+            columns: ["modulo_id"]
+            isOneToOne: false
+            referencedRelation: "modulos_sistema"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permisos_sistema_rol_id_fkey"
+            columns: ["rol_id"]
+            isOneToOne: false
+            referencedRelation: "roles_generales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          departamento_id: string | null
           email: string
           full_name: string | null
           id: string
+          rol_general_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          departamento_id?: string | null
           email: string
           full_name?: string | null
           id: string
+          rol_general_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          departamento_id?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          rol_general_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_rol_general_id_fkey"
+            columns: ["rol_general_id"]
+            isOneToOne: false
+            referencedRelation: "roles_generales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reportes_consolidados: {
         Row: {
@@ -664,10 +831,40 @@ export type Database = {
             foreignKeyName: "role_area_mapping_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
         ]
+      }
+      roles_generales: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nivel_jerarquia: number
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nivel_jerarquia?: number
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nivel_jerarquia?: number
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       salas: {
         Row: {
@@ -756,7 +953,7 @@ export type Database = {
             foreignKeyName: "solicitudes_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
           {
@@ -834,7 +1031,7 @@ export type Database = {
             foreignKeyName: "user_area_access_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
         ]
@@ -863,7 +1060,7 @@ export type Database = {
             foreignKeyName: "user_area_assignments_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas"
+            referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
           {
@@ -1076,6 +1273,14 @@ export type Database = {
       }
       user_has_area_access: {
         Args: { _user_id: string; _area_id: string }
+        Returns: boolean
+      }
+      usuario_tiene_permiso: {
+        Args: {
+          _user_id: string
+          _modulo_codigo: string
+          _accion_codigo: string
+        }
         Returns: boolean
       }
     }

@@ -69,12 +69,12 @@ const UserManagement = () => {
     },
   });
 
-  // Obtener áreas
+  // Obtener departamentos
   const { data: areas } = useQuery({
-    queryKey: ['areas'],
+    queryKey: ['departamentos'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('areas')
+        .from('departamentos')
         .select('*')
         .eq('activo', true)
         .order('nombre');
@@ -94,7 +94,7 @@ const UserManagement = () => {
         .from('user_area_access')
         .select(`
           *,
-          area:areas(*)
+          area:departamentos(*)
         `)
         .eq('user_id', selectedUser.id);
 

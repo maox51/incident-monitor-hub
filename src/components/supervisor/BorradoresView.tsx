@@ -43,7 +43,7 @@ const BorradoresView = () => {
         .from("incidencias")
         .select(`
           *,
-          areas(nombre, descripcion),
+          departamentos:departamentos!inner(nombre, descripcion),
           clasificaciones(nombre, color),
           incidencia_clasificaciones(
             id,
@@ -65,10 +65,10 @@ const BorradoresView = () => {
 
   // Obtener datos para los selects de edición
   const { data: areas } = useQuery({
-    queryKey: ["areas"],
+    queryKey: ["departamentos"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("areas")
+        .from("departamentos")
         .select("*")
         .eq("activo", true)
         .order("nombre");
@@ -359,7 +359,7 @@ const BorradoresView = () => {
                         <div className="flex flex-wrap gap-2 mb-3">
                           <Badge variant="outline">
                             <MapPin className="w-3 h-3 mr-1" />
-                            {incidencia.areas?.nombre}
+                            {incidencia.departamentos?.nombre}
                           </Badge>
                           {/* Mostrar todas las clasificaciones */}
                           {incidencia.incidencia_clasificaciones && incidencia.incidencia_clasificaciones.length > 0 ? (

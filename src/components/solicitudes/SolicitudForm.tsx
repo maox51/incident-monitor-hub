@@ -22,12 +22,12 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
 
   const { crearSolicitud, isCreating } = useSolicitudes();
 
-  // Obtener áreas disponibles
+  // Obtener departamentos disponibles
   const { data: areas = [] } = useQuery({
-    queryKey: ['areas'],
+    queryKey: ['departamentos'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('areas')
+        .from('departamentos')
         .select('id, nombre')
         .eq('activo', true)
         .order('nombre');
