@@ -20,9 +20,9 @@ export const useSmartAreaSelection = () => {
         .from('clasificacion_area_mapping')
         .select(`
           clasificacion_id,
-          area_id,
+          departamento_id,
           prioridad_sugerida,
-          areas!inner(nombre)
+          departamentos!inner(nombre)
         `)
         .eq('activo', true);
 
@@ -35,7 +35,7 @@ export const useSmartAreaSelection = () => {
           mappings[mapping.clasificacion_id] = [];
         }
         mappings[mapping.clasificacion_id].push({
-          area_id: mapping.area_id,
+          area_id: mapping.departamento_id,
           prioridad_sugerida: mapping.prioridad_sugerida || 'media'
         });
       });
@@ -71,7 +71,7 @@ export const useSmartAreaSelection = () => {
       if (error) throw error;
 
       return data?.map((item: any) => ({
-        areaId: item.area_id,
+        areaId: item.departamento_id || item.area_id, // Compatibilidad con ambos nombres
         prioridad: item.prioridad_sugerida,
         areaNombre: item.area_nombre
       })) || [];
