@@ -28,13 +28,14 @@ const IncidenciaForm = () => {
 
   // Obtener áreas
   const { data: areas } = useQuery({
-    queryKey: ["areas"],
+    queryKey: ["departamentos"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("areas")
+      const { data, error } = await supabase
+        .from("departamentos")
         .select("*")
         .eq("activo", true)
         .order("nombre");
+      if (error) throw error;
       return data || [];
     },
   });

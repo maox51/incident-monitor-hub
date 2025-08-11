@@ -241,7 +241,7 @@ export const useIncidenciaForm = () => {
               titulo: incidencia.titulo,
               descripcion: incidencia.descripcion,
               prioridad: incidencia.prioridad,
-              area_nombre: (await supabase.from('areas').select('nombre').eq('id', incidencia.area_id).single()).data?.nombre || '',
+              area_nombre: (await supabase.from('departamentos').select('nombre').eq('id', incidencia.area_id).single()).data?.nombre || '',
               clasificacion_nombre: (await supabase.from('clasificaciones').select('nombre').eq('id', incidencia.clasificacion_id).single()).data?.nombre || '',
               reportado_por: incidencia.reportado_por
             }

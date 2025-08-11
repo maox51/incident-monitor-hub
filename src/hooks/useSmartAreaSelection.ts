@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AreaMapping {
-  area_id: string;
+  departamento_id: string;
   prioridad_sugerida: string;
 }
 
@@ -30,12 +29,12 @@ export const useSmartAreaSelection = () => {
 
       // Organizar mappings por clasificación
       const mappings: Record<string, AreaMapping[]> = {};
-      data?.forEach((mapping) => {
+      data?.forEach((mapping: any) => {
         if (!mappings[mapping.clasificacion_id]) {
           mappings[mapping.clasificacion_id] = [];
         }
         mappings[mapping.clasificacion_id].push({
-          area_id: mapping.departamento_id,
+          departamento_id: mapping.departamento_id,
           prioridad_sugerida: mapping.prioridad_sugerida || 'media'
         });
       });
@@ -55,7 +54,7 @@ export const useSmartAreaSelection = () => {
     // Seleccionar el primer mapeo disponible
     const mapping = mappings[0];
     return {
-      areaId: mapping.area_id,
+      areaId: mapping.departamento_id,
       prioridad: mapping.prioridad_sugerida
     };
   };
@@ -71,7 +70,7 @@ export const useSmartAreaSelection = () => {
       if (error) throw error;
 
       return data?.map((item: any) => ({
-        areaId: item.departamento_id || item.area_id, // Compatibilidad con ambos nombres
+        areaId: item.departamento_id,
         prioridad: item.prioridad_sugerida,
         areaNombre: item.area_nombre
       })) || [];

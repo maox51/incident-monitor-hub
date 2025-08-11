@@ -1219,7 +1219,7 @@ export type Database = {
       obtener_areas_sugeridas_multiple: {
         Args: { clasificacion_ids: string[] }
         Returns: {
-          area_id: string
+          departamento_id: string
           prioridad_sugerida: string
           area_nombre: string
         }[]
