@@ -1275,6 +1275,10 @@ export type Database = {
         Args: { _user_id: string; _area_id: string }
         Returns: boolean
       }
+      user_has_departamento_access: {
+        Args: { _user_id: string; _departamento_id: string }
+        Returns: boolean
+      }
       usuario_tiene_permiso: {
         Args: {
           _user_id: string
