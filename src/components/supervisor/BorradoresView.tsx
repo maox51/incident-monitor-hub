@@ -43,7 +43,7 @@ const BorradoresView = () => {
         .from("incidencias")
         .select(`
           *,
-          departamentos:departamentos!inner(nombre, descripcion),
+          departamentos(nombre, descripcion),
           clasificaciones(nombre, color),
           incidencia_clasificaciones(
             id,
@@ -160,7 +160,7 @@ const BorradoresView = () => {
     setEditData({
       titulo: incidencia.titulo,
       descripcion: incidencia.descripcion,
-      area_id: incidencia.area_id,
+      departamento_id: incidencia.departamento_id,
       clasificacion_id: incidencia.clasificacion_id,
       sala_id: incidencia.sala_id,
       prioridad: incidencia.prioridad,
@@ -263,8 +263,8 @@ const BorradoresView = () => {
                       <div>
                         <label className="block text-sm font-medium mb-1">Área</label>
                         <Select 
-                          value={editData.area_id || ''} 
-                          onValueChange={(value) => setEditData(prev => ({ ...prev, area_id: value }))}
+                          value={editData.departamento_id || ''} 
+                          onValueChange={(value) => setEditData(prev => ({ ...prev, departamento_id: value }))}
                         >
                           <SelectTrigger>
                             <SelectValue />

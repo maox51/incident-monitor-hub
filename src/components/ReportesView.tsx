@@ -37,8 +37,8 @@ const ReportesView = () => {
   const [filtros, setFiltros] = useState({
     fechaInicio: "",
     fechaFin: "",
-    area_id: "all",
-    clasificacion_id: "all",
+    area: "all",
+    clasificacion: "all",
     prioridad: "all"
   });
 
@@ -78,7 +78,7 @@ const ReportesView = () => {
         .from("incidencias")
         .select(`
           *,
-          departamentos:departamentos!inner(nombre, descripcion),
+          departamentos(nombre, descripcion),
           clasificaciones(nombre, color),
           imagenes_incidencias(id, url_imagen, nombre_archivo)
         `)
@@ -92,14 +92,14 @@ const ReportesView = () => {
       if (filtros.fechaFin) {
         query = query.lte("fecha_incidencia", filtros.fechaFin);
       }
-      if (filtros.area_id && filtros.area_id !== "all") {
-        query = query.eq("area_id", filtros.area_id);
+      if (filtros.area && filtros.area !== "all") {
+        query.eq("departamento_id", filtros.area);
       }
-      if (filtros.clasificacion_id && filtros.clasificacion_id !== "all") {
-        query = query.eq("clasificacion_id", filtros.clasificacion_id);
+      if (filtros.clasificacion && filtros.clasificacion !== "all") {
+        query.eq("clasificacion_id", filtros.clasificacion);
       }
       if (filtros.prioridad && filtros.prioridad !== "all") {
-        query = query.eq("prioridad", filtros.prioridad);
+        query.eq("prioridad", filtros.prioridad);
       }
 
       const { data, error } = await query;
@@ -158,8 +158,8 @@ const ReportesView = () => {
     setFiltros({
       fechaInicio: "",
       fechaFin: "",
-      area_id: "all",
-      clasificacion_id: "all",
+      area: "all",
+      clasificacion: "all",
       prioridad: "all"
     });
   };
@@ -259,8 +259,8 @@ const ReportesView = () => {
             <div className="space-y-2">
               <Label>Área</Label>
               <Select 
-                value={filtros.area_id} 
-                onValueChange={(value) => handleFiltroChange("area_id", value)}
+                value={filtros.area} 
+                onValueChange={(value) => handleFiltroChange("area", value)}
                 disabled={!isAdmin && !!userAreaName} // Deshabilitar si no es admin y tiene área específica
               >
                 <SelectTrigger>
@@ -288,7 +288,7 @@ const ReportesView = () => {
 
             <div className="space-y-2">
               <Label>Tipo de Incidencia</Label>
-              <Select value={filtros.clasificacion_id} onValueChange={(value) => handleFiltroChange("clasificacion_id", value)}>
+              <Select value={filtros.clasificacion} onValueChange={(value) => handleFiltroChange("clasificacion", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
