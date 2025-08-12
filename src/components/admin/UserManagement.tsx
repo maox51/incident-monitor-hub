@@ -38,8 +38,8 @@ interface Area {
 interface UserAreaAccess {
   id: string;
   user_id: string;
-  area_id: string;
-  area?: Area;
+  departamento_id: string;
+  departamento?: Area;
 }
 
 const UserManagement = () => {
@@ -94,7 +94,7 @@ const UserManagement = () => {
         .from('user_area_access')
         .select(`
           *,
-          area:departamentos(*)
+          departamento:departamentos(*)
         `)
         .eq('user_id', selectedUser.id);
 
@@ -129,7 +129,7 @@ const UserManagement = () => {
         if (areaIds.length > 0) {
           const accesses = areaIds.map(areaId => ({
             user_id: userId,
-            area_id: areaId
+            departamento_id: areaId
           }));
 
           const { error: insertError } = await supabase
@@ -484,7 +484,7 @@ const UserManagement = () => {
                       setSelectedAreas([]);
                     } else {
                       // Pre-cargar áreas actuales del usuario
-                      const currentAreas = userAreaAccess?.map(access => access.area_id) || [];
+                      const currentAreas = userAreaAccess?.map(access => access.departamento_id) || [];
                       setSelectedAreas(currentAreas);
                     }
                   }}

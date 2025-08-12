@@ -8,7 +8,7 @@ export interface Solicitud {
   id: string;
   titulo: string;
   descripcion: string;
-  area_id: string;
+  departamento_id: string;
   solicitante_id: string;
   estado: 'pendiente' | 'aceptada' | 'en_ejecucion' | 'cerrada';
   fecha_creacion: string;
@@ -20,8 +20,7 @@ export interface Solicitud {
   progreso_ejecucion?: string;
   horas_transcurridas?: number;
   dias_pendientes?: number;
-  area?: { nombre: string };
-  areas?: { nombre: string };
+  departamento?: { nombre: string };
   solicitante?: { full_name: string };
   profiles?: { full_name: string };
 }
@@ -29,7 +28,7 @@ export interface Solicitud {
 export interface CrearSolicitudData {
   titulo: string;
   descripcion: string;
-  area_id: string;
+  departamento_id: string;
 }
 
 export const useSolicitudes = () => {
@@ -47,26 +46,26 @@ export const useSolicitudes = () => {
         // Obtener áreas asignadas al usuario
         const { data: userAreas, error: areasError } = await supabase
           .from('user_area_assignments')
-          .select('area_id')
+          .select('departamento_id')
           .eq('user_id', user.id);
 
         if (areasError) {
           console.error('Error fetching user areas:', areasError);
         }
 
-        const userAreaIds = userAreas?.map(ua => ua.area_id) || [];
+        const userAreaIds = userAreas?.map(ua => ua.departamento_id) || [];
 
         let query = supabase
           .from('solicitudes')
           .select(`
             *,
-            areas!solicitudes_area_id_fkey(nombre),
+            departamento:departamentos!solicitudes_departamento_id_fkey(nombre),
             profiles!solicitudes_solicitante_id_fkey(full_name)
           `);
 
         // Filtrar por áreas si el usuario tiene áreas asignadas
         if (userAreaIds.length > 0) {
-          query = query.in('area_id', userAreaIds);
+          query = query.in('departamento_id', userAreaIds);
         }
 
         const { data, error } = await query.order('fecha_creacion', { ascending: false });
@@ -129,7 +128,7 @@ export const useSolicitudes = () => {
         .insert({
           titulo: datos.titulo,
           descripcion: datos.descripcion,
-          area_id: datos.area_id,
+          departamento_id: datos.departamento_id,
           solicitante_id: user.id,
         })
         .select()

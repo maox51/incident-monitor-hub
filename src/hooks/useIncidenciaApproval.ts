@@ -17,7 +17,7 @@ export const useIncidenciaApproval = () => {
         .from('incidencias')
         .select(`
           *,
-          areas(nombre),
+          departamentos(nombre),
           clasificaciones(nombre),
           salas(nombre)
         `)
@@ -92,7 +92,7 @@ export const useIncidenciaApproval = () => {
               titulo: incidencia.titulo,
               descripcion: incidencia.descripcion,
               prioridad: incidencia.prioridad,
-              area_nombre: incidencia.areas?.nombre || '',
+              area_nombre: incidencia.departamentos?.nombre || '',
               clasificacion_nombre: incidencia.clasificaciones?.nombre || '',
               reportado_por: incidencia.reportado_por,
               sala_nombre: incidencia.salas?.nombre || '',

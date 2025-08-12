@@ -88,7 +88,7 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Building className="w-4 h-4" />
-              <span>{solicitud.areas?.nombre || solicitud.area?.nombre}</span>
+              <span>{solicitud.departamento?.nombre}</span>
             </div>
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />

@@ -17,7 +17,7 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
   const [formData, setFormData] = useState<CrearSolicitudData>({
     titulo: '',
     descripcion: '',
-    area_id: '',
+    departamento_id: '',
   });
 
   const { crearSolicitud, isCreating } = useSolicitudes();
@@ -40,13 +40,13 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id) {
+    if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.departamento_id) {
       return;
     }
 
     try {
       await crearSolicitud(formData);
-      setFormData({ titulo: '', descripcion: '', area_id: '' });
+      setFormData({ titulo: '', descripcion: '', departamento_id: '' });
       onCancel();
     } catch (error) {
       console.error('Error al crear solicitud:', error);
@@ -74,8 +74,8 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
           <div>
             <Label htmlFor="area">Área Destino</Label>
             <Select
-              value={formData.area_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, area_id: value }))}
+              value={formData.departamento_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, departamento_id: value }))}
               required
             >
               <SelectTrigger>

@@ -161,7 +161,7 @@ export const useIncidenciaForm = () => {
       const incidenciaData = {
         titulo: data.titulo,
         descripcion: data.descripcion,
-        area_id: data.area_id,
+        departamento_id: data.area_id,
         sala_id: data.sala_id,
         clasificacion_id: data.clasificacion_ids[0], // Primera clasificación como principal
         prioridad: data.prioridad,
@@ -241,7 +241,7 @@ export const useIncidenciaForm = () => {
               titulo: incidencia.titulo,
               descripcion: incidencia.descripcion,
               prioridad: incidencia.prioridad,
-              area_nombre: (await supabase.from('departamentos').select('nombre').eq('id', incidencia.area_id).single()).data?.nombre || '',
+              area_nombre: (await supabase.from('departamentos').select('nombre').eq('id', incidencia.departamento_id).single()).data?.nombre || '',
               clasificacion_nombre: (await supabase.from('clasificaciones').select('nombre').eq('id', incidencia.clasificacion_id).single()).data?.nombre || '',
               reportado_por: incidencia.reportado_por
             }

@@ -516,9 +516,9 @@ export type Database = {
       incidencias: {
         Row: {
           aprobado_por: string | null
-          area_id: string
           clasificacion_id: string
           created_at: string
+          departamento_id: string
           descripcion: string
           estado: string
           fecha_aprobacion: string | null
@@ -534,9 +534,9 @@ export type Database = {
         }
         Insert: {
           aprobado_por?: string | null
-          area_id: string
           clasificacion_id: string
           created_at?: string
+          departamento_id: string
           descripcion: string
           estado?: string
           fecha_aprobacion?: string | null
@@ -552,9 +552,9 @@ export type Database = {
         }
         Update: {
           aprobado_por?: string | null
-          area_id?: string
           clasificacion_id?: string
           created_at?: string
+          departamento_id?: string
           descripcion?: string
           estado?: string
           fecha_aprobacion?: string | null
@@ -571,7 +571,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "incidencias_area_id_fkey"
-            columns: ["area_id"]
+            columns: ["departamento_id"]
             isOneToOne: false
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
@@ -809,27 +809,27 @@ export type Database = {
       }
       role_area_mapping: {
         Row: {
-          area_id: string | null
           created_at: string | null
+          departamento_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
-          area_id?: string | null
           created_at?: string | null
+          departamento_id?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Update: {
-          area_id?: string | null
           created_at?: string | null
+          departamento_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: [
           {
             foreignKeyName: "role_area_mapping_area_id_fkey"
-            columns: ["area_id"]
+            columns: ["departamento_id"]
             isOneToOne: false
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
@@ -896,9 +896,9 @@ export type Database = {
       solicitudes: {
         Row: {
           aceptada_por: string | null
-          area_id: string
           cerrada_por: string | null
           created_at: string
+          departamento_id: string
           descripcion: string
           estado: string
           fecha_aceptacion: string | null
@@ -914,9 +914,9 @@ export type Database = {
         }
         Insert: {
           aceptada_por?: string | null
-          area_id: string
           cerrada_por?: string | null
           created_at?: string
+          departamento_id: string
           descripcion: string
           estado?: string
           fecha_aceptacion?: string | null
@@ -932,9 +932,9 @@ export type Database = {
         }
         Update: {
           aceptada_por?: string | null
-          area_id?: string
           cerrada_por?: string | null
           created_at?: string
+          departamento_id?: string
           descripcion?: string
           estado?: string
           fecha_aceptacion?: string | null
@@ -951,7 +951,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "solicitudes_area_id_fkey"
-            columns: ["area_id"]
+            columns: ["departamento_id"]
             isOneToOne: false
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
@@ -1006,22 +1006,22 @@ export type Database = {
       }
       user_area_access: {
         Row: {
-          area_id: string
           created_at: string
+          departamento_id: string
           id: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          area_id: string
           created_at?: string
+          departamento_id: string
           id?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          area_id?: string
           created_at?: string
+          departamento_id?: string
           id?: string
           updated_at?: string
           user_id?: string
@@ -1029,7 +1029,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_area_access_area_id_fkey"
-            columns: ["area_id"]
+            columns: ["departamento_id"]
             isOneToOne: false
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
@@ -1038,27 +1038,27 @@ export type Database = {
       }
       user_area_assignments: {
         Row: {
-          area_id: string
           created_at: string | null
+          departamento_id: string
           id: string
           user_id: string
         }
         Insert: {
-          area_id: string
           created_at?: string | null
+          departamento_id: string
           id?: string
           user_id: string
         }
         Update: {
-          area_id?: string
           created_at?: string | null
+          departamento_id?: string
           id?: string
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "user_area_assignments_area_id_fkey"
-            columns: ["area_id"]
+            columns: ["departamento_id"]
             isOneToOne: false
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
