@@ -584,6 +584,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "incidencias_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "incidencias_sala_id_fkey"
             columns: ["sala_id"]
             isOneToOne: false
@@ -834,6 +841,13 @@ export type Database = {
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "role_area_mapping_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       roles_generales: {
@@ -957,6 +971,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "solicitudes_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "solicitudes_solicitante_id_fkey"
             columns: ["solicitante_id"]
             isOneToOne: false
@@ -1034,6 +1055,13 @@ export type Database = {
             referencedRelation: "areas_old"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_area_access_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_area_assignments: {
@@ -1061,6 +1089,13 @@ export type Database = {
             columns: ["departamento_id"]
             isOneToOne: false
             referencedRelation: "areas_old"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_area_assignments_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
             referencedColumns: ["id"]
           },
           {

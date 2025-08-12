@@ -94,7 +94,7 @@ const UserManagement = () => {
         .from('user_area_access')
         .select(`
           *,
-          departamento:departamentos(*)
+          departamento:departamentos!user_area_access_departamento_id_fkey(*)
         `)
         .eq('user_id', selectedUser.id);
 

@@ -17,7 +17,7 @@ export const useIncidenciaApproval = () => {
         .from('incidencias')
         .select(`
           *,
-          departamentos(nombre),
+          departamentos!incidencias_departamento_id_fkey(nombre),
           clasificaciones(nombre),
           salas(nombre)
         `)

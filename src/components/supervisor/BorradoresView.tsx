@@ -43,7 +43,7 @@ const BorradoresView = () => {
         .from("incidencias")
         .select(`
           *,
-          departamentos(nombre, descripcion),
+          departamentos!incidencias_departamento_id_fkey(nombre, descripcion),
           clasificaciones(nombre, color),
           incidencia_clasificaciones(
             id,

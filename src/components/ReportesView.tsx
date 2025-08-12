@@ -68,29 +68,28 @@ const ReportesView = () => {
     },
   });
 
-  // Obtener incidencias filtradas - SOLO APROBADAS
-  const { data: incidencias, isLoading, refetch } = useQuery({
-    queryKey: ["incidencias-filtradas", filtros],
+  // Obtener incidencias filtradas
+  const { data: incidencias, isLoading } = useQuery({
+    queryKey: ["incidencias-reportes", filtros],
     queryFn: async () => {
-      console.log("Fetching filtered incidencias with filters:", filtros);
-      
-      let query = supabase
+      const query = supabase
         .from("incidencias")
         .select(`
           *,
-          departamentos(nombre, descripcion),
+          departamentos!incidencias_departamento_id_fkey(nombre, descripcion),
           clasificaciones(nombre, color),
-          imagenes_incidencias(id, url_imagen, nombre_archivo)
+          imagenes_incidencias(id, url_imagen, nombre_archivo, tipo_archivo),
+          salas(nombre)
         `)
-        .eq("estado", "aprobado") // Solo incidencias aprobadas
-        .order("created_at", { ascending: false });
+        .eq("estado", "aprobado")
+        .order("fecha_incidencia", { ascending: false });
 
       // Aplicar filtros
       if (filtros.fechaInicio) {
-        query = query.gte("fecha_incidencia", filtros.fechaInicio);
+        query.gte("fecha_incidencia", filtros.fechaInicio);
       }
       if (filtros.fechaFin) {
-        query = query.lte("fecha_incidencia", filtros.fechaFin);
+        query.lte("fecha_incidencia", filtros.fechaFin);
       }
       if (filtros.area && filtros.area !== "all") {
         query.eq("departamento_id", filtros.area);
@@ -103,11 +102,7 @@ const ReportesView = () => {
       }
 
       const { data, error } = await query;
-      
-      if (error) {
-        console.error("Error fetching incidencias:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       let filteredData = data || [];
 
@@ -123,30 +118,26 @@ const ReportesView = () => {
         .map(inc => inc.reportado_por)
         .filter(id => id && id.length === 36))] as string[]; // Solo UUIDs válidos
 
-      let profilesMap: Record<string, any> = {};
-      
+      let userProfiles: any = {};
       if (uniqueUserIds.length > 0) {
-        const { data: profilesData } = await supabase
+        const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, email")
           .in("id", uniqueUserIds);
-          
-        if (profilesData) {
-          profilesMap = profilesData.reduce((acc, profile) => {
+
+        if (profiles) {
+          userProfiles = profiles.reduce((acc, profile) => {
             acc[profile.id] = profile;
             return acc;
-          }, {} as Record<string, any>);
+          }, {});
         }
       }
 
       // Enriquecer datos con información de perfiles
-      const enrichedData = filteredData.map(incidencia => ({
+      return filteredData.map(incidencia => ({
         ...incidencia,
-        reportado_por_profile: profilesMap[incidencia.reportado_por] || null
+        reportado_por_profile: userProfiles[incidencia.reportado_por] || null
       }));
-
-      console.log("Filtered incidencias:", enrichedData);
-      return enrichedData;
     },
   });
 
@@ -192,8 +183,6 @@ const ReportesView = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    toast.success("Reporte CSV exportado correctamente");
   };
 
   const exportarPDF = () => {
@@ -202,28 +191,43 @@ const ReportesView = () => {
       return;
     }
 
-    try {
-      exportToPDF(incidencias, filtros);
-      toast.success("Reporte PDF exportado correctamente");
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      toast.error("Error al exportar el PDF");
-    }
+    // Convert incidencias to match IncidenciaData interface
+    const incidenciasData = incidencias.map(inc => ({
+      ...inc,
+      // Convert departamento_id back to area_id for compatibility with PDF export
+      area_id: inc.departamento_id
+    }));
+
+    exportToPDF(incidenciasData as any, filtros);
   };
 
   const getPrioridadColor = (prioridad: string) => {
-    switch (prioridad) {
-      case "critica": return "bg-red-500";
-      case "alta": return "bg-orange-500";
-      case "media": return "bg-yellow-500";
-      case "baja": return "bg-green-500";
-      default: return "bg-gray-500";
+    switch (prioridad.toLowerCase()) {
+      case "critica":
+        return "text-red-600 bg-red-100";
+      case "alta":
+        return "text-orange-600 bg-orange-100";
+      case "media":
+        return "text-yellow-600 bg-yellow-100";
+      case "baja":
+        return "text-green-600 bg-green-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Panel de filtros */}
+    <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Reportes de Incidencias</h1>
+          <p className="text-gray-600 mt-2">
+            Visualiza y exporta reportes detallados de incidencias aprobadas
+          </p>
+        </div>
+      </div>
+
+      {/* Filtros */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -231,15 +235,14 @@ const ReportesView = () => {
             Filtros de Búsqueda
           </CardTitle>
           <CardDescription>
-            Utiliza los filtros para generar reportes específicos de incidencias aprobadas del sistema de monitoreo
+            Aplica filtros para refinar tu búsqueda de incidencias
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="fechaInicio">Fecha Inicio</Label>
+              <Label>Fecha Inicio</Label>
               <Input
-                id="fechaInicio"
                 type="date"
                 value={filtros.fechaInicio}
                 onChange={(e) => handleFiltroChange("fechaInicio", e.target.value)}
@@ -247,9 +250,8 @@ const ReportesView = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fechaFin">Fecha Fin</Label>
+              <Label>Fecha Fin</Label>
               <Input
-                id="fechaFin"
                 type="date"
                 value={filtros.fechaFin}
                 onChange={(e) => handleFiltroChange("fechaFin", e.target.value)}
@@ -287,22 +289,16 @@ const ReportesView = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de Incidencia</Label>
+              <Label>Clasificación</Label>
               <Select value={filtros.clasificacion} onValueChange={(value) => handleFiltroChange("clasificacion", value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas" />
+                  <SelectValue placeholder="Todas las clasificaciones" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="all">Todas las clasificaciones</SelectItem>
                   {clasificaciones?.map((clasificacion) => (
                     <SelectItem key={clasificacion.id} value={clasificacion.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: clasificacion.color }}
-                        />
-                        {clasificacion.nombre}
-                      </div>
+                      {clasificacion.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -313,29 +309,29 @@ const ReportesView = () => {
               <Label>Prioridad</Label>
               <Select value={filtros.prioridad} onValueChange={(value) => handleFiltroChange("prioridad", value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas" />
+                  <SelectValue placeholder="Todas las prioridades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="baja">Baja</SelectItem>
-                  <SelectItem value="media">Media</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="all">Todas las prioridades</SelectItem>
                   <SelectItem value="critica">Crítica</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="media">Media</SelectItem>
+                  <SelectItem value="baja">Baja</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="flex gap-2 mt-4">
-            <Button onClick={limpiarFiltros} variant="outline">
+            <Button variant="outline" onClick={limpiarFiltros}>
               Limpiar Filtros
             </Button>
-            <Button onClick={exportarCSV} variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
+            <Button onClick={exportarCSV} className="bg-green-600 hover:bg-green-700">
+              <Download className="w-4 h-4 mr-2" />
               Exportar CSV
             </Button>
-            <Button onClick={exportarPDF} className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+            <Button onClick={exportarPDF} className="bg-red-600 hover:bg-red-700">
+              <FileText className="w-4 h-4 mr-2" />
               Exportar PDF
             </Button>
           </div>
@@ -346,7 +342,10 @@ const ReportesView = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Reporte de Incidencias Aprobadas - Monitoreo de Salas</span>
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Resultados
+            </div>
             <Badge variant="secondary">
               {incidencias?.length || 0} incidencias encontradas
             </Badge>
@@ -354,13 +353,9 @@ const ReportesView = () => {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-500 mt-2">Cargando incidencias...</p>
             </div>
           ) : incidencias && incidencias.length > 0 ? (
             <div className="space-y-4">
@@ -383,29 +378,64 @@ const ReportesView = () => {
                           >
                             {incidencia.clasificaciones?.nombre}
                           </Badge>
-                          <Badge className={`text-white ${getPrioridadColor(incidencia.prioridad)}`}>
+                          <Badge className={getPrioridadColor(incidencia.prioridad)}>
                             {incidencia.prioridad}
                           </Badge>
+                          {incidencia.salas?.nombre && (
+                            <Badge variant="secondary">
+                              Sala: {incidencia.salas.nombre}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div className="text-right text-sm text-gray-500">
-                        <p>{format(new Date(incidencia.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
-                        <p>Por: {incidencia.reportado_por_profile?.full_name || incidencia.reportado_por_profile?.email || incidencia.reportado_por}</p>
+                        <p className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {format(new Date(incidencia.fecha_incidencia), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        </p>
+                        <p className="mt-1">
+                          Por: {incidencia.reportado_por_profile?.full_name || 
+                               incidencia.reportado_por_profile?.email || 
+                               incidencia.reportado_por}
+                        </p>
                       </div>
                     </div>
                     
-                    <p className="text-gray-700 mb-3">{incidencia.descripcion}</p>
+                    <p className="text-gray-700 mb-4">{incidencia.descripcion}</p>
                     
                     {incidencia.observaciones && (
-                      <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                      <div className="bg-blue-50 p-3 rounded-lg mb-4">
                         <strong>Observaciones:</strong> {incidencia.observaciones}
                       </div>
                     )}
 
                     {incidencia.imagenes_incidencias && incidencia.imagenes_incidencias.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <ImageIcon className="h-4 w-4" />
-                        <span>{incidencia.imagenes_incidencias.length} imagen(es) adjunta(s)</span>
+                      <div className="border-t pt-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                          <ImageIcon className="w-4 h-4" />
+                          Evidencia multimedia ({incidencia.imagenes_incidencias.length} archivos)
+                        </p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {incidencia.imagenes_incidencias.map((imagen) => {
+                            const isVideo = imagen.tipo_archivo?.startsWith('video/');
+                            return (
+                              <div key={imagen.id} className="relative">
+                                {isVideo ? (
+                                  <div className="w-full h-20 bg-gray-100 rounded flex items-center justify-center">
+                                    <span className="text-xs text-gray-500">🎥 Video</span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={imagen.url_imagen}
+                                    alt="Evidencia"
+                                    className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-80"
+                                    onClick={() => window.open(imagen.url_imagen, '_blank')}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -414,8 +444,7 @@ const ReportesView = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <Eye className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-gray-600">No se encontraron incidencias aprobadas con los filtros aplicados</p>
+              <p className="text-gray-500">No se encontraron incidencias con los filtros aplicados</p>
             </div>
           )}
         </CardContent>
