@@ -108,15 +108,15 @@ const ReportesView = () => {
 
       // Filtrar por área según el rol del usuario (solo si no es admin)
       if (!isAdmin && userAreaName) {
-        filteredData = filteredData.filter(incidencia => 
+        filteredData = filteredData.filter((incidencia: any) => 
           incidencia.areas?.nombre === userAreaName
         );
       }
 
       // Obtener información de perfiles para los usuarios reportadores
       const uniqueUserIds = [...new Set(filteredData
-        .map(inc => inc.reportado_por)
-        .filter(id => id && id.length === 36))] as string[]; // Solo UUIDs válidos
+        .map((inc: any) => inc.reportado_por)
+        .filter((id: any) => id && id.length === 36))] as string[]; // Solo UUIDs válidos
 
       let userProfiles: any = {};
       if (uniqueUserIds.length > 0) {
@@ -126,7 +126,7 @@ const ReportesView = () => {
           .in("id", uniqueUserIds);
 
         if (profiles) {
-          userProfiles = profiles.reduce((acc, profile) => {
+          userProfiles = profiles.reduce((acc: any, profile: any) => {
             acc[profile.id] = profile;
             return acc;
           }, {});
@@ -134,7 +134,7 @@ const ReportesView = () => {
       }
 
       // Enriquecer datos con información de perfiles
-      return filteredData.map(incidencia => ({
+      return filteredData.map((incidencia: any) => ({
         ...incidencia,
         reportado_por_profile: userProfiles[incidencia.reportado_por] || null
       }));
@@ -163,7 +163,7 @@ const ReportesView = () => {
 
     const csv = [
       ["Título", "Área", "Clasificación", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
-      ...incidencias.map(inc => [
+      ...incidencias.map((inc: any) => [
         `"${inc.titulo}"`,
         `"${inc.areas?.nombre || ''}"`,
         `"${inc.clasificaciones?.nombre || ''}"`,
@@ -352,7 +352,7 @@ const ReportesView = () => {
             </div>
           ) : incidencias && incidencias.length > 0 ? (
             <div className="space-y-4">
-              {incidencias.map((incidencia) => (
+              {incidencias.map((incidencia: any) => (
                 <Card key={incidencia.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
                     <div className="flex justify-between items-start mb-4">
@@ -409,7 +409,7 @@ const ReportesView = () => {
                           Evidencia multimedia ({incidencia.imagenes_incidencias.length} archivos)
                         </p>
                         <div className="grid grid-cols-4 gap-2">
-                          {incidencia.imagenes_incidencias.map((imagen) => {
+                          {incidencia.imagenes_incidencias.map((imagen: any) => {
                             const isVideo = imagen.tipo_archivo?.startsWith('video/');
                             return (
                               <div key={imagen.id} className="relative">

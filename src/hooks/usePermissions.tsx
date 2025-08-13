@@ -10,33 +10,16 @@ interface RolGeneral {
   activo: boolean;
 }
 
-interface Departamento {
+interface Area {
   id: string;
   nombre: string;
   descripcion: string;
-  codigo: string;
-  activo: boolean;
-}
-
-interface ModuloSistema {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  codigo: string;
-  activo: boolean;
-}
-
-interface AccionSistema {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  codigo: string;
 }
 
 interface PermisoSistema {
   id: string;
   rol_id: string;
-  departamento_id: string | null;
+  area_id: string | null;
   modulo_id: string;
   accion_id: string;
   activo: boolean;
@@ -44,9 +27,9 @@ interface PermisoSistema {
 
 interface UsePermissionsReturn {
   roles: RolGeneral[];
-  departamentos: Departamento[];
-  modulos: ModuloSistema[];
-  acciones: AccionSistema[];
+  areas: Area[];
+  modulos: any[];
+  acciones: any[];
   permisos: PermisoSistema[];
   loading: boolean;
   error: string | null;
@@ -58,16 +41,16 @@ interface UsePermissionsReturn {
 export const usePermissions = (): UsePermissionsReturn => {
   const { user } = useAuth();
   const [roles, setRoles] = useState<RolGeneral[]>([]);
-  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
-  const [modulos, setModulos] = useState<ModuloSistema[]>([]);
-  const [acciones, setAcciones] = useState<AccionSistema[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [modulos, setModulos] = useState<any[]>([]);
+  const [acciones, setAcciones] = useState<any[]>([]);
   const [permisos, setPermisos] = useState<PermisoSistema[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCatalogData = async () => {
     try {
-      const [rolesRes, departamentosRes, modulosRes, accionesRes] = await Promise.all([
+      const [rolesRes, areasRes, modulosRes, accionesRes] = await Promise.all([
         supabase.from('roles_generales').select('*').eq('activo', true),
         supabase.from('areas').select('*').eq('activo', true),
         supabase.from('modulos_sistema').select('*').eq('activo', true),
@@ -75,12 +58,12 @@ export const usePermissions = (): UsePermissionsReturn => {
       ]);
 
       if (rolesRes.error) throw rolesRes.error;
-      if (departamentosRes.error) throw departamentosRes.error;
-      if (modulosRes.error) throw modulosRes.error;
-      if (accionesRes.error) throw accionesRes.error;
+    if (areasRes.error) throw areasRes.error;
+    if (modulosRes.error) throw modulosRes.error;
+    if (accionesRes.error) throw accionesRes.error;
 
-      setRoles(rolesRes.data || []);
-      setDepartamentos(departamentosRes.data || []);
+    setRoles(rolesRes.data || []);
+    setAreas(areasRes.data || []);
       setModulos(modulosRes.data || []);
       setAcciones(accionesRes.data || []);
     } catch (err: any) {
@@ -98,7 +81,7 @@ export const usePermissions = (): UsePermissionsReturn => {
         .select(`
           *,
           roles_generales!inner(id, nombre),
-          departamentos(id, nombre),
+          areas(id, nombre),
           modulos_sistema!inner(id, nombre, codigo),
           acciones_sistema!inner(id, nombre, codigo)
         `)
@@ -106,7 +89,7 @@ export const usePermissions = (): UsePermissionsReturn => {
 
       if (error) throw error;
 
-      return data || [];
+      return (data as any) || [];
     } catch (err: any) {
       console.error('Error fetching user permissions:', err);
       return [];
@@ -157,7 +140,7 @@ export const usePermissions = (): UsePermissionsReturn => {
 
   return {
     roles,
-    departamentos,
+    areas,
     modulos,
     acciones,
     permisos,
