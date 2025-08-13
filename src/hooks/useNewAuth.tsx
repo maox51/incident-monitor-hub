@@ -9,7 +9,7 @@ interface NewProfile {
   full_name: string | null;
   avatar_url: string | null;
   rol_general_id: string | null;
-  departamento_id: string | null;
+  area_id: string | null;
   created_at: string;
   updated_at: string;
   // Datos expandidos del rol y departamento
@@ -19,11 +19,10 @@ interface NewProfile {
     descripcion: string;
     nivel_jerarquia: number;
   } | null;
-  departamento?: {
+  area?: {
     id: string;
     nombre: string;
     descripcion: string;
-    codigo: string;
   } | null;
 }
 
@@ -76,7 +75,7 @@ export const NewAuthProvider = ({ children }: NewAuthProviderProps) => {
         .select(`
           *,
           rol_general:roles_generales(id, nombre, descripcion, nivel_jerarquia),
-          departamento:departamentos(id, nombre, descripcion, codigo)
+          area:areas(id, nombre, descripcion)
         `)
         .eq('id', userId)
         .maybeSingle();
