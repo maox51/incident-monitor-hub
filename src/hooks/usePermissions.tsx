@@ -69,7 +69,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     try {
       const [rolesRes, departamentosRes, modulosRes, accionesRes] = await Promise.all([
         supabase.from('roles_generales').select('*').eq('activo', true),
-        supabase.from('departamentos').select('*').eq('activo', true),
+        supabase.from('areas').select('*').eq('activo', true),
         supabase.from('modulos_sistema').select('*').eq('activo', true),
         supabase.from('acciones_sistema').select('*')
       ]);

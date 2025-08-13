@@ -8,7 +8,7 @@ export interface Solicitud {
   id: string;
   titulo: string;
   descripcion: string;
-  departamento_id: string;
+  area_id: string;
   solicitante_id: string;
   estado: 'pendiente' | 'aceptada' | 'en_ejecucion' | 'cerrada';
   fecha_creacion: string;
@@ -28,7 +28,7 @@ export interface Solicitud {
 export interface CrearSolicitudData {
   titulo: string;
   descripcion: string;
-  departamento_id: string;
+  area_id: string;
 }
 
 export const useSolicitudes = () => {
@@ -46,26 +46,26 @@ export const useSolicitudes = () => {
         // Obtener áreas asignadas al usuario
         const { data: userAreas, error: areasError } = await supabase
           .from('user_area_assignments')
-          .select('departamento_id')
+          .select('area_id')
           .eq('user_id', user.id);
 
         if (areasError) {
           console.error('Error fetching user areas:', areasError);
         }
 
-        const userAreaIds = userAreas?.map(ua => ua.departamento_id) || [];
+        const userAreaIds = userAreas?.map(ua => ua.area_id) || [];
 
         let query = supabase
           .from('solicitudes')
           .select(`
             *,
-            departamento:departamentos!solicitudes_departamento_id_fkey(nombre),
+            area:areas!solicitudes_area_id_fkey(nombre),
             profiles!solicitudes_solicitante_id_fkey(full_name)
           `);
 
         // Filtrar por áreas si el usuario tiene áreas asignadas
         if (userAreaIds.length > 0) {
-          query = query.in('departamento_id', userAreaIds);
+          query = query.in('area_id', userAreaIds);
         }
 
         const { data, error } = await query.order('fecha_creacion', { ascending: false });
@@ -128,7 +128,7 @@ export const useSolicitudes = () => {
         .insert({
           titulo: datos.titulo,
           descripcion: datos.descripcion,
-          departamento_id: datos.departamento_id,
+          area_id: datos.area_id,
           solicitante_id: user.id,
         })
         .select()

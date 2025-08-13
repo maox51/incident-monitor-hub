@@ -195,7 +195,7 @@ const ReportesView = () => {
     const incidenciasData = incidencias.map(inc => ({
       ...inc,
       // Ensure area_id is present for PDF export
-      area_id: inc.area_id
+      area_id: inc.area_id || inc.departamento_id
     }));
 
     exportToPDF(incidenciasData as any, filtros);

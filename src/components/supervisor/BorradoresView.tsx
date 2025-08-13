@@ -43,7 +43,7 @@ const BorradoresView = () => {
         .from("incidencias")
         .select(`
           *,
-          departamentos!incidencias_departamento_id_fkey(nombre, descripcion),
+          areas!incidencias_area_id_fkey(nombre, descripcion),
           clasificaciones(nombre, color),
           incidencia_clasificaciones(
             id,
@@ -65,10 +65,10 @@ const BorradoresView = () => {
 
   // Obtener datos para los selects de edición
   const { data: areas } = useQuery({
-    queryKey: ["departamentos"],
+    queryKey: ["areas"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("departamentos")
+        .from("areas")
         .select("*")
         .eq("activo", true)
         .order("nombre");
@@ -160,7 +160,7 @@ const BorradoresView = () => {
     setEditData({
       titulo: incidencia.titulo,
       descripcion: incidencia.descripcion,
-      departamento_id: incidencia.departamento_id,
+      area_id: incidencia.area_id,
       clasificacion_id: incidencia.clasificacion_id,
       sala_id: incidencia.sala_id,
       prioridad: incidencia.prioridad,
@@ -263,8 +263,8 @@ const BorradoresView = () => {
                       <div>
                         <label className="block text-sm font-medium mb-1">Área</label>
                         <Select 
-                          value={editData.departamento_id || ''} 
-                          onValueChange={(value) => setEditData(prev => ({ ...prev, departamento_id: value }))}
+          value={editData.area_id || ''} 
+          onValueChange={(value) => setEditData(prev => ({ ...prev, area_id: value }))}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -359,7 +359,7 @@ const BorradoresView = () => {
                         <div className="flex flex-wrap gap-2 mb-3">
                           <Badge variant="outline">
                             <MapPin className="w-3 h-3 mr-1" />
-                            {incidencia.departamentos?.nombre}
+                            {incidencia.areas?.nombre}
                           </Badge>
                           {/* Mostrar todas las clasificaciones */}
                           {incidencia.incidencia_clasificaciones && incidencia.incidencia_clasificaciones.length > 0 ? (
