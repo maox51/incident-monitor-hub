@@ -191,14 +191,7 @@ const ReportesView = () => {
       return;
     }
 
-    // Convert incidencias to match IncidenciaData interface
-    const incidenciasData = incidencias.map(inc => ({
-      ...inc,
-      // Ensure area_id is present for PDF export
-      area_id: inc.area_id || inc.departamento_id
-    }));
-
-    exportToPDF(incidenciasData as any, filtros);
+    exportToPDF(incidencias as any, filtros);
   };
 
   const getPrioridadColor = (prioridad: string) => {

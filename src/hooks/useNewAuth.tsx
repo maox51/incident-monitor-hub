@@ -91,6 +91,7 @@ export const NewAuthProvider = ({ children }: NewAuthProviderProps) => {
       }
 
       console.log('New profile fetched successfully:', data);
+      
       return data;
     } catch (error) {
       console.error('Error in fetchProfile:', error);
