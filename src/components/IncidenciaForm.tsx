@@ -28,10 +28,10 @@ const IncidenciaForm = () => {
 
   // Obtener áreas
   const { data: areas } = useQuery({
-    queryKey: ["departamentos"],
+    queryKey: ["areas"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("departamentos")
+        .from("areas")
         .select("*")
         .eq("activo", true)
         .order("nombre");

@@ -9,14 +9,14 @@ export interface IncidenciaData {
   titulo: string;
   descripcion: string;
   observaciones: string | null;
-  departamento_id: string;
+  area_id: string;
   clasificacion_id: string;
   prioridad: string;
   reportado_por: string;
   fecha_incidencia: string;
   created_at: string;
   updated_at: string;
-  departamentos?: {
+  areas?: {
     nombre: string;
     descripcion: string | null;
   };
@@ -207,7 +207,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
   const tableData = incidencias.map(inc => [
     //inc.id.slice(0, 8),
     inc.titulo.length > 25 ? inc.titulo.substring(0, 22) + '...' : inc.titulo,
-    inc.departamentos?.nombre || 'N/A',
+    inc.areas?.nombre || 'N/A',
     inc.prioridad.toUpperCase(),
     format(new Date(inc.fecha_incidencia), 'dd/MM', { locale: es }),
     (inc.imagenes_incidencias?.length || 0).toString()
@@ -273,7 +273,7 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     // Información principal
     const detallesInfo = [
       //['ID', inc.id],
-      ['Área', inc.departamentos?.nombre || 'No especificada'],
+      ['Área', inc.areas?.nombre || 'No especificada'],
       ['Clasificación', inc.clasificaciones?.nombre || 'No clasificada'],
       ['Prioridad', inc.prioridad.toUpperCase()],
       ['Reportado por', inc.reportado_por],

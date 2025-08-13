@@ -77,7 +77,7 @@ export const PermissionsManagement = () => {
     try {
       const [rolesRes, deptosRes, modulosRes, accionesRes, permisosRes] = await Promise.all([
         supabase.from('roles_generales').select('*').order('nivel_jerarquia'),
-        supabase.from('departamentos').select('*').order('nombre'),
+        supabase.from('areas').select('*').order('nombre'),
         supabase.from('modulos_sistema').select('*').order('nombre'),
         supabase.from('acciones_sistema').select('*').order('nombre'),
         supabase

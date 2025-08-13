@@ -44,10 +44,10 @@ const ReportesView = () => {
 
   // Obtener áreas para el filtro
   const { data: areas } = useQuery({
-    queryKey: ["departamentos"],
+    queryKey: ["areas"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("departamentos")
+        .from("areas")
         .select("*")
         .eq("activo", true)
         .order("nombre");
@@ -76,7 +76,7 @@ const ReportesView = () => {
         .from("incidencias")
         .select(`
           *,
-          departamentos!incidencias_departamento_id_fkey(nombre, descripcion),
+          areas!incidencias_area_id_fkey(nombre, descripcion),
           clasificaciones(nombre, color),
           imagenes_incidencias(id, url_imagen, nombre_archivo, tipo_archivo),
           salas(nombre)
@@ -92,7 +92,7 @@ const ReportesView = () => {
         query.lte("fecha_incidencia", filtros.fechaFin);
       }
       if (filtros.area && filtros.area !== "all") {
-        query.eq("departamento_id", filtros.area);
+        query.eq("area_id", filtros.area);
       }
       if (filtros.clasificacion && filtros.clasificacion !== "all") {
         query.eq("clasificacion_id", filtros.clasificacion);
@@ -109,7 +109,7 @@ const ReportesView = () => {
       // Filtrar por área según el rol del usuario (solo si no es admin)
       if (!isAdmin && userAreaName) {
         filteredData = filteredData.filter(incidencia => 
-          incidencia.departamentos?.nombre === userAreaName
+          incidencia.areas?.nombre === userAreaName
         );
       }
 
@@ -165,7 +165,7 @@ const ReportesView = () => {
       ["Título", "Área", "Clasificación", "Prioridad", "Reportado por", "Fecha", "Descripción"].join(","),
       ...incidencias.map(inc => [
         `"${inc.titulo}"`,
-        `"${inc.departamentos?.nombre || ''}"`,
+        `"${inc.areas?.nombre || ''}"`,
         `"${inc.clasificaciones?.nombre || ''}"`,
         `"${inc.prioridad}"`,
         `"${inc.reportado_por_profile?.full_name || inc.reportado_por_profile?.email || inc.reportado_por}"`,
@@ -194,8 +194,8 @@ const ReportesView = () => {
     // Convert incidencias to match IncidenciaData interface
     const incidenciasData = incidencias.map(inc => ({
       ...inc,
-      // Convert departamento_id back to area_id for compatibility with PDF export
-      area_id: inc.departamento_id
+      // Ensure area_id is present for PDF export
+      area_id: inc.area_id
     }));
 
     exportToPDF(incidenciasData as any, filtros);
@@ -367,7 +367,7 @@ const ReportesView = () => {
                         <h3 className="font-semibold text-lg mb-2">{incidencia.titulo}</h3>
                         <div className="flex flex-wrap gap-2 mb-3">
                           <Badge variant="outline">
-                            {incidencia.departamentos?.nombre}
+                            {incidencia.areas?.nombre}
                           </Badge>
                           <Badge 
                             variant="outline"

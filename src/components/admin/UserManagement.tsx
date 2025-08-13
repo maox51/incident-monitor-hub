@@ -38,8 +38,8 @@ interface Area {
 interface UserAreaAccess {
   id: string;
   user_id: string;
-  departamento_id: string;
-  departamento?: Area;
+  area_id: string;
+  area?: Area;
 }
 
 const UserManagement = () => {
@@ -69,12 +69,12 @@ const UserManagement = () => {
     },
   });
 
-  // Obtener departamentos
+  // Obtener áreas
   const { data: areas } = useQuery({
-    queryKey: ['departamentos'],
+    queryKey: ['areas'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('departamentos')
+        .from('areas')
         .select('*')
         .eq('activo', true)
         .order('nombre');
@@ -94,7 +94,7 @@ const UserManagement = () => {
         .from('user_area_access')
         .select(`
           *,
-          departamento:departamentos!user_area_access_departamento_id_fkey(*)
+          area:areas!user_area_access_area_id_fkey(*)
         `)
         .eq('user_id', selectedUser.id);
 
@@ -129,7 +129,7 @@ const UserManagement = () => {
         if (areaIds.length > 0) {
           const accesses = areaIds.map(areaId => ({
             user_id: userId,
-            departamento_id: areaId
+            area_id: areaId
           }));
 
           const { error: insertError } = await supabase
@@ -484,7 +484,7 @@ const UserManagement = () => {
                       setSelectedAreas([]);
                     } else {
                       // Pre-cargar áreas actuales del usuario
-                      const currentAreas = userAreaAccess?.map(access => access.departamento_id) || [];
+                      const currentAreas = userAreaAccess?.map(access => access.area_id) || [];
                       setSelectedAreas(currentAreas);
                     }
                   }}

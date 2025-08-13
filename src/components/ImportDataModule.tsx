@@ -82,7 +82,7 @@ const ImportDataModule = () => {
 
       // Obtener datos de referencia
       const [areasResult, clasificacionesResult, salasResult] = await Promise.all([
-        supabase.from('departamentos').select('id, nombre'),
+        supabase.from('areas').select('id, nombre'),
         supabase.from('clasificaciones').select('id, nombre'),
         supabase.from('salas').select('id, nombre')
       ]);

@@ -38,7 +38,7 @@ export type Database = {
         }
         Relationships: []
       }
-      areas_old: {
+      areas: {
         Row: {
           activo: boolean
           created_at: string
@@ -201,7 +201,7 @@ export type Database = {
             foreignKeyName: "clasificacion_area_area_id_fkey"
             columns: ["area_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
           {
@@ -216,34 +216,34 @@ export type Database = {
       clasificacion_area_mapping: {
         Row: {
           activo: boolean
-          area_id: string
           clasificacion_id: string
           created_at: string
+          departamento_id: string
           id: string
           prioridad_sugerida: string | null
         }
         Insert: {
           activo?: boolean
-          area_id: string
           clasificacion_id: string
           created_at?: string
+          departamento_id: string
           id?: string
           prioridad_sugerida?: string | null
         }
         Update: {
           activo?: boolean
-          area_id?: string
           clasificacion_id?: string
           created_at?: string
+          departamento_id?: string
           id?: string
           prioridad_sugerida?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "clasificacion_area_mapping_area_id_fkey"
-            columns: ["area_id"]
+            columns: ["departamento_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
           {
@@ -378,36 +378,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      departamentos: {
-        Row: {
-          activo: boolean
-          codigo: string | null
-          created_at: string
-          descripcion: string | null
-          id: string
-          nombre: string
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          codigo?: string | null
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          nombre: string
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          codigo?: string | null
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          nombre?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       fcm_tokens: {
         Row: {
@@ -573,7 +543,7 @@ export type Database = {
             foreignKeyName: "incidencias_area_id_fkey"
             columns: ["departamento_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
           {
@@ -581,13 +551,6 @@ export type Database = {
             columns: ["clasificacion_id"]
             isOneToOne: false
             referencedRelation: "clasificaciones"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "incidencias_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
             referencedColumns: ["id"]
           },
           {
@@ -696,13 +659,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "permisos_sistema_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "permisos_sistema_modulo_id_fkey"
             columns: ["modulo_id"]
             isOneToOne: false
@@ -753,13 +709,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "profiles_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "profiles_rol_general_id_fkey"
             columns: ["rol_general_id"]
@@ -838,14 +787,7 @@ export type Database = {
             foreignKeyName: "role_area_mapping_area_id_fkey"
             columns: ["departamento_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "role_area_mapping_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
         ]
@@ -967,14 +909,7 @@ export type Database = {
             foreignKeyName: "solicitudes_area_id_fkey"
             columns: ["departamento_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "solicitudes_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
           {
@@ -1052,14 +987,7 @@ export type Database = {
             foreignKeyName: "user_area_access_area_id_fkey"
             columns: ["departamento_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_area_access_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
         ]
@@ -1088,14 +1016,7 @@ export type Database = {
             foreignKeyName: "user_area_assignments_area_id_fkey"
             columns: ["departamento_id"]
             isOneToOne: false
-            referencedRelation: "areas_old"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_area_assignments_departamento_id_fkey"
-            columns: ["departamento_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
           {
@@ -1254,7 +1175,7 @@ export type Database = {
       obtener_areas_sugeridas_multiple: {
         Args: { clasificacion_ids: string[] }
         Returns: {
-          departamento_id: string
+          area_id: string
           prioridad_sugerida: string
           area_nombre: string
         }[]
@@ -1307,7 +1228,7 @@ export type Database = {
         Returns: boolean
       }
       user_has_area_access: {
-        Args: { _user_id: string; _area_id: string }
+        Args: { _user_id: string; _departamento_id: string }
         Returns: boolean
       }
       user_has_departamento_access: {
