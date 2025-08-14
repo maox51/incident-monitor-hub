@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { useSolicitudes, type CrearSolicitudData } from '@/hooks/useSolicitudes';
+import { useSolicitudes, type CrearSolicitudData } from '@/hooks/useSolicitudesTemp';
 
 interface SolicitudFormProps {
   onCancel: () => void;

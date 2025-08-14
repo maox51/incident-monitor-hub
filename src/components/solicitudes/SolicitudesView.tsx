@@ -7,7 +7,7 @@ import { Plus, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { SolicitudForm } from './SolicitudForm';
 import { SolicitudCard } from './SolicitudCard';
 import { GestionPagoDialog } from './GestionPagoDialog';
-import { useSolicitudes } from '@/hooks/useSolicitudes';
+import { useSolicitudes } from '@/hooks/useSolicitudesTemp';
 
 export const SolicitudesView = () => {
   const [showForm, setShowForm] = useState(false);

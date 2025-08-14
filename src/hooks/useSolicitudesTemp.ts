@@ -8,7 +8,7 @@ export interface Solicitud {
   id: string;
   titulo: string;
   descripcion: string;
-  area_id: string;
+  area_id?: string; // Opcional para compatibilidad con la base de datos actual
   solicitante_id: string;
   estado: 'pendiente' | 'aceptada' | 'en_ejecucion' | 'cerrada';
   fecha_creacion: string;
@@ -20,9 +20,11 @@ export interface Solicitud {
   progreso_ejecucion?: string;
   horas_transcurridas?: number;
   dias_pendientes?: number;
-  departamento?: { nombre: string };
-  solicitante?: { full_name: string };
+  area?: { nombre: string };
   profiles?: { full_name: string };
+  // Mantener compatibilidad con estructura anterior
+  departamento_id?: string;
+  [key: string]: any; // Para flexibilidad durante la transición
 }
 
 export interface CrearSolicitudData {
@@ -36,65 +38,29 @@ export const useSolicitudes = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Obtener todas las solicitudes con filtrado por área del usuario
+  // Obtener todas las solicitudes
   const { data: solicitudes = [], isLoading } = useQuery({
     queryKey: ['solicitudes', user?.id],
     queryFn: async () => {
       try {
         if (!user?.id) return [];
 
-        // Por ahora simplificamos la consulta hasta que la migración se complete
-        let query = supabase
+        // Consulta simplificada temporal
+        const { data, error } = await supabase
           .from('solicitudes')
           .select(`
             *,
-            area:areas!solicitudes_area_id_fkey(nombre),
-            profiles!solicitudes_solicitante_id_fkey(full_name)
-          `);
-
-        const { data, error } = await query.order('fecha_creacion', { ascending: false });
+            area:areas(nombre),
+            profiles:solicitante_id(full_name)
+          `)
+          .order('fecha_creacion', { ascending: false });
 
         if (error) {
           console.error('Error fetching solicitudes:', error);
-          throw error;
+          return [];
         }
 
-        if (!data) return [];
-
-        // Calcular días pendientes y horas transcurridas para cada solicitud
-        const solicitudesConTiempo = await Promise.all(
-          data.map(async (solicitud: any) => {
-            let diasPendientes = 0;
-            let horasTranscurridas = 0;
-
-            if (solicitud.estado === 'pendiente') {
-              try {
-                const { data: diasData } = await supabase
-                  .rpc('calcular_dias_pendientes', { p_solicitud_id: solicitud.id });
-                diasPendientes = diasData || 0;
-              } catch (error) {
-                console.error('Error calculating days:', error);
-              }
-            }
-
-            // Calcular horas transcurridas para todas las solicitudes (desde creación hasta cierre)
-            try {
-              const { data: horasData } = await supabase
-                .rpc('calcular_horas_solicitud', { p_solicitud_id: solicitud.id });
-              horasTranscurridas = horasData || 0;
-            } catch (error) {
-              console.error('Error calculating hours:', error);
-            }
-
-            return { 
-              ...solicitud, 
-              dias_pendientes: diasPendientes,
-              horas_transcurridas: horasTranscurridas
-            };
-          })
-        );
-
-        return solicitudesConTiempo;
+        return data || [];
       } catch (error) {
         console.error('Error in solicitudes query:', error);
         return [];
@@ -107,19 +73,27 @@ export const useSolicitudes = () => {
     mutationFn: async (datos: CrearSolicitudData) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      const { data, error } = await supabase
-        .from('solicitudes')
-        .insert({
+      try {
+        // Intentar insertar directamente como una operación simple
+        const insertData = {
           titulo: datos.titulo,
           descripcion: datos.descripcion,
           area_id: datos.area_id,
           solicitante_id: user.id,
-        } as any) // Uso any temporalmente hasta que la migración se complete
-        .select()
-        .maybeSingle();
+        };
 
-      if (error) throw error;
-      return data;
+        const { data, error } = await supabase
+          .from('solicitudes')
+          .insert(insertData as any)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('Error creating solicitud:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
@@ -138,7 +112,7 @@ export const useSolicitudes = () => {
     },
   });
 
-  // Aceptar solicitud - cambia automáticamente a "en ejecución" 
+  // Aceptar solicitud
   const aceptarSolicitud = useMutation({
     mutationFn: async (solicitudId: string) => {
       const { data, error } = await supabase
@@ -147,10 +121,10 @@ export const useSolicitudes = () => {
           estado: 'en_ejecucion',
           fecha_aceptacion: new Date().toISOString(),
           aceptada_por: user?.id,
-        })
+        } as any)
         .eq('id', solicitudId)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       return data;
@@ -172,7 +146,7 @@ export const useSolicitudes = () => {
     },
   });
 
-  // Actualizar progreso de ejecución
+  // Actualizar progreso
   const actualizarProgreso = useMutation({
     mutationFn: async ({ solicitudId, progreso }: { solicitudId: string; progreso: string }) => {
       if (progreso.length < 100) {
@@ -181,10 +155,10 @@ export const useSolicitudes = () => {
 
       const { data, error } = await supabase
         .from('solicitudes')
-        .update({ progreso_ejecucion: progreso })
+        .update({ progreso_ejecucion: progreso } as any)
         .eq('id', solicitudId)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       return data;
@@ -214,10 +188,10 @@ export const useSolicitudes = () => {
           estado: 'cerrada',
           fecha_cierre: new Date().toISOString(),
           cerrada_por: user?.id,
-        })
+        } as any)
         .eq('id', solicitudId)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       return data;

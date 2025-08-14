@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, User, Building, Edit, Timer } from 'lucide-react';
-import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
+import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudesTemp';
 import { useAuth } from '@/hooks/useAuth';
 import { ProgresoEjecucionDialog } from './ProgresoEjecucionDialog';
 import { CerrarSolicitudDialog } from './CerrarSolicitudDialog';
@@ -88,11 +88,11 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Building className="w-4 h-4" />
-              <span>{solicitud.departamento?.nombre}</span>
+              <span>{solicitud.area?.nombre || 'Sin área'}</span>
             </div>
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
-              <span>{solicitud.profiles?.full_name || solicitud.solicitante?.full_name}</span>
+              <span>{solicitud.profiles?.full_name || 'Usuario desconocido'}</span>
             </div>
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />

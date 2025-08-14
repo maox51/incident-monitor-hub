@@ -152,7 +152,7 @@ export const GestionPagoDialog = () => {
           descripcion: `${formData.descripcion}${formData.monto ? `\n\nMonto: $${formData.monto}` : ''}`,
           area_id: areaId,
           solicitante_id: user?.id || '',
-        })
+        } as any) // Uso any temporalmente hasta que la migración se complete
         .select()
         .single();
 
