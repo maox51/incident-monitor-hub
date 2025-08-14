@@ -45,7 +45,7 @@ export const useSolicitudes = () => {
 
         // Obtener áreas asignadas al usuario
         const { data: userAreas, error: areasError } = await supabase
-          .from('user_area_assignments')
+          .from('user_area_access')
           .select('area_id')
           .eq('user_id', user.id);
 
