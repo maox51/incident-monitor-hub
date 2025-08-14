@@ -9,6 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useSolicitudes, type CrearSolicitudData } from '@/hooks/useSolicitudesTemp';
 
+const tiposSolicitud = [
+  { valor: 'mantenimiento', etiqueta: 'Mantenimiento y Reparaciones' },
+  { valor: 'recursos', etiqueta: 'Solicitud de Recursos' },
+  { valor: 'permisos', etiqueta: 'Permisos y Autorizaciones' },
+  { valor: 'soporte_tecnico', etiqueta: 'Soporte Técnico' },
+  { valor: 'capacitacion', etiqueta: 'Capacitación' },
+  { valor: 'documentacion', etiqueta: 'Documentación' },
+  { valor: 'reunion', etiqueta: 'Solicitud de Reunión' },
+  { valor: 'otro', etiqueta: 'Otro' },
+];
+
 interface SolicitudFormProps {
   onCancel: () => void;
 }
@@ -19,6 +30,7 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
     descripcion: '',
     area_id: '',
   });
+  const [tipoSolicitud, setTipoSolicitud] = useState('');
 
   const { crearSolicitud, isCreating } = useSolicitudes();
 
@@ -40,13 +52,18 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id) {
+    if (!formData.titulo.trim() || !formData.descripcion.trim() || !formData.area_id || !tipoSolicitud) {
       return;
     }
 
     try {
-      await crearSolicitud(formData);
+      const solicitudConTipo = {
+        ...formData,
+        titulo: `[${tiposSolicitud.find(t => t.valor === tipoSolicitud)?.etiqueta}] ${formData.titulo}`
+      };
+      await crearSolicitud(solicitudConTipo);
       setFormData({ titulo: '', descripcion: '', area_id: '' });
+      setTipoSolicitud('');
       onCancel();
     } catch (error) {
       console.error('Error al crear solicitud:', error);
@@ -61,12 +78,32 @@ export const SolicitudForm = ({ onCancel }: SolicitudFormProps) => {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <Label htmlFor="tipo">Tipo de Solicitud</Label>
+            <Select
+              value={tipoSolicitud}
+              onValueChange={setTipoSolicitud}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione el tipo de solicitud" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiposSolicitud.map((tipo) => (
+                  <SelectItem key={tipo.valor} value={tipo.valor}>
+                    {tipo.etiqueta}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label htmlFor="titulo">Título</Label>
             <Input
               id="titulo"
               value={formData.titulo}
               onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-              placeholder="Ingrese el título de la solicitud"
+              placeholder="Ingrese el título específico de la solicitud"
               required
             />
           </div>

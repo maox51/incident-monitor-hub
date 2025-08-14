@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, X, FileText, CreditCard } from 'lucide-react';
+import { Upload, X, FileText, CreditCard, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +32,7 @@ export const GestionPagoDialog = () => {
   const [imagenes, setImagenes] = useState<ImagenSubida[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -109,6 +110,89 @@ export const GestionPagoDialog = () => {
     }
 
     setImagenes(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const handleCameraCapture = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      // Crear elemento de video
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true;
+      
+      // Crear canvas para capturar
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Crear contenedor modal para la cámara
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.9); z-index: 9999; display: flex;
+        flex-direction: column; align-items: center; justify-content: center;
+      `;
+      
+      video.style.cssText = 'max-width: 90vw; max-height: 70vh; border-radius: 8px;';
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.cssText = 'margin-top: 20px; display: flex; gap: 15px;';
+      
+      const captureBtn = document.createElement('button');
+      captureBtn.textContent = '📸 Capturar';
+      captureBtn.style.cssText = `
+        padding: 12px 24px; background: #22c55e; color: white; border: none;
+        border-radius: 8px; font-size: 16px; cursor: pointer;
+      `;
+      
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = '❌ Cancelar';
+      cancelBtn.style.cssText = `
+        padding: 12px 24px; background: #ef4444; color: white; border: none;
+        border-radius: 8px; font-size: 16px; cursor: pointer;
+      `;
+      
+      buttonContainer.appendChild(captureBtn);
+      buttonContainer.appendChild(cancelBtn);
+      modal.appendChild(video);
+      modal.appendChild(buttonContainer);
+      document.body.appendChild(modal);
+      
+      const cleanup = () => {
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(modal);
+      };
+      
+      captureBtn.onclick = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx?.drawImage(video, 0, 0);
+        
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const file = new File([blob], `foto-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            const fileList = new DataTransfer();
+            fileList.items.add(file);
+            await handleImageUpload(fileList.files);
+          }
+        }, 'image/jpeg', 0.8);
+        
+        cleanup();
+      };
+      
+      cancelBtn.onclick = cleanup;
+      
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast({
+        title: 'Error de cámara',
+        description: 'No se pudo acceder a la cámara. Verifique los permisos.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -246,25 +330,39 @@ export const GestionPagoDialog = () => {
           {/* Sección de carga de imágenes */}
           <div>
             <Label>Documentos de Soporte *</Label>
-            <div className="mt-2">
+            <div className="mt-2 space-y-3">
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                 <Upload className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <div className="mt-4">
-                  <Label htmlFor="images" className="cursor-pointer">
-                    <span className="text-sm font-medium text-primary hover:text-primary/80">
-                      Seleccione archivos
-                    </span>
-                    <input
-                      id="images"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e.target.files)}
-                      className="sr-only"
+                <div className="mt-4 space-y-3">
+                  <div className="flex gap-2 justify-center">
+                    <Label htmlFor="images" className="cursor-pointer">
+                      <Button type="button" variant="outline" asChild>
+                        <span>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Seleccionar archivos
+                        </span>
+                      </Button>
+                      <input
+                        id="images"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e.target.files)}
+                        className="sr-only"
+                        disabled={isUploading}
+                      />
+                    </Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleCameraCapture}
                       disabled={isUploading}
-                    />
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      Tomar foto
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
                     PNG, JPG hasta 5MB cada uno
                   </p>
                 </div>

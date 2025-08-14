@@ -181,13 +181,23 @@ export const useSolicitudes = () => {
 
   // Cerrar solicitud
   const cerrarSolicitud = useMutation({
-    mutationFn: async (solicitudId: string) => {
+    mutationFn: async ({ solicitudId, accionesRealizadas }: { solicitudId: string; accionesRealizadas?: string }) => {
+      // Primero obtener la solicitud actual para conservar el progreso existente
+      const { data: solicitudActual } = await supabase
+        .from('solicitudes')
+        .select('progreso_ejecucion')
+        .eq('id', solicitudId)
+        .single();
+
       const { data, error } = await supabase
         .from('solicitudes')
         .update({
           estado: 'cerrada',
           fecha_cierre: new Date().toISOString(),
           cerrada_por: user?.id,
+          progreso_ejecucion: accionesRealizadas 
+            ? `${solicitudActual?.progreso_ejecucion || ''}\n\n--- ACCIONES DE CIERRE ---\n${accionesRealizadas}`.trim()
+            : solicitudActual?.progreso_ejecucion
         } as any)
         .eq('id', solicitudId)
         .select()
