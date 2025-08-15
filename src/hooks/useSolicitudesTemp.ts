@@ -45,15 +45,39 @@ export const useSolicitudes = () => {
       try {
         if (!user?.id) return [];
 
-        // Consulta simplificada temporal
-        const { data, error } = await supabase
+        // Verificar si es admin o supervisor de monitoreo
+        const { data: isAdminOrSupervisor } = await supabase
+          .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        
+        const { data: isSupervisorMonitoreo } = await supabase
+          .rpc('has_role', { _user_id: user.id, _role: 'supervisor_monitoreo' });
+
+        let query = supabase
           .from('solicitudes')
           .select(`
             *,
             area:areas(nombre),
             profiles:solicitante_id(full_name)
-          `)
-          .order('fecha_creacion', { ascending: false });
+          `);
+
+        // Si no es admin ni supervisor de monitoreo, filtrar por área del usuario
+        if (!isAdminOrSupervisor && !isSupervisorMonitoreo) {
+          // Obtener las áreas del usuario desde el perfil
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('area_id')
+            .eq('id', user.id)
+            .single();
+
+          if (userProfile?.area_id) {
+            query = query.eq('area_id', userProfile.area_id);
+          } else {
+            // Si no tiene área asignada, solo ver sus propias solicitudes
+            query = query.eq('solicitante_id', user.id);
+          }
+        }
+
+        const { data, error } = await query.order('fecha_creacion', { ascending: false });
 
         if (error) {
           console.error('Error fetching solicitudes:', error);
