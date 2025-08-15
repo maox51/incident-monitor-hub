@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -216,32 +216,32 @@ export type Database = {
       clasificacion_area_mapping: {
         Row: {
           activo: boolean
+          area_id: string
           clasificacion_id: string
           created_at: string
-          departamento_id: string
           id: string
           prioridad_sugerida: string | null
         }
         Insert: {
           activo?: boolean
+          area_id: string
           clasificacion_id: string
           created_at?: string
-          departamento_id: string
           id?: string
           prioridad_sugerida?: string | null
         }
         Update: {
           activo?: boolean
+          area_id?: string
           clasificacion_id?: string
           created_at?: string
-          departamento_id?: string
           id?: string
           prioridad_sugerida?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "clasificacion_area_mapping_area_id_fkey"
-            columns: ["departamento_id"]
+            columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
             referencedColumns: ["id"]
@@ -486,9 +486,9 @@ export type Database = {
       incidencias: {
         Row: {
           aprobado_por: string | null
+          area_id: string
           clasificacion_id: string
           created_at: string
-          departamento_id: string
           descripcion: string
           estado: string
           fecha_aprobacion: string | null
@@ -504,9 +504,9 @@ export type Database = {
         }
         Insert: {
           aprobado_por?: string | null
+          area_id: string
           clasificacion_id: string
           created_at?: string
-          departamento_id: string
           descripcion: string
           estado?: string
           fecha_aprobacion?: string | null
@@ -522,9 +522,9 @@ export type Database = {
         }
         Update: {
           aprobado_por?: string | null
+          area_id?: string
           clasificacion_id?: string
           created_at?: string
-          departamento_id?: string
           descripcion?: string
           estado?: string
           fecha_aprobacion?: string | null
@@ -541,7 +541,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "incidencias_area_id_fkey"
-            columns: ["departamento_id"]
+            columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
             referencedColumns: ["id"]
@@ -676,9 +676,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          area_id: string | null
           avatar_url: string | null
           created_at: string
-          departamento_id: string | null
           email: string
           full_name: string | null
           id: string
@@ -687,9 +687,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_id?: string | null
           avatar_url?: string | null
           created_at?: string
-          departamento_id?: string | null
           email: string
           full_name?: string | null
           id: string
@@ -698,9 +698,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_id?: string | null
           avatar_url?: string | null
           created_at?: string
-          departamento_id?: string | null
           email?: string
           full_name?: string | null
           id?: string
@@ -765,27 +765,27 @@ export type Database = {
       }
       role_area_mapping: {
         Row: {
+          area_id: string | null
           created_at: string | null
-          departamento_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
+          area_id?: string | null
           created_at?: string | null
-          departamento_id?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Update: {
+          area_id?: string | null
           created_at?: string | null
-          departamento_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: [
           {
             foreignKeyName: "role_area_mapping_area_id_fkey"
-            columns: ["departamento_id"]
+            columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
             referencedColumns: ["id"]
@@ -852,9 +852,9 @@ export type Database = {
       solicitudes: {
         Row: {
           aceptada_por: string | null
+          area_id: string
           cerrada_por: string | null
           created_at: string
-          departamento_id: string
           descripcion: string
           estado: string
           fecha_aceptacion: string | null
@@ -870,9 +870,9 @@ export type Database = {
         }
         Insert: {
           aceptada_por?: string | null
+          area_id: string
           cerrada_por?: string | null
           created_at?: string
-          departamento_id: string
           descripcion: string
           estado?: string
           fecha_aceptacion?: string | null
@@ -888,9 +888,9 @@ export type Database = {
         }
         Update: {
           aceptada_por?: string | null
+          area_id?: string
           cerrada_por?: string | null
           created_at?: string
-          departamento_id?: string
           descripcion?: string
           estado?: string
           fecha_aceptacion?: string | null
@@ -907,7 +907,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "solicitudes_area_id_fkey"
-            columns: ["departamento_id"]
+            columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
             referencedColumns: ["id"]
@@ -962,22 +962,22 @@ export type Database = {
       }
       user_area_access: {
         Row: {
+          area_id: string
           created_at: string
-          departamento_id: string
           id: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          area_id: string
           created_at?: string
-          departamento_id: string
           id?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          area_id?: string
           created_at?: string
-          departamento_id?: string
           id?: string
           updated_at?: string
           user_id?: string
@@ -985,7 +985,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_area_access_area_id_fkey"
-            columns: ["departamento_id"]
+            columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
             referencedColumns: ["id"]
@@ -994,27 +994,27 @@ export type Database = {
       }
       user_area_assignments: {
         Row: {
+          area_id: string
           created_at: string | null
-          departamento_id: string
           id: string
           user_id: string
         }
         Insert: {
+          area_id: string
           created_at?: string | null
-          departamento_id: string
           id?: string
           user_id: string
         }
         Update: {
+          area_id?: string
           created_at?: string | null
-          departamento_id?: string
           id?: string
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "user_area_assignments_area_id_fkey"
-            columns: ["departamento_id"]
+            columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
             referencedColumns: ["id"]
@@ -1073,26 +1073,26 @@ export type Database = {
     Functions: {
       actualizar_conteo_quincenal_maquinas: {
         Args: {
-          p_sala_id: string
           p_cantidad_maquinas: number
           p_fecha?: string
+          p_sala_id: string
         }
         Returns: boolean
       }
       actualizar_conteo_quincenal_sala: {
         Args: {
+          p_fecha?: string
+          p_minutos: number
           p_sala_id: string
           p_tipo_incidencia: string
-          p_minutos: number
-          p_fecha?: string
         }
         Returns: boolean
       }
       add_participant_to_group: {
         Args: {
+          _new_participant_id: string
           _room_id: string
           _user_id: string
-          _new_participant_id: string
         }
         Returns: boolean
       }
@@ -1110,9 +1110,9 @@ export type Database = {
       }
       create_group_chat: {
         Args: {
-          _name: string
-          _description: string
           _creator_id: string
+          _description: string
+          _name: string
           _participant_ids: string[]
         }
         Returns: string
@@ -1136,9 +1136,9 @@ export type Database = {
       get_notification_admins: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
           email: string
           full_name: string
+          id: string
           role: string
         }[]
       }
@@ -1148,22 +1148,22 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
       insert_fcm_token: {
-        Args: { p_user_id: string; p_token: string; p_device_type?: string }
+        Args: { p_device_type?: string; p_token: string; p_user_id: string }
         Returns: undefined
       }
       log_user_action: {
         Args: {
           p_action_type: string
-          p_resource_type?: string
-          p_resource_id?: string
           p_details?: Json
           p_ip_address?: string
+          p_resource_id?: string
+          p_resource_type?: string
           p_user_agent?: string
         }
         Returns: string
@@ -1176,8 +1176,8 @@ export type Database = {
         Args: { clasificacion_ids: string[] }
         Returns: {
           area_id: string
-          prioridad_sugerida: string
           area_nombre: string
+          prioridad_sugerida: string
         }[]
       }
       obtener_consolidado_con_medios: {
@@ -1185,37 +1185,37 @@ export type Database = {
         Returns: Json
       }
       obtener_conteo_quincenal_maquinas: {
-        Args: { p_sala_id: string; p_fecha?: string }
+        Args: { p_fecha?: string; p_sala_id: string }
         Returns: string
       }
       obtener_conteo_quincenal_sala: {
-        Args: { p_sala_id: string; p_fecha?: string }
+        Args: { p_fecha?: string; p_sala_id: string }
         Returns: string
       }
       obtener_estadisticas_quincenales_maquinas: {
         Args: { p_año?: number; p_mes?: number }
         Returns: {
-          sala_id: string
-          sala_nombre: string
           año: number
           mes: number
           quincena: number
-          total_maquinas_apagadas: number
+          sala_id: string
+          sala_nombre: string
           total_incidencias_maquinas: number
+          total_maquinas_apagadas: number
         }[]
       }
       obtener_estadisticas_quincenales_sala: {
         Args: { p_año?: number; p_mes?: number }
         Returns: {
-          sala_id: string
-          sala_nombre: string
           año: number
           mes: number
-          quincena: number
-          minutos_ingresos_tardios: number
           minutos_cierres_prematuros: number
-          total_incidencias_ingresos: number
+          minutos_ingresos_tardios: number
+          quincena: number
+          sala_id: string
+          sala_nombre: string
           total_incidencias_cierres: number
+          total_incidencias_ingresos: number
           total_minutos: number
         }[]
       }
@@ -1224,22 +1224,22 @@ export type Database = {
         Returns: string
       }
       user_can_access_chat_room: {
-        Args: { _user_id: string; _room_id: string }
+        Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
       user_has_area_access: {
-        Args: { _user_id: string; _departamento_id: string }
+        Args: { _departamento_id: string; _user_id: string }
         Returns: boolean
       }
       user_has_departamento_access: {
-        Args: { _user_id: string; _departamento_id: string }
+        Args: { _departamento_id: string; _user_id: string }
         Returns: boolean
       }
       usuario_tiene_permiso: {
         Args: {
-          _user_id: string
-          _modulo_codigo: string
           _accion_codigo: string
+          _modulo_codigo: string
+          _user_id: string
         }
         Returns: boolean
       }
