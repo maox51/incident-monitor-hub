@@ -62,15 +62,25 @@ export const useSolicitudes = () => {
 
         // Si no es admin ni supervisor de monitoreo, filtrar por área del usuario
         if (!isAdminOrSupervisor && !isSupervisorMonitoreo) {
-          // Obtener las áreas del usuario desde el perfil
+          // Filtrar por área del usuario o sus propias solicitudes
           const { data: userProfile } = await supabase
             .from('profiles')
             .select('area_id')
             .eq('id', user.id)
             .single();
 
-          if (userProfile?.area_id) {
-            query = query.eq('area_id', userProfile.area_id);
+          // Obtener áreas asignadas al usuario
+          const { data: userAreas } = await supabase
+            .from('user_area_access')
+            .select('area_id')
+            .eq('user_id', user.id);
+
+          if (userProfile?.area_id || (userAreas && userAreas.length > 0)) {
+            const areaIds = [];
+            if (userProfile?.area_id) areaIds.push(userProfile.area_id);
+            if (userAreas) areaIds.push(...userAreas.map(ua => ua.area_id));
+            
+            query = query.in('area_id', areaIds);
           } else {
             // Si no tiene área asignada, solo ver sus propias solicitudes
             query = query.eq('solicitante_id', user.id);

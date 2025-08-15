@@ -85,7 +85,7 @@ export const PermissionsManagement = () => {
           .select(`
             *,
             rol:roles_generales(nombre),
-            departamento:departamentos(nombre),
+            area:areas(nombre),
             modulo:modulos_sistema(nombre, codigo),
             accion:acciones_sistema(nombre, codigo)
           `)
@@ -99,7 +99,7 @@ export const PermissionsManagement = () => {
       if (permisosRes.error) throw permisosRes.error;
 
       setRoles(rolesRes.data || []);
-      setDepartamentos(deptosRes.data || []);
+      setDepartamentos((deptosRes.data || []).map(area => ({ ...area, codigo: area.id })));
       setModulos(modulosRes.data || []);
       setAcciones(accionesRes.data || []);
 
@@ -107,12 +107,12 @@ export const PermissionsManagement = () => {
       const permisosTransformados = (permisosRes.data || []).map(p => ({
         id: p.id,
         rol_id: p.rol_id,
-        departamento_id: p.departamento_id,
+        departamento_id: p.area_id,
         modulo_id: p.modulo_id,
         accion_id: p.accion_id,
         activo: p.activo,
         rol_nombre: p.rol?.nombre || 'Sin rol',
-        departamento_nombre: p.departamento?.nombre || null,
+        departamento_nombre: (p.area as any)?.nombre || null,
         modulo_nombre: p.modulo?.nombre || 'Sin módulo',
         modulo_codigo: p.modulo?.codigo || '',
         accion_nombre: p.accion?.nombre || 'Sin acción',
@@ -141,7 +141,7 @@ export const PermissionsManagement = () => {
     try {
       const permisosToCreate = selectedAcciones.map(accionId => ({
         rol_id: selectedRol,
-        departamento_id: selectedDepartamento || null,
+        area_id: selectedDepartamento || null,
         modulo_id: selectedModulo,
         accion_id: accionId,
         activo: true

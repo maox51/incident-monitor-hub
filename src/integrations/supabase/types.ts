@@ -623,8 +623,8 @@ export type Database = {
         Row: {
           accion_id: string
           activo: boolean
+          area_id: string | null
           created_at: string
-          departamento_id: string | null
           id: string
           modulo_id: string
           rol_id: string
@@ -633,8 +633,8 @@ export type Database = {
         Insert: {
           accion_id: string
           activo?: boolean
+          area_id?: string | null
           created_at?: string
-          departamento_id?: string | null
           id?: string
           modulo_id: string
           rol_id: string
@@ -643,8 +643,8 @@ export type Database = {
         Update: {
           accion_id?: string
           activo?: boolean
+          area_id?: string | null
           created_at?: string
-          departamento_id?: string | null
           id?: string
           modulo_id?: string
           rol_id?: string
@@ -1228,11 +1228,7 @@ export type Database = {
         Returns: boolean
       }
       user_has_area_access: {
-        Args: { _departamento_id: string; _user_id: string }
-        Returns: boolean
-      }
-      user_has_departamento_access: {
-        Args: { _departamento_id: string; _user_id: string }
+        Args: { _area_id: string; _user_id: string }
         Returns: boolean
       }
       usuario_tiene_permiso: {

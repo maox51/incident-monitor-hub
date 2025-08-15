@@ -99,7 +99,7 @@ export const SolicitudesView = () => {
           ) : (
             <div className="grid gap-4">
               {solicitudes.map((solicitud) => (
-                <SolicitudCard key={solicitud.id} solicitud={solicitud} />
+                <SolicitudCard key={solicitud.id} solicitud={solicitud as any} />
               ))}
             </div>
           )}
@@ -108,7 +108,7 @@ export const SolicitudesView = () => {
         <TabsContent value="pendientes" className="space-y-4">
           <div className="grid gap-4">
             {solicitudesPendientes.map((solicitud) => (
-              <SolicitudCard key={solicitud.id} solicitud={solicitud} />
+              <SolicitudCard key={solicitud.id} solicitud={solicitud as any} />
             ))}
           </div>
         </TabsContent>
@@ -117,7 +117,7 @@ export const SolicitudesView = () => {
         <TabsContent value="en_ejecucion" className="space-y-4">
           <div className="grid gap-4">
             {solicitudesEnEjecucion.map((solicitud) => (
-              <SolicitudCard key={solicitud.id} solicitud={solicitud} />
+              <SolicitudCard key={solicitud.id} solicitud={solicitud as any} />
             ))}
           </div>
         </TabsContent>
@@ -125,7 +125,7 @@ export const SolicitudesView = () => {
         <TabsContent value="cerradas" className="space-y-4">
           <div className="grid gap-4">
             {solicitudesCerradas.map((solicitud) => (
-              <SolicitudCard key={solicitud.id} solicitud={solicitud} />
+              <SolicitudCard key={solicitud.id} solicitud={solicitud as any} />
             ))}
           </div>
         </TabsContent>

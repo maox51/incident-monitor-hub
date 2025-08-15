@@ -8,7 +8,7 @@ export interface Solicitud {
   id: string;
   titulo: string;
   descripcion: string;
-  area_id: string;
+  area_id?: string; // Opcional para compatibilidad
   solicitante_id: string;
   estado: 'pendiente' | 'aceptada' | 'en_ejecucion' | 'cerrada';
   fecha_creacion: string;
