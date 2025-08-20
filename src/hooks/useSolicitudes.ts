@@ -105,37 +105,20 @@ export const useSolicitudes = () => {
   // Crear nueva solicitud
   const crearSolicitud = useMutation({
     mutationFn: async (datos: CrearSolicitudData) => {
-      console.log('=== CREAR SOLICITUD DEBUG ===');
-      console.log('User:', user);
-      console.log('User ID:', user?.id);
-      console.log('Datos solicitud:', datos);
-      
-      if (!user?.id) {
-        console.error('Usuario no autenticado - user:', user);
-        throw new Error('Usuario no autenticado');
-      }
-
-      const insertData = {
-        titulo: datos.titulo,
-        descripcion: datos.descripcion,
-        area_id: datos.area_id,
-        solicitante_id: user.id,
-      };
-      
-      console.log('Datos a insertar:', insertData);
+      if (!user?.id) throw new Error('Usuario no autenticado');
 
       const { data, error } = await supabase
         .from('solicitudes')
-        .insert(insertData)
+        .insert({
+          titulo: datos.titulo,
+          descripcion: datos.descripcion,
+          area_id: datos.area_id,
+          solicitante_id: user.id,
+        })
         .select()
         .maybeSingle();
 
-      console.log('Resultado de inserción:', { data, error });
-      
-      if (error) {
-        console.error('Error en inserción:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
