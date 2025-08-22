@@ -11,20 +11,24 @@ import {
   AlertTriangle,
   FileCheck,
   Clock,
-  MessageSquare
+  MessageSquare,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { profile } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -35,19 +39,22 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       id: 'dashboard', 
       label: 'Dashboard', 
       icon: BarChart3, 
-      roles: ['admin', 'supervisor_monitoreo', 'monitor'] 
+      roles: ['admin', 'supervisor_monitoreo', 'monitor'],
+      path: '/'
     },
     { 
       id: 'incidencias', 
       label: 'Incidencias', 
       icon: AlertTriangle, 
-      roles: ['admin', 'supervisor_monitoreo', 'monitor'] 
+      roles: ['admin', 'supervisor_monitoreo', 'monitor'],
+      path: '/'
     },
     { 
-      id: 'solicitudes', 
-      label: 'Solicitudes', 
-      icon: MessageSquare, 
-      roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas'] 
+      id: 'pagos724', 
+      label: 'Pagos 724', 
+      icon: DollarSign, 
+      roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas'],
+      path: '/pagos724'
     },
     { 
       id: 'reportes', 
@@ -91,6 +98,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     item.roles.includes(profile?.role || '')
   );
 
+  const handleNavigation = (item: any) => {
+    if (item.path && item.path !== '/') {
+      navigate(item.path);
+    } else if (onTabChange) {
+      onTabChange(item.id);
+    }
+  };
+
+  const isItemActive = (item: any) => {
+    if (item.path && item.path !== '/') {
+      return location.pathname === item.path;
+    }
+    return activeTab === item.id;
+  };
+
   return (
     <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-64'
@@ -118,11 +140,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
             return (
               <li key={item.id}>
                 <Button
-                  variant={activeTab === item.id ? "default" : "ghost"}
+                  variant={isItemActive(item) ? "default" : "ghost"}
                   className={`w-full justify-start ${
                     isCollapsed ? 'px-2' : 'px-4'
                   }`}
-                  onClick={() => onTabChange(item.id)}
+                  onClick={() => handleNavigation(item)}
                 >
                   <Icon size={20} />
                   {!isCollapsed && <span className="ml-2">{item.label}</span>}

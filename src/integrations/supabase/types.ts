@@ -619,6 +619,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pagos_724: {
+        Row: {
+          apellidos: string
+          created_at: string
+          fecha_pago: string
+          foto_documento_url: string | null
+          hora_pago: string
+          id: string
+          monto_pagar: number
+          nombres: string
+          updated_at: string
+          usuario_registro: string
+        }
+        Insert: {
+          apellidos: string
+          created_at?: string
+          fecha_pago?: string
+          foto_documento_url?: string | null
+          hora_pago?: string
+          id?: string
+          monto_pagar: number
+          nombres: string
+          updated_at?: string
+          usuario_registro: string
+        }
+        Update: {
+          apellidos?: string
+          created_at?: string
+          fecha_pago?: string
+          foto_documento_url?: string | null
+          hora_pago?: string
+          id?: string
+          monto_pagar?: number
+          nombres?: string
+          updated_at?: string
+          usuario_registro?: string
+        }
+        Relationships: []
+      }
       permisos_sistema: {
         Row: {
           accion_id: string
@@ -1051,6 +1090,17 @@ export type Database = {
       }
     }
     Views: {
+      estadisticas_pagos_724: {
+        Row: {
+          fecha_pago: string | null
+          pago_maximo: number | null
+          pago_minimo: number | null
+          promedio_pago: number | null
+          suma_total: number | null
+          total_pagos: number | null
+        }
+        Relationships: []
+      }
       vista_consolidados_detallados: {
         Row: {
           archivo_pdf_url: string | null
@@ -1191,6 +1241,17 @@ export type Database = {
       obtener_conteo_quincenal_sala: {
         Args: { p_fecha?: string; p_sala_id: string }
         Returns: string
+      }
+      obtener_estadisticas_generales_724: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          pagos_hoy: number
+          pagos_mes_actual: number
+          suma_hoy: number
+          suma_mes_actual: number
+          suma_total_historica: number
+          total_pagos_historico: number
+        }[]
       }
       obtener_estadisticas_quincenales_maquinas: {
         Args: { p_año?: number; p_mes?: number }
