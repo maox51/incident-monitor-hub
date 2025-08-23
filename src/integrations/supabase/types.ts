@@ -447,6 +447,47 @@ export type Database = {
           },
         ]
       }
+      imagenes_solicitudes: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre_archivo: string
+          solicitud_id: string
+          tamaño_bytes: number | null
+          tipo_archivo: string | null
+          url_imagen: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre_archivo: string
+          solicitud_id: string
+          tamaño_bytes?: number | null
+          tipo_archivo?: string | null
+          url_imagen: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre_archivo?: string
+          solicitud_id?: string
+          tamaño_bytes?: number | null
+          tipo_archivo?: string | null
+          url_imagen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagenes_solicitudes_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidencia_clasificaciones: {
         Row: {
           clasificacion_id: string

@@ -242,16 +242,16 @@ export const GestionPagoDialog = () => {
 
       if (solicitudError) throw solicitudError;
 
-      // Registrar imágenes de soporte (reutilizamos la tabla de imágenes de incidencias)
+      // Registrar imágenes de soporte en la tabla específica de solicitudes
       const imagenesData = imagenes.map(img => ({
-        incidencia_id: solicitud.id, // Reutilizamos este campo para almacenar el ID de la solicitud
+        solicitud_id: solicitud.id,
         url_imagen: img.url,
         nombre_archivo: img.nombre,
         tipo_archivo: 'image/jpeg',
       }));
 
       const { error: imagenesError } = await supabase
-        .from('imagenes_incidencias')
+        .from('imagenes_solicitudes')
         .insert(imagenesData);
 
       if (imagenesError) throw imagenesError;
