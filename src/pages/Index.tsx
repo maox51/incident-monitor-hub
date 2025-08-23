@@ -9,10 +9,11 @@ import ImportDataModule from "@/components/ImportDataModule";
 import BorradoresView from "@/components/supervisor/BorradoresView";
 import SalaTimingModule from "@/components/monitoring/SalaTimingModule";
 import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
+import { Pagos724View } from "@/components/pagos724/Pagos724View";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MonitorSpeaker, MessageSquare } from "lucide-react";
+import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MonitorSpeaker, MessageSquare, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -38,6 +39,7 @@ const Index = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
     { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento', 'gestor_solicitudes'] },
+    { id: 'pagos724', label: 'Pagos 724', icon: DollarSign, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas'] },
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
     { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
@@ -287,6 +289,7 @@ const Index = () => {
           {activeTab === "consolidado" && <ConsolidadoDiario />}
           {activeTab === "monitoreo-salas" && <SalaTimingModule />}
           {activeTab === "solicitudes" && <SolicitudesView />}
+          {activeTab === "pagos724" && <Pagos724View />}
         </div>
       </div>
     );
@@ -378,6 +381,7 @@ const Index = () => {
           {activeTab === "borradores" && <BorradoresView />}
           {activeTab === "nueva-incidencia" && <IncidenciaForm />}
           {activeTab === "solicitudes" && <SolicitudesView />}
+          {activeTab === "pagos724" && <Pagos724View />}
         </div>
       </div>
     );
@@ -396,6 +400,8 @@ const Index = () => {
         return <IncidenciaForm />;
       case "solicitudes":
         return <SolicitudesView />;
+      case "pagos724":
+        return <Pagos724View />;
       case "borradores":
         return <BorradoresView />;
       case "consolidado":
