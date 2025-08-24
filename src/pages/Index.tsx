@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Dashboard from "@/components/Dashboard";
 import IncidenciaForm from "@/components/IncidenciaForm";
@@ -12,14 +11,20 @@ import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
 import { Pagos724View } from "@/components/pagos724/Pagos724View";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, BarChart3, FileText, Users, Calendar, Upload, Menu, Clock, MonitorSpeaker, MessageSquare, DollarSign } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AlertTriangle, MessageSquare } from "lucide-react";
+import { 
+  SidebarProvider, 
+  SidebarTrigger, 
+  SidebarInset 
+} from "@/components/ui/sidebar";
 
 const Index = () => {
   const { isAdmin, isMonitor, isSupervisorMonitoreo, isRRHH, isSupervisorSalas, isFinanzas, isMantenimiento, isLector, isGestorSolicitudes } = useAuth();
+  const isMobile = useIsMobile();
+  
   const [activeTab, setActiveTab] = useState(() => {
     // Si es gestor de solicitudes, mostrar solicitudes por defecto
     if (isGestorSolicitudes && !isAdmin) return "solicitudes";
@@ -35,37 +40,7 @@ const Index = () => {
     return "dashboard";
   });
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
-    { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
-    { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento', 'gestor_solicitudes'] },
-    { id: 'pagos724', label: 'Pagos 724', icon: DollarSign, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas'] },
-    { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
-    { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
-    { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
-    { id: 'monitoreo-salas', label: 'Monitoreo de Salas', icon: MonitorSpeaker, roles: ['admin', 'rrhh', 'lector'] },
-    { id: 'usuarios', label: 'Usuarios', icon: Users, roles: ['admin'] },
-    { id: 'importar', label: 'Importar Datos', icon: Upload, roles: ['admin'] },
-  ];
-
-  // Determinar qué roles tiene el usuario actual
-  const userRoles = [];
-  if (isAdmin) userRoles.push('admin');
-  if (isMonitor) userRoles.push('monitor');
-  if (isSupervisorMonitoreo) userRoles.push('supervisor_monitoreo');
-  if (isRRHH) userRoles.push('rrhh');
-  if (isSupervisorSalas) userRoles.push('supervisor_salas');
-  if (isFinanzas) userRoles.push('finanzas');
-  if (isMantenimiento) userRoles.push('mantenimiento');
-  if (isLector) userRoles.push('lector');
-  if (isGestorSolicitudes) userRoles.push('gestor_solicitudes');
-
-  // Filtrar items del menú según los roles del usuario
-  const filteredMenuItems = menuItems.filter(item => 
-    item.roles.some(role => userRoles.includes(role))
-  );
-
-  // Los monitores solo ven el formulario de nueva incidencia (sin navegación)
+  // Los monitores solo ven el formulario de nueva incidencia (sin sidebar)
   if (isMonitor && !isAdmin && !isSupervisorMonitoreo) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -88,7 +63,7 @@ const Index = () => {
     );
   }
 
-  // El gestor de solicitudes solo ve el módulo de solicitudes
+  // El gestor de solicitudes solo ve el módulo de solicitudes (sin sidebar)
   if (isGestorSolicitudes && !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -111,283 +86,7 @@ const Index = () => {
     );
   }
 
-  // El rol lector puede ver reportes, consolidados y monitoreo (sin crear/editar)
-  if (isLector && !isAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Header />
-        
-        {/* Navigation Bar - Responsive */}
-        <div className="bg-white shadow-sm border-b sticky top-0 z-40">
-          <div className="container mx-auto px-2 sm:px-4">
-            {/* Mobile Navigation */}
-            <div className="flex items-center justify-between py-3 md:hidden">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {filteredMenuItems.find(item => item.id === activeTab)?.label || 'Reportes'}
-              </h2>
-              
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-64">
-                  <div className="py-4">
-                    <h3 className="font-semibold text-gray-900 mb-4">Navegación</h3>
-                    <div className="space-y-2">
-                      {filteredMenuItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                              activeTab === item.id
-                                ? "bg-blue-100 text-blue-700 font-medium"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                            <span className="text-sm">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1 py-2">
-              {filteredMenuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === item.id
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
-          <div className="text-center mb-4 sm:mb-6 md:mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
-              <FileText className="text-blue-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              <span>Sistema de Consultas - Grupo ESVASA</span>
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
-              Consulta de reportes y estadísticas de monitoreo
-            </p>
-          </div>
-
-          {activeTab === "reportes" && <ReportesView />}
-          {activeTab === "consolidado" && <ConsolidadoDiario />}
-          {activeTab === "monitoreo-salas" && <SalaTimingModule />}
-        </div>
-      </div>
-    );
-  }
-
-  // Los roles específicos (RRHH, finanzas, supervisor_salas) ven solo reportes y consolidados
-  if ((isRRHH || isFinanzas || isSupervisorSalas || isMantenimiento) && !isAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Header />
-        
-        {/* Navigation Bar - Responsive */}
-        <div className="bg-white shadow-sm border-b sticky top-0 z-40">
-          <div className="container mx-auto px-2 sm:px-4">
-            {/* Mobile Navigation */}
-            <div className="flex items-center justify-between py-3 md:hidden">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {filteredMenuItems.find(item => item.id === activeTab)?.label || 'Reportes'}
-              </h2>
-              
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-64">
-                  <div className="py-4">
-                    <h3 className="font-semibold text-gray-900 mb-4">Navegación</h3>
-                    <div className="space-y-2">
-                      {filteredMenuItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                              activeTab === item.id
-                                ? "bg-blue-100 text-blue-700 font-medium"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                            <span className="text-sm">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1 py-2">
-              {filteredMenuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === item.id
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
-          <div className="text-center mb-4 sm:mb-6 md:mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
-              <AlertTriangle className="text-orange-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              <span>Sistema de Monitoreo - Grupo ESVASA</span>
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
-              Consulta de reportes y consolidados de monitoreo
-            </p>
-          </div>
-
-          {activeTab === "reportes" && <ReportesView />}
-          {activeTab === "consolidado" && <ConsolidadoDiario />}
-          {activeTab === "monitoreo-salas" && <SalaTimingModule />}
-          {activeTab === "solicitudes" && <SolicitudesView />}
-          {activeTab === "pagos724" && <Pagos724View />}
-        </div>
-      </div>
-    );
-  }
-
-  // Los supervisores de monitoreo ven su vista especializada
-  if (isSupervisorMonitoreo && !isAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Header />
-        
-        {/* Navigation Bar - Responsive */}
-        <div className="bg-white shadow-sm border-b sticky top-0 z-40">
-          <div className="container mx-auto px-2 sm:px-4">
-            {/* Mobile Navigation */}
-            <div className="flex items-center justify-between py-3 md:hidden">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {filteredMenuItems.find(item => item.id === activeTab)?.label || 'Aprobar Incidencias'}
-              </h2>
-              
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-64">
-                  <div className="py-4">
-                    <h3 className="font-semibold text-gray-900 mb-4">Navegación</h3>
-                    <div className="space-y-2">
-                      {filteredMenuItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                              activeTab === item.id
-                                ? "bg-blue-100 text-blue-700 font-medium"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                            <span className="text-sm">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1 py-2">
-              {filteredMenuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === item.id
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
-          <div className="text-center mb-4 sm:mb-6 md:mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
-              <AlertTriangle className="text-orange-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-              <span>Sistema de Monitoreo - Grupo ESVASA</span>
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
-              Supervisión y aprobación de incidencias de monitoreo
-            </p>
-          </div>
-
-          {activeTab === "borradores" && <BorradoresView />}
-          {activeTab === "nueva-incidencia" && <IncidenciaForm />}
-          {activeTab === "solicitudes" && <SolicitudesView />}
-          {activeTab === "pagos724" && <Pagos724View />}
-        </div>
-      </div>
-    );
-  }
-
-  // Los administradores ven el sistema completo con navegación responsive
+  // Función para renderizar el contenido basado en el tab activo
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -435,90 +134,32 @@ const Index = () => {
     }
   };
 
+  // Layout principal con sidebar para todos los demás roles
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Header />
-      
-      {/* Navigation Bar - Responsive */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
-        <div className="container mx-auto px-2 sm:px-4">
-          {/* Mobile Navigation */}
-          <div className="flex items-center justify-between py-3 md:hidden">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {filteredMenuItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
-            </h2>
-            
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-64">
-                <div className="py-4">
-                  <h3 className="font-semibold text-gray-900 mb-4">Navegación</h3>
-                  <div className="space-y-2">
-                    {filteredMenuItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => setActiveTab(item.id)}
-                          className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                            activeTab === item.id
-                              ? "bg-blue-100 text-blue-700 font-medium"
-                              : "text-gray-600 hover:bg-gray-100"
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
-                          <span className="text-sm">{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+    <SidebarProvider defaultOpen={!isMobile}>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        <SidebarInset className="flex-1">
+          <Header />
+          
+          {/* Header con trigger del sidebar */}
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <div className="ml-auto text-sm text-muted-foreground">
+              Sistema de Monitoreo - Grupo ESVASA
+            </div>
+          </header>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1 py-2">
-            {filteredMenuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === item.id
-                      ? "bg-blue-100 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
+            <div className="container mx-auto p-4 md:p-6">
+              {renderContent()}
+            </div>
+          </main>
+        </SidebarInset>
       </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2 md:gap-3">
-            <AlertTriangle className="text-orange-500 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
-            <span>Sistema de Monitoreo - Grupo ESVASA</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2 sm:px-4">
-            Gestión integral de incidencias de monitoreo por cámaras
-          </p>
-        </div>
-
-        {renderContent()}
-      </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
