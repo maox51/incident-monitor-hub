@@ -20,8 +20,8 @@ const ReportesView = () => {
   // Mapeo de roles a nombres de áreas
   const roleAreaMapping = useMemo(() => ({
     rrhh: "Recursos Humanos",
-    finanzas: "Finanzas", 
-    supervisor_salas: "Salas",
+    finanzas: "Contabilidad", 
+    supervisor_salas: "Supervisión Salas",
     mantenimiento: "Mantenimiento"
   }), []);
 

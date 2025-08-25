@@ -63,8 +63,8 @@ const ConsolidadoDiario = () => {
   // Mapeo de roles a nombres de áreas (mismo que en ReportesView)
   const roleAreaMapping = useMemo(() => ({
     rrhh: "Recursos Humanos",
-    finanzas: "Finanzas", 
-    supervisor_salas: "Salas",
+    finanzas: "Contabilidad", 
+    supervisor_salas: "Supervisión Salas",
     mantenimiento: "Mantenimiento"
   }), []);
 

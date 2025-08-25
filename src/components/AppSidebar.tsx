@@ -133,8 +133,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           </div>
           {open && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">Sistema ESVASA</span>
-              <span className="text-xs text-muted-foreground">Monitoreo</span>
+              <span className="text-sm font-semibold">Insight360</span>
+              <span className="text-xs text-muted-foreground">Esva</span>
             </div>
           )}
         </div>
