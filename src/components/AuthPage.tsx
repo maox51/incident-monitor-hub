@@ -235,6 +235,7 @@ const AuthPage = () => {
                         id="login-password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Tu contraseña"
+                        maxLength={15}
                         value={loginData.password}
                         onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                         className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-white/40 rounded-xl h-12 pr-12 transition-all duration-300"
