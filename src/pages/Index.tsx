@@ -8,6 +8,7 @@ import ImportDataModule from "@/components/ImportDataModule";
 import BorradoresView from "@/components/supervisor/BorradoresView";
 import SalaTimingModule from "@/components/monitoring/SalaTimingModule";
 import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
+import { GestionPagosView } from "@/components/gestion-pagos/GestionPagosView";
 import { Pagos724View } from "@/components/pagos724/Pagos724View";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -125,6 +126,8 @@ const Index = () => {
             <ImportDataModule />
           </ProtectedRoute>
         );
+      case "gestion-pagos":
+        return <GestionPagosView />;
       default:
         return (
           <ProtectedRoute requireAdmin>

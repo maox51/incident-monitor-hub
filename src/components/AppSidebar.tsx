@@ -10,6 +10,7 @@ import {
   MonitorSpeaker, 
   MessageSquare, 
   DollarSign,
+  CreditCard,
   Settings,
   LogOut
 } from "lucide-react";
@@ -48,6 +49,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
     { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento', 'gestor_solicitudes'] },
+    { id: 'gestion-pagos', label: 'Gestión de Pagos', icon: CreditCard, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento', 'gestor_solicitudes'] },
     { id: 'pagos724', label: 'Pagos 724', icon: DollarSign, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas'] },
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
@@ -80,7 +82,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   );
   
   const moduleItems = filteredMenuItems.filter(item => 
-    ['solicitudes', 'pagos724'].includes(item.id)
+    ['solicitudes', 'gestion-pagos', 'pagos724'].includes(item.id)
   );
   
   const reportItems = filteredMenuItems.filter(item => 
