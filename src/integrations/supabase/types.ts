@@ -285,6 +285,33 @@ export type Database = {
         }
         Relationships: []
       }
+      conceptos_pago: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conteos_quincenales_maquinas: {
         Row: {
           año: number
@@ -375,6 +402,47 @@ export type Database = {
             columns: ["sala_id"]
             isOneToOne: false
             referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos_solicitudes_pago: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre_archivo: string
+          solicitud_pago_id: string
+          tamaño_bytes: number | null
+          tipo_archivo: string | null
+          url_documento: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre_archivo: string
+          solicitud_pago_id: string
+          tamaño_bytes?: number | null
+          tipo_archivo?: string | null
+          url_documento: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre_archivo?: string
+          solicitud_pago_id?: string
+          tamaño_bytes?: number | null
+          tipo_archivo?: string | null
+          url_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_solicitudes_pago_solicitud_pago_id_fkey"
+            columns: ["solicitud_pago_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_pago"
             referencedColumns: ["id"]
           },
         ]
@@ -1001,6 +1069,72 @@ export type Database = {
           },
         ]
       }
+      solicitudes_pago: {
+        Row: {
+          aprobado_por: string | null
+          concepto_pago_id: string
+          created_at: string
+          descripcion: string
+          estado: string
+          fecha_aprobacion: string | null
+          fecha_pago: string | null
+          id: string
+          monto: number
+          numero_solicitud: string
+          observaciones: string | null
+          sala_id: string
+          solicitante_id: string
+          updated_at: string
+        }
+        Insert: {
+          aprobado_por?: string | null
+          concepto_pago_id: string
+          created_at?: string
+          descripcion: string
+          estado?: string
+          fecha_aprobacion?: string | null
+          fecha_pago?: string | null
+          id?: string
+          monto: number
+          numero_solicitud?: string
+          observaciones?: string | null
+          sala_id: string
+          solicitante_id: string
+          updated_at?: string
+        }
+        Update: {
+          aprobado_por?: string | null
+          concepto_pago_id?: string
+          created_at?: string
+          descripcion?: string
+          estado?: string
+          fecha_aprobacion?: string | null
+          fecha_pago?: string | null
+          id?: string
+          monto?: number
+          numero_solicitud?: string
+          observaciones?: string | null
+          sala_id?: string
+          solicitante_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_pago_concepto_pago_id_fkey"
+            columns: ["concepto_pago_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_pago"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_pago_sala_id_fkey"
+            columns: ["sala_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_actions: {
         Row: {
           action_type: string
@@ -1319,6 +1453,19 @@ export type Database = {
           total_incidencias_cierres: number
           total_incidencias_ingresos: number
           total_minutos: number
+        }[]
+      }
+      obtener_estadisticas_solicitudes_pago: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          monto_total_aprobado: number
+          monto_total_pagado: number
+          monto_total_pendiente: number
+          solicitudes_aprobadas: number
+          solicitudes_pagadas: number
+          solicitudes_pendientes: number
+          solicitudes_rechazadas: number
+          total_solicitudes: number
         }[]
       }
       recalcular_conteos_quincenales: {
