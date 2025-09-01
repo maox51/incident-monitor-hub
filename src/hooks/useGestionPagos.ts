@@ -74,7 +74,7 @@ export const useGestionPagos = () => {
           sala:salas(nombre),
           concepto_pago:conceptos_pago(nombre, descripcion),
           solicitante:profiles!solicitudes_pago_solicitante_id_fkey(full_name),
-          aprobador:profiles!solicitudes_pago_aprobado_por_fkey(full_name),
+          aprobador:profiles!solicitudes_pago_aprobado_por_fkey1(full_name),
           documentos:documentos_solicitudes_pago(*)
         `)
         .order('created_at', { ascending: false });

@@ -19,11 +19,10 @@ import { useGestionPagos } from '@/hooks/useGestionPagos';
 
 const COLORS = {
   pendiente: '#f59e0b',
-  aprobado: '#3b82f6',
+  aprobado: '#17ed50ff',
   rechazado: '#ef4444',
-  pagado: '#10b981',
-};
-
+  pagado: '#170ce9ff',
+}
 export const EstadisticasPagos = () => {
   const { estadisticas, solicitudes } = useGestionPagos();
 
@@ -40,7 +39,7 @@ export const EstadisticasPagos = () => {
     { nombre: 'Pendiente', valor: estadisticas.solicitudes_pendientes, color: COLORS.pendiente },
     { nombre: 'Aprobado', valor: estadisticas.solicitudes_aprobadas, color: COLORS.aprobado },
     { nombre: 'Rechazado', valor: estadisticas.solicitudes_rechazadas, color: COLORS.rechazado },
-    { nombre: 'Pagado', valor: estadisticas.solicitudes_pagadas, color: COLORS.pagado },
+    //{ nombre: 'Pagado', valor: estadisticas.solicitudes_pagadas, color: COLORS.pagado },
   ];
 
   // Datos para gráfico de montos
@@ -55,11 +54,11 @@ export const EstadisticasPagos = () => {
       monto: Number(estadisticas.monto_total_aprobado) || 0, 
       color: COLORS.aprobado 
     },
-    { 
+    /*{ 
       nombre: 'Pagado', 
       monto: Number(estadisticas.monto_total_pagado) || 0, 
       color: COLORS.pagado 
-    },
+    },*/
   ];
 
   // Calcular porcentajes de eficiencia
