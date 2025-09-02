@@ -64,34 +64,42 @@ export const useSolicitudes = () => {
           `);
 
         // Aplicar filtros según el rol del usuario
+        console.log('User role:', userProfile?.role, 'User area_id:', userProfile?.area_id);
+        
         if (userProfile?.role === 'admin' || userProfile?.role === 'supervisor_monitoreo') {
           // Administradores y supervisores de monitoreo pueden ver todas las solicitudes
-          // No agregar filtros adicionales
+          console.log('Admin/Supervisor: Ver todas las solicitudes');
         } else if (userProfile?.role === 'monitor') {
           // Monitores solo pueden ver sus propias solicitudes
+          console.log('Monitor: Ver solo solicitudes propias');
           query = query.eq('solicitante_id', user.id);
         } else if (userProfile?.role && ['rrhh', 'supervisor_salas', 'finanzas', 'gestor_solicitudes'].includes(userProfile.role)) {
           // Otros roles específicos solo pueden ver solicitudes de su área
+          console.log('Rol específico:', userProfile.role);
           if (userProfile.area_id) {
+            console.log('Filtrando por área del perfil:', userProfile.area_id);
             query = query.eq('area_id', userProfile.area_id);
           } else {
             // Si no tiene área asignada, buscar en user_area_assignments
+            console.log('Buscando asignaciones de área...');
             const { data: areaAssignments } = await supabase
               .from('user_area_assignments')
               .select('area_id')
               .eq('user_id', user.id);
 
+            console.log('Area assignments found:', areaAssignments);
             if (areaAssignments && areaAssignments.length > 0) {
               const areaIds = areaAssignments.map(assignment => assignment.area_id);
+              console.log('Filtrando por áreas asignadas:', areaIds);
               query = query.in('area_id', areaIds);
             } else {
-              // Si no tiene áreas asignadas, no puede ver ninguna solicitud
-              return [];
+              // Si no tiene áreas asignadas, mostrar todas las solicitudes por defecto
+              console.log('Sin áreas asignadas, mostrando todas las solicitudes');
             }
           }
         } else {
-          // Roles no reconocidos no pueden ver solicitudes
-          return [];
+          // Para roles no reconocidos, mostrar todas las solicitudes por defecto
+          console.log('Rol no reconocido, mostrando todas las solicitudes por defecto');
         }
 
         const { data, error } = await query.order('fecha_creacion', { ascending: false });
