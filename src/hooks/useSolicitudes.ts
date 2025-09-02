@@ -43,7 +43,18 @@ export const useSolicitudes = () => {
       try {
         if (!user?.id) return [];
 
-        // Por ahora simplificamos la consulta hasta que la migración se complete
+        // Obtener el perfil del usuario actual para determinar su rol y área
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, area_id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          return [];
+        }
+
         let query = supabase
           .from('solicitudes')
           .select(`
@@ -51,6 +62,37 @@ export const useSolicitudes = () => {
             area:areas!solicitudes_area_id_fkey(nombre),
             profiles!solicitudes_solicitante_id_fkey(full_name)
           `);
+
+        // Aplicar filtros según el rol del usuario
+        if (userProfile?.role === 'admin' || userProfile?.role === 'supervisor_monitoreo') {
+          // Administradores y supervisores de monitoreo pueden ver todas las solicitudes
+          // No agregar filtros adicionales
+        } else if (userProfile?.role === 'monitor') {
+          // Monitores solo pueden ver sus propias solicitudes
+          query = query.eq('solicitante_id', user.id);
+        } else if (userProfile?.role && ['rrhh', 'supervisor_salas', 'finanzas', 'gestor_solicitudes'].includes(userProfile.role)) {
+          // Otros roles específicos solo pueden ver solicitudes de su área
+          if (userProfile.area_id) {
+            query = query.eq('area_id', userProfile.area_id);
+          } else {
+            // Si no tiene área asignada, buscar en user_area_assignments
+            const { data: areaAssignments } = await supabase
+              .from('user_area_assignments')
+              .select('area_id')
+              .eq('user_id', user.id);
+
+            if (areaAssignments && areaAssignments.length > 0) {
+              const areaIds = areaAssignments.map(assignment => assignment.area_id);
+              query = query.in('area_id', areaIds);
+            } else {
+              // Si no tiene áreas asignadas, no puede ver ninguna solicitud
+              return [];
+            }
+          }
+        } else {
+          // Roles no reconocidos no pueden ver solicitudes
+          return [];
+        }
 
         const { data, error } = await query.order('fecha_creacion', { ascending: false });
 
