@@ -33,6 +33,7 @@ import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useGestionPagos, CrearSolicitudPagoData } from '@/hooks/useGestionPagos';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImageToWebP } from '@/utils/imageCompression';
+import { CameraCapture } from '@/components/ui/camera-capture';
 
 const formSchema = z.object({
   sala_id: z.string().min(1, 'Debe seleccionar una sala'),
@@ -373,18 +374,14 @@ export const SolicitudPagoForm = ({ open, onOpenChange }: SolicitudPagoFormProps
       {/* Modal de cámara */}
       {showCamera && (
         <Dialog open={showCamera} onOpenChange={setShowCamera}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Tomar Fotografía</DialogTitle>
+              <DialogTitle>Tomar Fotografía del Documento</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-muted rounded-lg p-8 text-center">
-                <Camera className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  Funcionalidad de cámara en desarrollo
-                </p>
-              </div>
-            </div>
+            <CameraCapture
+              onCapture={handleCameraCapture}
+              onClose={() => setShowCamera(false)}
+            />
           </DialogContent>
         </Dialog>
       )}
