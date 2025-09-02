@@ -31,10 +31,11 @@ interface HistorialSolicitudesProps {
 
 export const HistorialSolicitudes = ({ soloMias = false }: HistorialSolicitudesProps) => {
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [filtroSala, setFiltroSala] = useState<string>('todas');
   const [busqueda, setBusqueda] = useState('');
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<string | null>(null);
   
-  const { solicitudes, isLoading } = useGestionPagos();
+  const { solicitudes, salas, isLoading } = useGestionPagos();
   const { user } = useAuth();
 
   // Filtrar solicitudes
@@ -49,6 +50,11 @@ export const HistorialSolicitudes = ({ soloMias = false }: HistorialSolicitudesP
       return false;
     }
 
+    // Filtro por sala
+    if (filtroSala !== 'todas' && solicitud.sala_id !== filtroSala) {
+      return false;
+    }
+
     // Filtro por búsqueda
     if (busqueda) {
       const textoCompleto = `${solicitud.numero_solicitud} ${solicitud.descripcion} ${solicitud.sala?.nombre || ''} ${solicitud.concepto_pago?.nombre || ''}`.toLowerCase();
@@ -59,6 +65,47 @@ export const HistorialSolicitudes = ({ soloMias = false }: HistorialSolicitudesP
 
     return true;
   });
+
+  // Función para descargar CSV
+  const descargarCSV = () => {
+    if (solicitudesFiltradas.length === 0) return;
+
+    const headers = [
+      'Número Solicitud',
+      'Fecha',
+      'Sala',
+      'Concepto',
+      'Monto',
+      'Estado',
+      ...(soloMias ? [] : ['Solicitante']),
+      'Observaciones'
+    ];
+
+    const rows = solicitudesFiltradas.map(solicitud => [
+      solicitud.numero_solicitud,
+      format(new Date(solicitud.created_at), 'dd/MM/yyyy', { locale: es }),
+      solicitud.sala?.nombre || 'N/A',
+      solicitud.concepto_pago?.nombre || 'N/A',
+      solicitud.monto.toLocaleString(),
+      solicitud.estado,
+      ...(soloMias ? [] : [solicitud.solicitante?.full_name || 'N/A']),
+      solicitud.observaciones || ''
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `solicitudes-pago-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -100,29 +147,55 @@ export const HistorialSolicitudes = ({ soloMias = false }: HistorialSolicitudesP
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filtros */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por número, descripción, sala..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-10"
-              />
+          {/* Filtros y acciones */}
+          <div className="space-y-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por número, descripción, sala..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los estados</SelectItem>
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="aprobado">Aprobado</SelectItem>
+                  <SelectItem value="rechazado">Rechazado</SelectItem>
+                  <SelectItem value="pagado">Pagado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filtroSala} onValueChange={setFiltroSala}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filtrar por sala" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las salas</SelectItem>
+                  {salas?.map((sala) => (
+                    <SelectItem key={sala.id} value={sala.id}>
+                      {sala.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filtrar por estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los estados</SelectItem>
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="aprobado">Aprobado</SelectItem>
-                <SelectItem value="rechazado">Rechazado</SelectItem>
-                <SelectItem value="pagado">Pagado</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex justify-end">
+              <Button
+                onClick={descargarCSV}
+                disabled={solicitudesFiltradas.length === 0}
+                className="gap-2"
+                variant="outline"
+              >
+                <Download className="h-4 w-4" />
+                Descargar CSV
+              </Button>
+            </div>
           </div>
 
           {/* Tabla */}
