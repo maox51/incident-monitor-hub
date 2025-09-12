@@ -1120,6 +1120,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "solicitudes_pago_aprobado_por_fkey1"
+            columns: ["aprobado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "solicitudes_pago_concepto_pago_id_fkey"
             columns: ["concepto_pago_id"]
             isOneToOne: false
@@ -1131,6 +1138,13 @@ export type Database = {
             columns: ["sala_id"]
             isOneToOne: false
             referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_pago_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
