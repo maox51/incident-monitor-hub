@@ -97,9 +97,9 @@ export const Chatbot: React.FC = () => {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0 flex flex-col h-full">
+          <CardContent className="p-0 flex flex-col">
             {/* Messages Area */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="h-72 sm:h-80 p-4">
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <MessageCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
@@ -152,7 +152,7 @@ export const Chatbot: React.FC = () => {
             </ScrollArea>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border bg-background">
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
