@@ -3,7 +3,6 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { useAuthAudit } from './usePageAudit';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -60,7 +59,61 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { logLogin, logLogout, logAuthError } = useAuthAudit();
+  
+  // Simple audit functions without React hooks to avoid initialization issues
+  const logLogin = async (email: string, role: string, details?: any) => {
+    try {
+      await supabase.rpc('log_user_action', {
+        p_action_type: 'login',
+        p_resource_type: 'auth',
+        p_resource_id: null,
+        p_details: {
+          email,
+          role,
+          timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+          ...details
+        }
+      });
+    } catch (error) {
+      console.error('Error logging login:', error);
+    }
+  };
+
+  const logLogout = async (email: string) => {
+    try {
+      await supabase.rpc('log_user_action', {
+        p_action_type: 'logout',
+        p_resource_type: 'auth',
+        p_resource_id: null,
+        p_details: {
+          email,
+          timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent
+        }
+      });
+    } catch (error) {
+      console.error('Error logging logout:', error);
+    }
+  };
+
+  const logAuthError = async (errorMessage: string, email: string) => {
+    try {
+      await supabase.rpc('log_user_action', {
+        p_action_type: 'auth_error',
+        p_resource_type: 'auth',
+        p_resource_id: null,
+        p_details: {
+          error: errorMessage,
+          email,
+          timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent
+        }
+      });
+    } catch (error) {
+      console.error('Error logging auth error:', error);
+    }
+  };
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
