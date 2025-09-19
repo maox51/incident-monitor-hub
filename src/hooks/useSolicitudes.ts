@@ -73,33 +73,38 @@ export const useSolicitudes = () => {
           // Monitores solo pueden ver sus propias solicitudes
           console.log('Monitor: Ver solo solicitudes propias');
           query = query.eq('solicitante_id', user.id);
-        } else if (userProfile?.role && ['rrhh', 'supervisor_salas', 'finanzas', 'gestor_solicitudes'].includes(userProfile.role)) {
-          // Otros roles específicos solo pueden ver solicitudes de su área
-          console.log('Rol específico:', userProfile.role);
-          if (userProfile.area_id) {
-            console.log('Filtrando por área del perfil:', userProfile.area_id);
-            query = query.eq('area_id', userProfile.area_id);
-          } else {
-            // Si no tiene área asignada, buscar en user_area_assignments
-            console.log('Buscando asignaciones de área...');
-            const { data: areaAssignments } = await supabase
-              .from('user_area_assignments')
-              .select('area_id')
-              .eq('user_id', user.id);
-
-            console.log('Area assignments found:', areaAssignments);
-            if (areaAssignments && areaAssignments.length > 0) {
-              const areaIds = areaAssignments.map(assignment => assignment.area_id);
-              console.log('Filtrando por áreas asignadas:', areaIds);
-              query = query.in('area_id', areaIds);
-            } else {
-              // Si no tiene áreas asignadas, mostrar todas las solicitudes por defecto
-              console.log('Sin áreas asignadas, mostrando todas las solicitudes');
-            }
-          }
         } else {
-          // Para roles no reconocidos, mostrar todas las solicitudes por defecto
-          console.log('Rol no reconocido, mostrando todas las solicitudes por defecto');
+          // Para todos los demás roles: ver solo solicitudes propias O dirigidas a su área
+          console.log('Rol específico:', userProfile?.role);
+          
+          // Obtener el área del usuario desde su perfil o asignaciones
+          let userAreaIds: string[] = [];
+          
+          if (userProfile?.area_id) {
+            userAreaIds.push(userProfile.area_id);
+          }
+          
+          // También buscar en user_area_assignments
+          const { data: areaAssignments } = await supabase
+            .from('user_area_assignments')
+            .select('area_id')
+            .eq('user_id', user.id);
+
+          if (areaAssignments && areaAssignments.length > 0) {
+            const assignedAreaIds = areaAssignments.map(assignment => assignment.area_id);
+            userAreaIds.push(...assignedAreaIds);
+          }
+
+          console.log('User area IDs:', userAreaIds);
+
+          if (userAreaIds.length > 0) {
+            // Filtrar por: solicitudes propias O solicitudes dirigidas a sus áreas
+            query = query.or(`solicitante_id.eq.${user.id},area_id.in.(${userAreaIds.join(',')})`);
+          } else {
+            // Si no tiene áreas asignadas, solo ver sus propias solicitudes
+            console.log('Sin áreas asignadas, mostrando solo solicitudes propias');
+            query = query.eq('solicitante_id', user.id);
+          }
         }
 
         const { data, error } = await query.order('fecha_creacion', { ascending: false });
