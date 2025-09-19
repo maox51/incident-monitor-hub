@@ -6,7 +6,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Plus, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { SolicitudForm } from './SolicitudForm';
 import { SolicitudCard } from './SolicitudCard';
-import { useSolicitudes } from '@/hooks/useSolicitudesTemp';
+import { useSolicitudes } from '@/hooks/useSolicitudes';
 
 export const SolicitudesView = () => {
   const [showForm, setShowForm] = useState(false);
