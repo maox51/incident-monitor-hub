@@ -127,22 +127,22 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar className="border-r border-border bg-background">
-      <SidebarHeader className="border-b border-border p-4">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <AlertTriangle className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
+            <AlertTriangle className="h-4 w-4 text-sidebar-primary-foreground" />
           </div>
           {open && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">Insight360</span>
-              <span className="text-xs text-muted-foreground">Esva</span>
+              <span className="text-sm font-semibold text-sidebar-foreground">Insight360</span>
+              <span className="text-xs text-sidebar-foreground/70">Esva</span>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="flex-1 overflow-y-auto">
+      <SidebarContent className="flex-1 overflow-y-auto bg-sidebar">
         <div className="space-y-2 p-2">
           {renderMenuGroup(mainItems, "Principal")}
           {renderMenuGroup(moduleItems, "Módulos")}
@@ -151,19 +151,19 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </div>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4 bg-sidebar">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-muted text-xs">
+            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
               {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>
           {open && (
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-medium truncate">
+              <span className="text-sm font-medium truncate text-sidebar-foreground">
                 {profile?.full_name || profile?.email}
               </span>
-              <span className="text-xs text-muted-foreground capitalize">
+              <span className="text-xs text-sidebar-foreground/70 capitalize">
                 {profile?.role?.replace('_', ' ')}
               </span>
             </div>
@@ -174,7 +174,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           variant="ghost"
           size="sm"
           onClick={handleSignOut}
-          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
         >
           <LogOut className="h-4 w-4" />
           {open && <span>Cerrar Sesión</span>}

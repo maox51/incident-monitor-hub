@@ -6,7 +6,6 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Plus, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { SolicitudForm } from './SolicitudForm';
 import { SolicitudCard } from './SolicitudCard';
-import { GestionPagoDialog } from './GestionPagoDialog';
 import { useSolicitudes } from '@/hooks/useSolicitudesTemp';
 
 export const SolicitudesView = () => {
@@ -36,13 +35,10 @@ export const SolicitudesView = () => {
           <h1 className="text-3xl font-bold">Solicitudes</h1>
           <p className="text-muted-foreground">Gestiona las solicitudes del sistema</p>
         </div>
-        <div className="flex gap-3">
-          <GestionPagoDialog />
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Solicitud
-          </Button>
-        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Solicitud
+        </Button>
       </div>
 
       {/* Estadísticas rápidas */}
