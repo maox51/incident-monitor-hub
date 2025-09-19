@@ -20,7 +20,7 @@ export interface Solicitud {
   progreso_ejecucion?: string;
   horas_transcurridas?: number;
   dias_pendientes?: number;
-  departamento?: { nombre: string };
+  area?: { nombre: string }; // Para compatibilidad con componentes
   solicitante?: { full_name: string };
   profiles?: { full_name: string };
 }
@@ -75,7 +75,7 @@ export const useSolicitudes = () => {
           query = query.eq('solicitante_id', user.id);
         } else {
           // Para todos los demás roles: ver solo solicitudes propias O dirigidas a su área
-          console.log('Rol específico:', userProfile?.role);
+          console.log('Aplicando lógica estándar para rol:', userProfile?.role);
           
           // Obtener el área del usuario desde su perfil o asignaciones
           let userAreaIds: string[] = [];
@@ -262,13 +262,23 @@ export const useSolicitudes = () => {
 
   // Cerrar solicitud
   const cerrarSolicitud = useMutation({
-    mutationFn: async (solicitudId: string) => {
+    mutationFn: async ({ solicitudId, accionesRealizadas }: { solicitudId: string; accionesRealizadas?: string }) => {
+      // Primero obtener la solicitud actual para conservar el progreso existente
+      const { data: solicitudActual } = await supabase
+        .from('solicitudes')
+        .select('progreso_ejecucion')
+        .eq('id', solicitudId)
+        .maybeSingle();
+
       const { data, error } = await supabase
         .from('solicitudes')
         .update({
           estado: 'cerrada',
           fecha_cierre: new Date().toISOString(),
           cerrada_por: user?.id,
+          progreso_ejecucion: accionesRealizadas 
+            ? `${solicitudActual?.progreso_ejecucion || ''}\n\n--- ACCIONES DE CIERRE ---\n${accionesRealizadas}`.trim()
+            : solicitudActual?.progreso_ejecucion
         })
         .eq('id', solicitudId)
         .select()

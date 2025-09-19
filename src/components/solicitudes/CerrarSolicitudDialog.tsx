@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudesTemp';
+import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatHorasATradicional } from '@/utils/timeFormatter';

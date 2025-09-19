@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, User, Building, Edit, Timer } from 'lucide-react';
-import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudesTemp';
+import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
 import { useAuth } from '@/hooks/useAuth';
 import { ProgresoEjecucionDialog } from './ProgresoEjecucionDialog';
 import { CerrarSolicitudDialog } from './CerrarSolicitudDialog';
