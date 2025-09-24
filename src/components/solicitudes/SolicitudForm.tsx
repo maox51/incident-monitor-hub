@@ -17,6 +17,7 @@ const tiposSolicitud = [
   { valor: 'capacitacion', etiqueta: 'Capacitación' },
   { valor: 'documentacion', etiqueta: 'Documentación' },
   { valor: 'reunion', etiqueta: 'Solicitud de Reunión' },
+  { valor: 'video', etiqueta: 'Requirimiento de video' },
   { valor: 'otro', etiqueta: 'Otro' },
 ];
 
