@@ -38,6 +38,83 @@ export type Database = {
         }
         Relationships: []
       }
+      activos_salas: {
+        Row: {
+          codigo: string
+          created_at: string
+          descripcion: string | null
+          estado: string
+          fecha_asignacion: string
+          fecha_baja: string | null
+          fecha_compra: string | null
+          garantia_meses: number | null
+          id: string
+          marca: string | null
+          modelo: string | null
+          nombre: string
+          numero_serie: string | null
+          observaciones: string | null
+          proveedor: string | null
+          sala_id: string
+          tipo_activo: string
+          updated_at: string
+          usuario_registro: string
+          valor_compra: number | null
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_asignacion?: string
+          fecha_baja?: string | null
+          fecha_compra?: string | null
+          garantia_meses?: number | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          nombre: string
+          numero_serie?: string | null
+          observaciones?: string | null
+          proveedor?: string | null
+          sala_id: string
+          tipo_activo: string
+          updated_at?: string
+          usuario_registro?: string
+          valor_compra?: number | null
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_asignacion?: string
+          fecha_baja?: string | null
+          fecha_compra?: string | null
+          garantia_meses?: number | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          nombre?: string
+          numero_serie?: string | null
+          observaciones?: string | null
+          proveedor?: string | null
+          sala_id?: string
+          tipo_activo?: string
+          updated_at?: string
+          usuario_registro?: string
+          valor_compra?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activos_salas_sala_id_fkey"
+            columns: ["sala_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       areas: {
         Row: {
           activo: boolean
@@ -700,6 +777,67 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      movimientos_activos: {
+        Row: {
+          activo_id: string
+          created_at: string
+          fecha_movimiento: string
+          id: string
+          motivo: string
+          observaciones: string | null
+          sala_destino_id: string | null
+          sala_origen_id: string | null
+          tipo_movimiento: string
+          usuario_registro: string
+        }
+        Insert: {
+          activo_id: string
+          created_at?: string
+          fecha_movimiento?: string
+          id?: string
+          motivo: string
+          observaciones?: string | null
+          sala_destino_id?: string | null
+          sala_origen_id?: string | null
+          tipo_movimiento: string
+          usuario_registro?: string
+        }
+        Update: {
+          activo_id?: string
+          created_at?: string
+          fecha_movimiento?: string
+          id?: string
+          motivo?: string
+          observaciones?: string | null
+          sala_destino_id?: string | null
+          sala_origen_id?: string | null
+          tipo_movimiento?: string
+          usuario_registro?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimientos_activos_activo_id_fkey"
+            columns: ["activo_id"]
+            isOneToOne: false
+            referencedRelation: "activos_salas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_activos_sala_destino_id_fkey"
+            columns: ["sala_destino_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_activos_sala_origen_id_fkey"
+            columns: ["sala_origen_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_settings: {
         Row: {
@@ -1368,6 +1506,10 @@ export type Database = {
         Args: { minutos_totales: number }
         Returns: string
       }
+      generar_codigo_activo: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string
@@ -1500,6 +1642,10 @@ export type Database = {
           _modulo_codigo: string
           _user_id: string
         }
+        Returns: boolean
+      }
+      validar_codigo_activo: {
+        Args: { p_codigo: string; p_id?: string }
         Returns: boolean
       }
     }
