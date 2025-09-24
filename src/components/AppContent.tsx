@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import Index from "@/pages/Index";
 import Solicitudes from "@/pages/Solicitudes";
 import Pagos724 from "@/pages/Pagos724";
+import MovimientoActivos from "@/pages/MovimientoActivos";
 import AuthPage from "@/components/AuthPage";
 import NotFound from "@/pages/NotFound";
 
@@ -44,6 +45,7 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/solicitudes" element={<Solicitudes />} />
         <Route path="/pagos724" element={<Pagos724 />} />
+        <Route path="/movimiento-activos" element={<MovimientoActivos />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
