@@ -97,7 +97,7 @@ export const useMovimientoActivos = () => {
         .from('activos_salas')
         .select(`
           *,
-          salas!activos_salas_sala_id_fkey(nombre)
+          salas(nombre)
         `)
         .order('created_at', { ascending: false });
 
@@ -112,7 +112,7 @@ export const useMovimientoActivos = () => {
       .from('activos_salas')
       .select(`
         *,
-        salas!activos_salas_sala_id_fkey(nombre)
+        salas(nombre)
       `);
 
     if (filtros.codigo) {
@@ -148,9 +148,9 @@ export const useMovimientoActivos = () => {
         .from('movimientos_activos')
         .select(`
           *,
-          activos_salas!movimientos_activos_activo_id_fkey(*),
-          sala_origen:salas!movimientos_activos_sala_origen_id_fkey(nombre),
-          sala_destino:salas!movimientos_activos_sala_destino_id_fkey(nombre)
+          activos_salas(*),
+          sala_origen:salas!sala_origen_id(nombre),
+          sala_destino:salas!sala_destino_id(nombre)
         `)
         .order('created_at', { ascending: false });
 
