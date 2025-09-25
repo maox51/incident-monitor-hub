@@ -10,6 +10,7 @@ import SalaTimingModule from "@/components/monitoring/SalaTimingModule";
 import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
 import { GestionPagosView } from "@/components/gestion-pagos/GestionPagosView";
 import { Pagos724View } from "@/components/pagos724/Pagos724View";
+import MovimientoActivos from "@/pages/MovimientoActivos";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -128,6 +129,8 @@ const Index = () => {
         );
       case "gestion-pagos":
         return <GestionPagosView />;
+      case "movimiento-activos":
+        return <MovimientoActivos />;
       default:
         return (
           <ProtectedRoute requireAdmin>

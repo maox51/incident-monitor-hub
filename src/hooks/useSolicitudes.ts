@@ -74,35 +74,16 @@ export const useSolicitudes = () => {
           console.log('Monitor: Ver solo solicitudes propias');
           query = query.eq('solicitante_id', user.id);
         } else {
-          // Para todos los demás roles: ver solo solicitudes propias O dirigidas a su área
+          // Para todos los demás roles: ver solicitudes propias O dirigidas a su área
           console.log('Aplicando lógica estándar para rol:', userProfile?.role);
           
-          // Obtener el área del usuario desde su perfil o asignaciones
-          let userAreaIds: string[] = [];
-          
           if (userProfile?.area_id) {
-            userAreaIds.push(userProfile.area_id);
-          }
-          
-          // También buscar en user_area_assignments
-          const { data: areaAssignments } = await supabase
-            .from('user_area_assignments')
-            .select('area_id')
-            .eq('user_id', user.id);
-
-          if (areaAssignments && areaAssignments.length > 0) {
-            const assignedAreaIds = areaAssignments.map(assignment => assignment.area_id);
-            userAreaIds.push(...assignedAreaIds);
-          }
-
-          console.log('User area IDs:', userAreaIds);
-
-          if (userAreaIds.length > 0) {
-            // Filtrar por: solicitudes propias O solicitudes dirigidas a sus áreas
-            query = query.or(`solicitante_id.eq.${user.id},area_id.in.(${userAreaIds.join(',')})`);
+            // Filtrar por: solicitudes propias O solicitudes dirigidas a su área
+            console.log('User area_id:', userProfile.area_id);
+            query = query.or(`solicitante_id.eq.${user.id},area_id.eq.${userProfile.area_id}`);
           } else {
-            // Si no tiene áreas asignadas, solo ver sus propias solicitudes
-            console.log('Sin áreas asignadas, mostrando solo solicitudes propias');
+            // Si no tiene área asignada, solo ver sus propias solicitudes
+            console.log('Sin área asignada, mostrando solo solicitudes propias');
             query = query.eq('solicitante_id', user.id);
           }
         }
