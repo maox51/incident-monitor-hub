@@ -4,11 +4,12 @@ import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, User, Building, Edit, Timer } from 'lucide-react';
+import { Clock, User, Building, Edit, Timer, Eye } from 'lucide-react';
 import { useSolicitudes, type Solicitud } from '@/hooks/useSolicitudes';
 import { useAuth } from '@/hooks/useAuth';
 import { ProgresoEjecucionDialog } from './ProgresoEjecucionDialog';
 import { CerrarSolicitudDialog } from './CerrarSolicitudDialog';
+import { DetallesCierreDialog } from './DetallesCierreDialog';
 import { formatHorasATradicional } from '@/utils/timeFormatter';
 
 interface SolicitudCardProps {
@@ -50,6 +51,7 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
   const { aceptarSolicitud, isAccepting } = useSolicitudes();
   const [showProgresoDialog, setShowProgresoDialog] = useState(false);
   const [showCerrarDialog, setShowCerrarDialog] = useState(false);
+  const [showDetallesCierreDialog, setShowDetallesCierreDialog] = useState(false);
 
   const canManageSolicitud = user?.id !== solicitud.solicitante_id;
   const showDiasPendientes = solicitud.estado === 'pendiente' && solicitud.dias_pendientes && solicitud.dias_pendientes > 0;
@@ -151,6 +153,20 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
               )}
             </div>
           )}
+
+          {/* Botón para ver detalles del cierre cuando está cerrada */}
+          {solicitud.estado === 'cerrada' && (
+            <div className="flex gap-2 mt-4">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => setShowDetallesCierreDialog(true)}
+              >
+                <Eye className="w-4 h-4 mr-1" />
+                Ver Detalles del Cierre
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
 
@@ -164,6 +180,12 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
         solicitud={solicitud}
         isOpen={showCerrarDialog}
         onClose={() => setShowCerrarDialog(false)}
+      />
+
+      <DetallesCierreDialog
+        solicitud={solicitud}
+        isOpen={showDetallesCierreDialog}
+        onClose={() => setShowDetallesCierreDialog(false)}
       />
     </Card>
   );
