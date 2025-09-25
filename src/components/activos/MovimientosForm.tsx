@@ -196,8 +196,8 @@ export const MovimientosForm = ({ activo, onSuccess, onCancel }: MovimientosForm
               <div className="space-y-2">
                 <Label>Sala Origen</Label>
                 <Select
-                  value={formData.sala_origen_id || ''}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, sala_origen_id: value }))}
+                  value={formData.sala_origen_id || undefined}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, sala_origen_id: value || undefined }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sala actual" />
@@ -220,8 +220,8 @@ export const MovimientosForm = ({ activo, onSuccess, onCancel }: MovimientosForm
                   {formData.tipo_movimiento === 'traslado' ? 'Sala Destino *' : 'Sala Asignada *'}
                 </Label>
                 <Select
-                  value={formData.sala_destino_id || ''}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, sala_destino_id: value }))}
+                  value={formData.sala_destino_id || undefined}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, sala_destino_id: value || undefined }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar sala" />

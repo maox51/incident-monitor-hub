@@ -53,7 +53,9 @@ export const ActivosFilters = ({ onFilterChange, onClearFilters }: ActivosFilter
   }, []);
 
   const handleFiltroChange = (key: keyof FiltrosActivos, value: string | undefined) => {
-    const nuevosFiltros = { ...filtros, [key]: value || undefined };
+    // Convert "all" values back to undefined for filtering
+    const filteredValue = value === 'all' ? undefined : value;
+    const nuevosFiltros = { ...filtros, [key]: filteredValue || undefined };
     setFiltros(nuevosFiltros);
   };
 
@@ -103,14 +105,14 @@ export const ActivosFilters = ({ onFilterChange, onClearFilters }: ActivosFilter
         <div className="space-y-2">
           <Label>Tipo de Activo</Label>
           <Select
-            value={filtros.tipo_activo || ''}
+            value={filtros.tipo_activo || 'all'}
             onValueChange={(value) => handleFiltroChange('tipo_activo', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos los tipos</SelectItem>
+              <SelectItem value="all">Todos los tipos</SelectItem>
               {tiposActivo.map((tipo) => (
                 <SelectItem key={tipo.value} value={tipo.value}>
                   {tipo.label}
@@ -124,14 +126,14 @@ export const ActivosFilters = ({ onFilterChange, onClearFilters }: ActivosFilter
         <div className="space-y-2">
           <Label>Sala</Label>
           <Select
-            value={filtros.sala_id || ''}
+            value={filtros.sala_id || 'all'}
             onValueChange={(value) => handleFiltroChange('sala_id', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Todas las salas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas las salas</SelectItem>
+              <SelectItem value="all">Todas las salas</SelectItem>
               {salas.map((sala) => (
                 <SelectItem key={sala.id} value={sala.id}>
                   {sala.nombre}
@@ -145,14 +147,14 @@ export const ActivosFilters = ({ onFilterChange, onClearFilters }: ActivosFilter
         <div className="space-y-2">
           <Label>Estado</Label>
           <Select
-            value={filtros.estado || ''}
+            value={filtros.estado || 'all'}
             onValueChange={(value) => handleFiltroChange('estado', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos los estados</SelectItem>
+              <SelectItem value="all">Todos los estados</SelectItem>
               {estadosActivo.map((estado) => (
                 <SelectItem key={estado.value} value={estado.value}>
                   {estado.label}
