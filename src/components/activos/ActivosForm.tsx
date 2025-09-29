@@ -254,7 +254,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               </Select>
             </div>
 
-            {/* Estado (solo en edición) */}
+            {/* Estado (solo en edición) *
             {activo && (
               <div className="space-y-2">
                 <Label>Estado</Label>
@@ -276,7 +276,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               </div>
             )}
 
-            {/* Marca */}
+            {/* Marca *
             <div className="space-y-2">
               <Label htmlFor="marca">Marca</Label>
               <Input
@@ -286,7 +286,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               />
             </div>
 
-            {/* Modelo */}
+            {/* Modelo *
             <div className="space-y-2">
               <Label htmlFor="modelo">Modelo</Label>
               <Input
@@ -296,7 +296,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               />
             </div>
 
-            {/* Número de Serie */}
+            {/* Número de Serie *
             <div className="space-y-2">
               <Label htmlFor="numero_serie">Número de Serie</Label>
               <Input
@@ -306,7 +306,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               />
             </div>
 
-            {/* Valor de Compra */}
+            {/* Valor de Compra *
             <div className="space-y-2">
               <Label htmlFor="valor_compra">Valor de Compra</Label>
               <Input
@@ -321,7 +321,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               />
             </div>
 
-            {/* Fecha de Compra */}
+            {/* Fecha de Compra *
             <div className="space-y-2">
               <Label>Fecha de Compra</Label>
               <Popover>
@@ -349,7 +349,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               </Popover>
             </div>
 
-            {/* Garantía en Meses */}
+            {/* Garantía en Meses *
             <div className="space-y-2">
               <Label htmlFor="garantia_meses">Garantía (meses)</Label>
               <Input
@@ -363,7 +363,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
               />
             </div>
 
-            {/* Proveedor */}
+            {/* Proveedor *
             <div className="space-y-2">
               <Label htmlFor="proveedor">Proveedor</Label>
               <Input
@@ -371,7 +371,7 @@ export const ActivosForm = ({ activo, onSuccess, onCancel }: ActivosFormProps) =
                 value={formData.proveedor}
                 onChange={(e) => setFormData({ ...formData, proveedor: e.target.value })}
               />
-            </div>
+            </div>*/}
           </div>
 
           {/* Descripción */}
