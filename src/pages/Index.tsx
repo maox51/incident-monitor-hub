@@ -43,7 +43,7 @@ const Index = () => {
   });
 
   // Los monitores solo ven el formulario de nueva incidencia (sin sidebar)
-  if (isMonitor && !isAdmin && !isSupervisorMonitoreo) {
+  /*if (isMonitor && !isAdmin && !isSupervisorMonitoreo) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <Header />
@@ -63,7 +63,7 @@ const Index = () => {
         </div>
       </div>
     );
-  }
+  }*/
 
   // El gestor de solicitudes solo ve el módulo de solicitudes (sin sidebar)
   if (isGestorSolicitudes && !isAdmin) {
