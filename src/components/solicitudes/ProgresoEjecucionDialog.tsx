@@ -16,7 +16,7 @@ export const ProgresoEjecucionDialog = ({ solicitud, isOpen, onClose }: Progreso
   const { actualizarProgreso, isUpdatingProgress } = useSolicitudes();
 
   const handleSubmit = async () => {
-    if (progreso.length < 100) {
+    if (progreso.length < 20) {
       return;
     }
 
@@ -67,7 +67,7 @@ export const ProgresoEjecucionDialog = ({ solicitud, isOpen, onClose }: Progreso
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={progreso.length < 100 || isUpdatingProgress}
+            disabled={progreso.length < 20 || isUpdatingProgress}
           >
             {isUpdatingProgress ? 'Guardando...' : 'Actualizar Progreso'}
           </Button>
