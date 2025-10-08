@@ -211,8 +211,8 @@ export const useSolicitudes = () => {
   // Actualizar progreso de ejecución
   const actualizarProgreso = useMutation({
     mutationFn: async ({ solicitudId, progreso }: { solicitudId: string; progreso: string }) => {
-      if (progreso.length < 100) {
-        throw new Error('El progreso debe tener al menos 100 caracteres');
+      if (progreso.length < 20) {
+        throw new Error('El progreso debe tener al menos 20 caracteres');
       }
 
       const { data, error } = await supabase
