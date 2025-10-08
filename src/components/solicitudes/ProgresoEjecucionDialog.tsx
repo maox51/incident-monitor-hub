@@ -28,7 +28,7 @@ export const ProgresoEjecucionDialog = ({ solicitud, isOpen, onClose }: Progreso
     }
   };
 
-  const caracteresRestantes = 100 - progreso.length;
+  const caracteresRestantes = 20 - progreso.length;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -50,7 +50,7 @@ export const ProgresoEjecucionDialog = ({ solicitud, isOpen, onClose }: Progreso
             <div className="text-sm text-muted-foreground mt-1">
               {caracteresRestantes > 0 ? (
                 <span className="text-red-500">
-                  Faltan {caracteresRestantes} caracteres (mínimo 100)
+                  Faltan {caracteresRestantes} caracteres (mínimo 20)
                 </span>
               ) : (
                 <span className="text-green-600">
