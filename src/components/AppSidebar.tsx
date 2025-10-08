@@ -53,6 +53,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     { id: 'gestion-pagos', label: 'Gestión de Pagos', icon: CreditCard, roles: ['admin', 'supervisor_monitoreo', 'rrhh', 'finanzas', 'mantenimiento', 'gestor_solicitudes'] },
     { id: 'pagos724', label: 'Pagos 724', icon: DollarSign, roles: ['admin', 'supervisor_monitoreo', 'rrhh', 'finanzas'] },
     { id: 'movimiento-activos', label: 'Movimiento de Activos', icon: Package, roles: ['admin', 'supervisor_monitoreo', 'rrhh', 'finanzas', 'gestor_solicitudes'] },
+    { id: 'billeteros', label: 'Billeteros', icon: CreditCard, roles: ['admin', 'supervisor_monitoreo', 'rrhh', 'finanzas', 'gestor_solicitudes'] },
     { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
     { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
@@ -84,7 +85,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   );
   
   const moduleItems = filteredMenuItems.filter(item => 
-    ['solicitudes', 'gestion-pagos', 'pagos724', 'movimiento-activos'].includes(item.id)
+    ['solicitudes', 'gestion-pagos', 'pagos724', 'movimiento-activos', 'billeteros'].includes(item.id)
   );
   
   const reportItems = filteredMenuItems.filter(item => 

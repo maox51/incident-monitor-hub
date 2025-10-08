@@ -142,6 +142,59 @@ export type Database = {
         }
         Relationships: []
       }
+      billeteros: {
+        Row: {
+          codigo: string
+          created_at: string
+          descripcion: string | null
+          estado: string
+          fecha_ingreso: string
+          id: string
+          numero_maquina: string | null
+          observaciones: string | null
+          sala_id: string | null
+          tipo: string
+          updated_at: string
+          usuario_registro: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_ingreso?: string
+          id?: string
+          numero_maquina?: string | null
+          observaciones?: string | null
+          sala_id?: string | null
+          tipo: string
+          updated_at?: string
+          usuario_registro?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_ingreso?: string
+          id?: string
+          numero_maquina?: string | null
+          observaciones?: string | null
+          sala_id?: string | null
+          tipo?: string
+          updated_at?: string
+          usuario_registro?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billeteros_sala_id_fkey"
+            columns: ["sala_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -839,6 +892,79 @@ export type Database = {
           },
         ]
       }
+      movimientos_billeteros: {
+        Row: {
+          billetero_id: string
+          created_at: string
+          estado_anterior: string | null
+          estado_nuevo: string | null
+          fecha_movimiento: string
+          id: string
+          motivo: string
+          numero_maquina_anterior: string | null
+          numero_maquina_nuevo: string | null
+          observaciones: string | null
+          sala_destino_id: string | null
+          sala_origen_id: string | null
+          tipo_movimiento: string
+          usuario_registro: string
+        }
+        Insert: {
+          billetero_id: string
+          created_at?: string
+          estado_anterior?: string | null
+          estado_nuevo?: string | null
+          fecha_movimiento?: string
+          id?: string
+          motivo: string
+          numero_maquina_anterior?: string | null
+          numero_maquina_nuevo?: string | null
+          observaciones?: string | null
+          sala_destino_id?: string | null
+          sala_origen_id?: string | null
+          tipo_movimiento: string
+          usuario_registro?: string
+        }
+        Update: {
+          billetero_id?: string
+          created_at?: string
+          estado_anterior?: string | null
+          estado_nuevo?: string | null
+          fecha_movimiento?: string
+          id?: string
+          motivo?: string
+          numero_maquina_anterior?: string | null
+          numero_maquina_nuevo?: string | null
+          observaciones?: string | null
+          sala_destino_id?: string | null
+          sala_origen_id?: string | null
+          tipo_movimiento?: string
+          usuario_registro?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimientos_billeteros_billetero_id_fkey"
+            columns: ["billetero_id"]
+            isOneToOne: false
+            referencedRelation: "billeteros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_billeteros_sala_destino_id_fkey"
+            columns: ["sala_destino_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_billeteros_sala_origen_id_fkey"
+            columns: ["sala_origen_id"]
+            isOneToOne: false
+            referencedRelation: "salas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           created_at: string | null
@@ -1510,6 +1636,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generar_codigo_billetero: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string
@@ -1645,6 +1775,10 @@ export type Database = {
         Returns: boolean
       }
       validar_codigo_activo: {
+        Args: { p_codigo: string; p_id?: string }
+        Returns: boolean
+      }
+      validar_codigo_billetero: {
         Args: { p_codigo: string; p_id?: string }
         Returns: boolean
       }

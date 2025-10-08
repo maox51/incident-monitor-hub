@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import Dashboard from "@/components/Dashboard";
 import IncidenciaForm from "@/components/IncidenciaForm";
 import ReportesView from "@/components/ReportesView";
@@ -131,6 +131,13 @@ const Index = () => {
         return <GestionPagosView />;
       case "movimiento-activos":
         return <MovimientoActivos />;
+      case "billeteros":
+        const BilleterosPage = lazy(() => import('@/pages/Billeteros'));
+        return (
+          <Suspense fallback={<div>Cargando...</div>}>
+            <BilleterosPage />
+          </Suspense>
+        );
       default:
         return (
           <ProtectedRoute requireAdmin>
