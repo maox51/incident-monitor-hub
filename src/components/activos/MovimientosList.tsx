@@ -42,19 +42,38 @@ const tipoLabels = {
 
 export const MovimientosList = ({ movimientos }: MovimientosListProps) => {
   const exportarExcel = () => {
+    // Crear datos simplificados
     const datosExcel = movimientos.map(movimiento => ({
       'Fecha': format(new Date(movimiento.fecha_movimiento), 'dd/MM/yyyy'),
+      'Código': movimiento.activos_salas?.codigo || '',
       'Tipo Movimiento': tipoLabels[movimiento.tipo_movimiento],
-      'Código Activo': movimiento.activos_salas?.codigo || '',
-      'Nombre Activo': movimiento.activos_salas?.nombre || '',
-      'Sala Origen': movimiento.sala_origen?.nombre || '',
-      'Sala Destino': movimiento.sala_destino?.nombre || '',
+      'Sala Origen': movimiento.sala_origen?.nombre || '-',
+      'Sala Destino': movimiento.sala_destino?.nombre || '-',
       'Motivo': movimiento.motivo,
-      'Observaciones': movimiento.observaciones || '',
-      'Fecha Registro': format(new Date(movimiento.created_at), 'dd/MM/yyyy HH:mm'),
     }));
 
-    const ws = XLSX.utils.json_to_sheet(datosExcel);
+    // Crear encabezado con logo
+    const header = [
+      ['GRUPO ESVA'],
+      ['Sistema de Gestión de Activos'],
+      ['Reporte de Movimientos de Activos'],
+      [`Fecha de Generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`],
+      [], // Línea vacía
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(header);
+    XLSX.utils.sheet_add_json(ws, datosExcel, { origin: -1 });
+
+    // Ajustar ancho de columnas
+    ws['!cols'] = [
+      { wch: 12 }, // Fecha
+      { wch: 15 }, // Código
+      { wch: 18 }, // Tipo Movimiento
+      { wch: 20 }, // Sala Origen
+      { wch: 20 }, // Sala Destino
+      { wch: 40 }, // Motivo
+    ];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
     

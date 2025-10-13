@@ -28,40 +28,46 @@ const tipoMovimientoColors: Record<string, string> = {
 
 export const MovimientosBilleterosList = ({ movimientos }: MovimientosBilleterosListProps) => {
   const exportarExcel = () => {
+    // Crear datos simplificados
     const datosExcel = movimientos.map(mov => ({
       'Fecha': format(new Date(mov.fecha_movimiento), 'dd/MM/yyyy', { locale: es }),
-      'Código Billetero': mov.billeteros?.codigo || '',
-      'Serial Billetero': mov.billeteros?.serial || '',
-      'Tipo Billetero': mov.billeteros?.tipo || '',
+      'Código': mov.billeteros?.codigo || '',
+      'Tipo': mov.billeteros?.tipo || '',
       'Tipo Movimiento': tipoMovimientoLabels[mov.tipo_movimiento] || mov.tipo_movimiento,
       'Sala Origen': mov.sala_origen?.nombre || '-',
       'Sala Destino': mov.sala_destino?.nombre || '-',
-      'Número Máquina Anterior': mov.numero_maquina_anterior || '-',
-      'Número Máquina Nuevo': mov.numero_maquina_nuevo || '-',
-      'Estado Anterior': mov.estado_anterior || '-',
-      'Estado Nuevo': mov.estado_nuevo || '-',
+      'Número Máquina': mov.numero_maquina_nuevo || mov.numero_maquina_anterior || '-',
       'Motivo': mov.motivo,
-      'Observaciones': mov.observaciones || '-',
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+    // Crear encabezado con logo
+    const header = [
+      ['GRUPO ESVA'],
+      ['Sistema de Gestión de Billeteros'],
+      ['Reporte de Movimientos de Billeteros'],
+      [`Fecha de Generación: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`],
+      [], // Línea vacía
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(header);
+    XLSX.utils.sheet_add_json(worksheet, datosExcel, { origin: -1 });
+
+    // Ajustar ancho de columnas
+    worksheet['!cols'] = [
+      { wch: 12 }, // Fecha
+      { wch: 15 }, // Código
+      { wch: 8 },  // Tipo
+      { wch: 18 }, // Tipo Movimiento
+      { wch: 20 }, // Sala Origen
+      { wch: 20 }, // Sala Destino
+      { wch: 15 }, // Número Máquina
+      { wch: 40 }, // Motivo
+    ];
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Movimientos');
 
-    // Ajustar ancho de columnas
-    const maxWidth = 50;
-    const colWidths = Object.keys(datosExcel[0] || {}).map(key => ({
-      wch: Math.min(
-        maxWidth,
-        Math.max(
-          key.length,
-          ...datosExcel.map(row => String(row[key as keyof typeof row]).length)
-        )
-      )
-    }));
-    worksheet['!cols'] = colWidths;
-
-    const fecha = format(new Date(), 'dd-MM-yyyy');
+    const fecha = format(new Date(), 'dd-MM-yyyy', { locale: es });
     XLSX.writeFile(workbook, `movimientos-billeteros-${fecha}.xlsx`);
   };
 

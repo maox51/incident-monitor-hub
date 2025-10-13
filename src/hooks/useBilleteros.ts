@@ -268,6 +268,7 @@ export const useBilleteros = () => {
         updateData = {
           sala_id: data.sala_destino_id,
           numero_maquina: data.numero_maquina_nuevo,
+          estado: 'asignado', // Cambiar automáticamente a asignado
         };
       } else if (data.tipo_movimiento === 'cambio_estado') {
         updateData = {
