@@ -8,12 +8,29 @@ interface BilleterosCardsProps {
 }
 
 export const BilleterosCards = ({ billeteros }: BilleterosCardsProps) => {
+  const totalBilleteros = billeteros.length;
+  const totalAsignados = billeteros.filter(b => b.estado === 'asignado').length;
   const enStock = billeteros.filter(b => b.estado === 'en_stock').length;
   const enReparacion = billeteros.filter(b => b.estado === 'reparacion').length;
   const enProgramacion = billeteros.filter(b => b.estado === 'en_programacion').length;
+  
   const descarte = billeteros.filter(b => b.estado === 'descarte').length;
 
   const estadisticas = [
+    { 
+      titulo: 'Total Billeteros', 
+      valor: totalBilleteros,
+      icon: Package, 
+      color: 'text-gray-600',
+      bgColor: 'bg-gray-50'
+    },
+    { 
+      titulo: 'Total Asignados', 
+      valor: totalAsignados,
+      icon: Package, 
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    },
     { 
       titulo: 'En Stock', 
       valor: enStock, 

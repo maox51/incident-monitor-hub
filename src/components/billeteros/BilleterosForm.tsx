@@ -27,6 +27,7 @@ export const BilleterosForm = ({ open, onOpenChange }: BilleterosFormProps) => {
 
   const tipo = watch('tipo');
   const codigo = watch('codigo');
+  const serial = watch('serial');
 
   const onSubmit = async (data: CrearBilleteroData) => {
     try {
@@ -97,6 +98,24 @@ export const BilleterosForm = ({ open, onOpenChange }: BilleterosFormProps) => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="serial">Número de Serie</Label>
+              <Input
+                id="serial"
+                {...register('serial', { 
+                  pattern: {
+                    value: /^[0-9A-Z]+$/,
+                    message: 'El número de serie debe contener solo números o letras'
+                  }
+                })}
+                placeholder="123ABC"
+                className={errors.serial ? 'border-red-500' : ''}
+              />
+              {errors.serial && (
+                <p className="text-sm text-red-500">{errors.serial.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="tipo">
                 Tipo <span className="text-red-500">*</span>
               </Label>
@@ -128,6 +147,7 @@ export const BilleterosForm = ({ open, onOpenChange }: BilleterosFormProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en_stock">En Stock</SelectItem>
+                  <SelectItem value="asignado">Asignado</SelectItem>
                   <SelectItem value="reparacion">En Reparación</SelectItem>
                   <SelectItem value="en_programacion">En Programación</SelectItem>
                   <SelectItem value="descarte">Descarte</SelectItem>

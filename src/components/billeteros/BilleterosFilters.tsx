@@ -13,6 +13,7 @@ interface BilleterosFiltersProps {
 
 export const BilleterosFilters = ({ onFilter }: BilleterosFiltersProps) => {
   const [codigo, setCodigo] = useState('');
+  const [serial, setSerial] = useState('');
   const [tipo, setTipo] = useState<string | undefined>(undefined);
   const [estado, setEstado] = useState<string | undefined>(undefined);
   const [salaId, setSalaId] = useState<string | undefined>(undefined);
@@ -34,12 +35,14 @@ export const BilleterosFilters = ({ onFilter }: BilleterosFiltersProps) => {
   useEffect(() => {
     const filtros: FiltrosBilleteros = {};
     if (codigo) filtros.codigo = codigo;
+    if (serial) filtros.serial = serial;
     if (tipo) filtros.tipo = tipo as 'MJ' | 'PK';
     if (estado) filtros.estado = estado as any;
     if (salaId) filtros.sala_id = salaId;
 
+
     onFilter(filtros);
-  }, [codigo, tipo, estado, salaId, onFilter]);
+  }, [codigo, serial, tipo, estado, salaId, onFilter]);
 
   const limpiarFiltros = () => {
     setCodigo('');
@@ -48,7 +51,7 @@ export const BilleterosFilters = ({ onFilter }: BilleterosFiltersProps) => {
     setSalaId(undefined);
   };
 
-  const hayFiltrosActivos = codigo || tipo || estado || salaId;
+  const hayFiltrosActivos = codigo || serial || tipo || estado || salaId;
 
   return (
     <div className="grid gap-4 md:grid-cols-5">

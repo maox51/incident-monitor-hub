@@ -5,8 +5,9 @@ import { toast } from 'sonner';
 export interface Billetero {
   id: string;
   codigo: string;
+  serial?: string;
   tipo: 'MJ' | 'PK';
-  estado: 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
+  estado: 'asignado' |'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
   sala_id?: string;
   numero_maquina?: string;
   descripcion?: string;
@@ -23,7 +24,7 @@ export interface Billetero {
 export interface MovimientoBilletero {
   id: string;
   billetero_id: string;
-  tipo_movimiento: 'asignacion' | 'cambio_estado' | 'transferencia' | 'baja';
+  tipo_movimiento: 'asignacion' | 'cambio_estado' | 'transferencia';
   estado_anterior?: string;
   estado_nuevo?: string;
   sala_origen_id?: string;
@@ -42,23 +43,26 @@ export interface MovimientoBilletero {
 
 export interface FiltrosBilleteros {
   codigo?: string;
+  serial?: string;
   tipo?: 'MJ' | 'PK';
-  estado?: 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
+  estado?: 'asignado' | 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
   sala_id?: string;
 }
 
 export interface CrearBilleteroData {
   codigo: string;
+  serial?: string;
   tipo: 'MJ' | 'PK';
-  estado?: 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
+  estado?: 'asignado' | 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
   descripcion?: string;
   observaciones?: string;
 }
 
 export interface ActualizarBilleteroData {
   codigo?: string;
+  serial?: string;
   tipo?: 'MJ' | 'PK';
-  estado?: 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
+  estado?: 'asignado' | 'en_stock' | 'reparacion' | 'en_programacion' | 'descarte';
   sala_id?: string | null;
   numero_maquina?: string | null;
   descripcion?: string;
@@ -119,6 +123,9 @@ export const useBilleteros = () => {
     if (filtros.codigo) {
       query = query.ilike('codigo', `%${filtros.codigo}%`);
     }
+    if (filtros.serial) {
+      query = query.ilike('serial', `%${filtros.serial}%`);
+    }
     if (filtros.tipo) {
       query = query.eq('tipo', filtros.tipo);
     }
@@ -170,6 +177,7 @@ export const useBilleteros = () => {
         .from('billeteros')
         .insert({
           codigo: data.codigo,
+          serial: data.serial,
           tipo: data.tipo,
           estado: data.estado || 'en_stock',
           descripcion: data.descripcion,

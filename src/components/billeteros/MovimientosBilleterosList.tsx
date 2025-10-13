@@ -31,6 +31,7 @@ export const MovimientosBilleterosList = ({ movimientos }: MovimientosBilleteros
     const datosExcel = movimientos.map(mov => ({
       'Fecha': format(new Date(mov.fecha_movimiento), 'dd/MM/yyyy', { locale: es }),
       'Código Billetero': mov.billeteros?.codigo || '',
+      'Serial Billetero': mov.billeteros?.serial || '',
       'Tipo Billetero': mov.billeteros?.tipo || '',
       'Tipo Movimiento': tipoMovimientoLabels[mov.tipo_movimiento] || mov.tipo_movimiento,
       'Sala Origen': mov.sala_origen?.nombre || '-',
@@ -87,6 +88,7 @@ export const MovimientosBilleterosList = ({ movimientos }: MovimientosBilleteros
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Código</TableHead>
+              <TableHead>Serial</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Tipo Movimiento</TableHead>
               <TableHead>Sala Origen</TableHead>
@@ -104,6 +106,7 @@ export const MovimientosBilleterosList = ({ movimientos }: MovimientosBilleteros
                 <TableCell className="font-medium">
                   {movimiento.billeteros?.codigo}
                 </TableCell>
+                <TableCell>{movimiento.billeteros?.serial}</TableCell>
                 <TableCell>
                   <Badge variant="outline">{movimiento.billeteros?.tipo}</Badge>
                 </TableCell>

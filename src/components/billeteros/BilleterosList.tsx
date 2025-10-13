@@ -11,6 +11,7 @@ interface BilleterosListProps {
 }
 
 const estadoColors: Record<string, string> = {
+  asignado: 'bg-purple-100 text-purple-800',
   en_stock: 'bg-green-100 text-green-800',
   reparacion: 'bg-yellow-100 text-yellow-800',
   en_programacion: 'bg-blue-100 text-blue-800',
@@ -18,6 +19,7 @@ const estadoColors: Record<string, string> = {
 };
 
 const estadoLabels: Record<string, string> = {
+  asignado: 'Asignado',
   en_stock: 'En Stock',
   reparacion: 'En Reparación',
   en_programacion: 'En Programación',
@@ -54,6 +56,7 @@ export const BilleterosList = ({ billeteros }: BilleterosListProps) => {
             <TableRow>
               <TableHead>Código</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Serial</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Sala Asignada</TableHead>
               <TableHead>Número Máquina</TableHead>
@@ -68,6 +71,7 @@ export const BilleterosList = ({ billeteros }: BilleterosListProps) => {
                 <TableCell>
                   <Badge variant="outline">{tipoLabels[billetero.tipo]}</Badge>
                 </TableCell>
+                <TableCell>{billetero.serial}</TableCell>
                 <TableCell>
                   <Badge className={estadoColors[billetero.estado]}>
                     {estadoLabels[billetero.estado]}
