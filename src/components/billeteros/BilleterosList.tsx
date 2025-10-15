@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Edit } from "lucide-react";
 import { Billetero } from "@/hooks/useBilleteros";
 import { MovimientosBilleterosForm } from "./MovimientosBilleterosForm";
+import { BilleterosEditForm } from "./BilleterosEditForm";
 
 interface BilleterosListProps {
   billeteros: Billetero[];
@@ -33,6 +34,7 @@ const tipoLabels: Record<string, string> = {
 
 export const BilleterosList = ({ billeteros }: BilleterosListProps) => {
   const [movimientoDialogOpen, setMovimientoDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [billeteroSeleccionado, setBilleteroSeleccionado] = useState<Billetero | null>(null);
 
   const handleRegistrarMovimiento = (billetero: Billetero) => {
@@ -87,14 +89,26 @@ export const BilleterosList = ({ billeteros }: BilleterosListProps) => {
                   {billetero.descripcion || '-'}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleRegistrarMovimiento(billetero)}
-                  >
-                    <ArrowRight className="h-4 w-4 mr-1" />
-                    Movimiento
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setBilleteroSeleccionado(billetero);
+                        setEditDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRegistrarMovimiento(billetero)}
+                    >
+                      <ArrowRight className="h-4 w-4 mr-1" />
+                      Movimiento
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -103,11 +117,18 @@ export const BilleterosList = ({ billeteros }: BilleterosListProps) => {
       </div>
 
       {billeteroSeleccionado && (
-        <MovimientosBilleterosForm
-          open={movimientoDialogOpen}
-          onOpenChange={setMovimientoDialogOpen}
-          billetero={billeteroSeleccionado}
-        />
+        <>
+          <MovimientosBilleterosForm
+            open={movimientoDialogOpen}
+            onOpenChange={setMovimientoDialogOpen}
+            billetero={billeteroSeleccionado}
+          />
+          <BilleterosEditForm
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            billetero={billeteroSeleccionado}
+          />
+        </>
       )}
     </>
   );

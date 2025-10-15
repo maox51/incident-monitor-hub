@@ -242,6 +242,18 @@ export const useBilleteros = () => {
         throw new Error('Solo se pueden asignar billeteros que están en stock');
       }
 
+      // Determinar el nuevo estado basado en el tipo de movimiento
+      let nuevoEstado = billeteroActual.estado;
+      
+      if (data.tipo_movimiento === 'asignacion') {
+        nuevoEstado = 'asignado';
+      } else if (data.tipo_movimiento === 'cambio_estado' && data.observaciones) {
+        // Para cambio de estado, el nuevo estado viene en observaciones
+        nuevoEstado = data.observaciones;
+      } else if (data.tipo_movimiento === 'baja') {
+        nuevoEstado = 'descarte';
+      }
+
       // Registrar movimiento
       const { data: movimiento, error: movError } = await supabase
         .from('movimientos_billeteros')
@@ -249,6 +261,7 @@ export const useBilleteros = () => {
           billetero_id: data.billetero_id,
           tipo_movimiento: data.tipo_movimiento,
           estado_anterior: billeteroActual.estado,
+          estado_nuevo: nuevoEstado,
           sala_origen_id: billeteroActual.sala_id,
           sala_destino_id: data.sala_destino_id,
           numero_maquina_anterior: billeteroActual.numero_maquina,
@@ -268,11 +281,11 @@ export const useBilleteros = () => {
         updateData = {
           sala_id: data.sala_destino_id,
           numero_maquina: data.numero_maquina_nuevo,
-          estado: 'asignado', // Cambiar automáticamente a asignado
+          estado: 'asignado',
         };
       } else if (data.tipo_movimiento === 'cambio_estado') {
         updateData = {
-          estado: data.observaciones || billeteroActual.estado, // El nuevo estado viene en observaciones
+          estado: nuevoEstado,
         };
       } else if (data.tipo_movimiento === 'baja') {
         updateData = {

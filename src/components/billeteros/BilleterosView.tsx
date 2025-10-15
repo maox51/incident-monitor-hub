@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FileDown } from "lucide-react";
 import { BilleterosCards } from "./BilleterosCards";
 import { BilleterosFilters } from "./BilleterosFilters";
 import { BilleterosForm } from "./BilleterosForm";
 import { BilleterosList } from "./BilleterosList";
 import { MovimientosBilleterosList } from "./MovimientosBilleterosList";
+import { BilleterosExportDialog } from "./BilleterosExportDialog";
 import { useBilleteros, FiltrosBilleteros, Billetero } from "@/hooks/useBilleteros";
 
 export const BilleterosView = () => {
   const { billeteros, movimientos, billeterosLoading, obtenerBilleterosFiltrados } = useBilleteros();
   const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [billeterosFiltrados, setBilleterosFiltrados] = useState<Billetero[]>([]);
 
   useEffect(() => {
@@ -50,10 +52,20 @@ export const BilleterosView = () => {
             Gestión y control de billeteros
           </p>
         </div>
-        <Button onClick={() => setFormDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Billetero
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setExportDialogOpen(true)}
+            disabled={billeteros.length === 0}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+          <Button onClick={() => setFormDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Billetero
+          </Button>
+        </div>
       </div>
 
       <BilleterosCards billeteros={billeteros} />
@@ -77,6 +89,11 @@ export const BilleterosView = () => {
       <BilleterosForm
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}
+      />
+      <BilleterosExportDialog 
+        open={exportDialogOpen} 
+        onOpenChange={setExportDialogOpen}
+        billeteros={billeterosFiltrados.length > 0 ? billeterosFiltrados : billeteros}
       />
     </div>
   );

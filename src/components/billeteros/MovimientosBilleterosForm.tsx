@@ -165,12 +165,29 @@ export const MovimientosBilleterosForm = ({ open, onOpenChange, billetero }: Mov
           <div className="space-y-2">
             <Label htmlFor="motivo">
               Motivo <span className="text-red-500">*</span>
+              {tipoMovimiento === 'baja' && (
+                <span className="text-red-500 ml-2 font-semibold">
+                  (Detalle obligatorio para dar de baja)
+                </span>
+              )}
             </Label>
             <Textarea
               id="motivo"
-              {...register('motivo', { required: 'El motivo es requerido' })}
-              placeholder="Describa el motivo del movimiento..."
-              rows={3}
+              {...register('motivo', { 
+                required: 'El motivo es requerido',
+                minLength: {
+                  value: tipoMovimiento === 'baja' ? 20 : 5,
+                  message: tipoMovimiento === 'baja' 
+                    ? 'Para dar de baja, el motivo debe tener al menos 20 caracteres' 
+                    : 'El motivo debe tener al menos 5 caracteres'
+                }
+              })}
+              placeholder={
+                tipoMovimiento === 'baja'
+                  ? "Describa detalladamente el motivo de la baja del billetero (mínimo 20 caracteres)..."
+                  : "Describa el motivo del movimiento..."
+              }
+              rows={tipoMovimiento === 'baja' ? 5 : 3}
               className={errors.motivo ? 'border-red-500' : ''}
             />
             {errors.motivo && (
