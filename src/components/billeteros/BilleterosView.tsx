@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, FileDown } from "lucide-react";
+import { Plus, FileDown, Printer } from "lucide-react";
 import { BilleterosCards } from "./BilleterosCards";
 import { BilleterosFilters } from "./BilleterosFilters";
 import { BilleterosForm } from "./BilleterosForm";
@@ -35,6 +35,10 @@ export const BilleterosView = () => {
     }
   };
 
+  const handlePrintDirect = () => {
+    window.print();
+  };
+
   if (billeterosLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -53,6 +57,14 @@ export const BilleterosView = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handlePrintDirect}
+            disabled={billeteros.length === 0}
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimir
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => setExportDialogOpen(true)}

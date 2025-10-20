@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -45,6 +47,21 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
+
+  // Contador de solicitudes nuevas (pendientes)
+  const { data: solicitudesPendientes = 0 } = useQuery({
+    queryKey: ['solicitudes-pendientes-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('solicitudes')
+        .select('*', { count: 'exact', head: true })
+        .eq('estado', 'pendiente');
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: 30000, // Refrescar cada 30 segundos
+  });
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
@@ -109,6 +126,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
             {items.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isSolicitudes = item.id === 'solicitudes';
+              const hasPendientes = isSolicitudes && solicitudesPendientes > 0;
               
               return (
                 <SidebarMenuItem key={item.id}>
@@ -118,7 +137,15 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                     className="w-full justify-start gap-3"
                   >
                     <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {hasPendientes && (
+                      <Badge 
+                        variant="destructive" 
+                        className="ml-auto h-5 min-w-[20px] rounded-full px-1.5 text-xs font-semibold"
+                      >
+                        {solicitudesPendientes}
+                      </Badge>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );

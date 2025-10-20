@@ -247,11 +247,11 @@ export const useBilleteros = () => {
       
       if (data.tipo_movimiento === 'asignacion') {
         nuevoEstado = 'asignado';
-      } else if (data.tipo_movimiento === 'cambio_estado' && data.observaciones) {
-        // Para cambio de estado, el nuevo estado viene en observaciones
-        nuevoEstado = data.observaciones;
       } else if (data.tipo_movimiento === 'baja') {
         nuevoEstado = 'descarte';
+      } else if (data.tipo_movimiento === 'cambio_estado') {
+        // Para cambio de estado, mantener el estado actual si no se especifica uno nuevo
+        nuevoEstado = billeteroActual.estado;
       }
 
       // Registrar movimiento
