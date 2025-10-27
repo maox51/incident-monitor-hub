@@ -61,8 +61,7 @@ export const useSolicitudes = () => {
           .select(`
             *,
             area:areas!solicitudes_area_id_fkey(nombre),
-            profiles!solicitudes_solicitante_id_fkey(full_name),
-            aceptador:profiles!aceptada_por(full_name)
+            profiles!solicitudes_solicitante_id_fkey(full_name)
           `);
 
         // Aplicar filtros según el rol del usuario
@@ -100,10 +99,12 @@ export const useSolicitudes = () => {
         if (!data) return [];
 
         // Calcular días pendientes y horas transcurridas para cada solicitud
+        // Y obtener el nombre del usuario que aceptó
         const solicitudesConTiempo = await Promise.all(
           data.map(async (solicitud: any) => {
             let diasPendientes = 0;
             let horasTranscurridas = 0;
+            let aceptadorNombre = null;
 
             if (solicitud.estado === 'pendiente') {
               try {
@@ -124,10 +125,25 @@ export const useSolicitudes = () => {
               console.error('Error calculating hours:', error);
             }
 
+            // Obtener nombre del usuario que aceptó
+            if (solicitud.aceptada_por) {
+              try {
+                const { data: aceptadorData } = await supabase
+                  .from('profiles')
+                  .select('full_name')
+                  .eq('id', solicitud.aceptada_por)
+                  .single();
+                aceptadorNombre = aceptadorData?.full_name || null;
+              } catch (error) {
+                console.error('Error fetching aceptador:', error);
+              }
+            }
+
             return { 
               ...solicitud, 
               dias_pendientes: diasPendientes,
-              horas_transcurridas: horasTranscurridas
+              horas_transcurridas: horasTranscurridas,
+              aceptador: aceptadorNombre ? { full_name: aceptadorNombre } : null
             };
           })
         );
