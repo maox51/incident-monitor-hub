@@ -62,7 +62,7 @@ export const useSolicitudes = () => {
             *,
             area:areas!solicitudes_area_id_fkey(nombre),
             profiles!solicitudes_solicitante_id_fkey(full_name),
-            aceptador:profiles!solicitudes_aceptada_por_fkey(full_name)
+            aceptador:profiles!aceptada_por(full_name)
           `);
 
         // Aplicar filtros según el rol del usuario
