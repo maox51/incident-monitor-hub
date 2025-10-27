@@ -153,6 +153,7 @@ export type Database = {
           numero_maquina: string | null
           observaciones: string | null
           sala_id: string | null
+          serial: string | null
           tipo: string
           updated_at: string
           usuario_registro: string
@@ -167,6 +168,7 @@ export type Database = {
           numero_maquina?: string | null
           observaciones?: string | null
           sala_id?: string | null
+          serial?: string | null
           tipo: string
           updated_at?: string
           usuario_registro?: string
@@ -181,6 +183,7 @@ export type Database = {
           numero_maquina?: string | null
           observaciones?: string | null
           sala_id?: string | null
+          serial?: string | null
           tipo?: string
           updated_at?: string
           usuario_registro?: string
@@ -1419,7 +1422,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string | null
           user_agent: string | null
@@ -1431,7 +1434,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           user_agent?: string | null
@@ -1443,7 +1446,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           user_agent?: string | null
@@ -1632,20 +1635,14 @@ export type Database = {
         Args: { minutos_totales: number }
         Returns: string
       }
-      generar_codigo_activo: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generar_codigo_billetero: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generar_codigo_activo: { Args: never; Returns: string }
+      generar_codigo_billetero: { Args: never; Returns: string }
       generar_reporte_consolidado: {
         Args: { fecha_objetivo?: string }
         Returns: string
       }
       get_notification_admins: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           email: string
           full_name: string
@@ -1654,7 +1651,7 @@ export type Database = {
         }[]
       }
       get_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
       has_role: {
@@ -1704,7 +1701,7 @@ export type Database = {
         Returns: string
       }
       obtener_estadisticas_generales_724: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           pagos_hoy: number
           pagos_mes_actual: number
@@ -1742,7 +1739,7 @@ export type Database = {
         }[]
       }
       obtener_estadisticas_solicitudes_pago: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           monto_total_aprobado: number
           monto_total_pagado: number

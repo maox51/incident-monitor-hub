@@ -110,6 +110,15 @@ export const SolicitudCard = ({ solicitud }: SolicitudCardProps) => {
             )}
           </div>
 
+          {/* Mostrar quién aceptó la solicitud */}
+          {solicitud.aceptada_por && solicitud.aceptador?.full_name && (
+            <div className="bg-blue-50 dark:bg-blue-950 p-2 rounded-md mt-2">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                <span className="font-medium">Aceptada por:</span> {solicitud.aceptador.full_name}
+              </p>
+            </div>
+          )}
+
           {solicitud.progreso_ejecucion && (
             <div className="bg-muted p-3 rounded-md mt-3">
               <h5 className="text-sm font-medium mb-1">Progreso de ejecución:</h5>

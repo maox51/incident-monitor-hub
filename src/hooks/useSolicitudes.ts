@@ -23,6 +23,7 @@ export interface Solicitud {
   area?: { nombre: string }; // Para compatibilidad con componentes
   solicitante?: { full_name: string };
   profiles?: { full_name: string };
+  aceptador?: { full_name: string }; // Usuario que aceptó la solicitud
 }
 
 export interface CrearSolicitudData {
@@ -60,7 +61,8 @@ export const useSolicitudes = () => {
           .select(`
             *,
             area:areas!solicitudes_area_id_fkey(nombre),
-            profiles!solicitudes_solicitante_id_fkey(full_name)
+            profiles!solicitudes_solicitante_id_fkey(full_name),
+            aceptador:profiles!solicitudes_aceptada_por_fkey(full_name)
           `);
 
         // Aplicar filtros según el rol del usuario
