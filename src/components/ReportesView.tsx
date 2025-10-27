@@ -37,17 +37,17 @@ const ReportesView = () => {
   const [filtros, setFiltros] = useState({
     fechaInicio: "",
     fechaFin: "",
-    area: "all",
+    sala_id: "all",
     clasificacion: "all",
     prioridad: "all"
   });
 
-  // Obtener áreas para el filtro
-  const { data: areas } = useQuery({
-    queryKey: ["areas"],
+  // Obtener salas para el filtro
+  const { data: salas } = useQuery({
+    queryKey: ["salas"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("areas")
+        .from("salas")
         .select("*")
         .eq("activo", true)
         .order("nombre");
@@ -91,8 +91,8 @@ const ReportesView = () => {
       if (filtros.fechaFin) {
         query.lte("fecha_incidencia", filtros.fechaFin);
       }
-      if (filtros.area && filtros.area !== "all") {
-        query.eq("area_id", filtros.area);
+      if (filtros.sala_id && filtros.sala_id !== "all") {
+        query.eq("sala_id", filtros.sala_id);
       }
       if (filtros.clasificacion && filtros.clasificacion !== "all") {
         query.eq("clasificacion_id", filtros.clasificacion);
@@ -149,7 +149,7 @@ const ReportesView = () => {
     setFiltros({
       fechaInicio: "",
       fechaFin: "",
-      area: "all",
+      sala_id: "all",
       clasificacion: "all",
       prioridad: "all"
     });
@@ -252,33 +252,23 @@ const ReportesView = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Área</Label>
+              <Label>Sala</Label>
               <Select 
-                value={filtros.area} 
-                onValueChange={(value) => handleFiltroChange("area", value)}
-                disabled={!isAdmin && !!userAreaName} // Deshabilitar si no es admin y tiene área específica
+                value={filtros.sala_id} 
+                onValueChange={(value) => handleFiltroChange("sala_id", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !isAdmin && userAreaName 
-                      ? `Área: ${userAreaName}` 
-                      : "Todas las áreas"
-                  } />
+                  <SelectValue placeholder="Todas las salas" />
                 </SelectTrigger>
                 <SelectContent>
-                  {isAdmin && <SelectItem value="all">Todas las áreas</SelectItem>}
-                  {areas?.map((area) => (
-                    <SelectItem key={area.id} value={area.id}>
-                      {area.nombre}
+                  <SelectItem value="all">Todas las salas</SelectItem>
+                  {salas?.map((sala) => (
+                    <SelectItem key={sala.id} value={sala.id}>
+                      {sala.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {!isAdmin && userAreaName && (
-                <p className="text-xs text-gray-500">
-                  Solo puedes ver incidencias de tu área: {userAreaName}
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
