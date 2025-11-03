@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { createTransport } from "npm:nodemailer@6.9.7";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,21 +49,11 @@ const handler = async (req: Request): Promise<Response> => {
     // Inicializar cliente Supabase
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    // Configuración SMTP
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpPort = Deno.env.get("SMTP_PORT");
-    const smtpUser = Deno.env.get("SMTP_USER");
-    const smtpPass = Deno.env.get("SMTP_PASS");
-    const smtpFromEmail = Deno.env.get("SMTP_FROM_EMAIL");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     console.log("🔑 Supabase URL:", supabaseUrl ? "Present" : "Missing");
     console.log("🔑 Service Key:", supabaseServiceKey ? "Present" : "Missing");
-    console.log("🔑 SMTP Host:", smtpHost ? "Present" : "Missing");
-    console.log("🔑 SMTP Port:", smtpPort ? "Present" : "Missing");
-    console.log("🔑 SMTP User:", smtpUser ? "Present" : "Missing");
-    console.log("🔑 SMTP Pass:", smtpPass ? "Present" : "Missing");
-    console.log("🔑 SMTP From Email:", smtpFromEmail ? "Present" : "Missing");
+    console.log("🔑 Resend API Key:", resendApiKey ? "Present" : "Missing");
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("❌ Missing Supabase configuration");
@@ -76,16 +66,18 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !smtpFromEmail) {
-      console.error("❌ Missing SMTP configuration");
+    if (!resendApiKey) {
+      console.error("❌ Missing Resend API Key");
       return new Response(
-        JSON.stringify({ error: "Servicio de email SMTP no configurado" }),
+        JSON.stringify({ error: "Servicio de email no configurado" }),
         {
           status: 500,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         }
       );
     }
+
+    const resend = new Resend(resendApiKey);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -305,77 +297,31 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    // Crear transporter de nodemailer con configuración SMTP
-    const transporter = createTransport({
-      host: smtpHost,
-      port: parseInt(smtpPort),
-      secure: parseInt(smtpPort) === 465, // true para 465, false para otros puertos
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-      tls: {
-        // No fallar en certificados auto-firmados
-        rejectUnauthorized: false,
-      },
-    });
-
-    // Enviar email usando nodemailer SMTP
+    // Enviar email usando Resend
     try {
-      console.log("📧 Attempting to send email via SMTP...");
-      console.log("📧 SMTP Host:", smtpHost);
-      console.log("📧 SMTP Port:", smtpPort);
+      console.log("📧 Attempting to send email via Resend...");
       console.log(
         "📧 Recipients:",
         recipients.map((recipient: any) => recipient.email)
       );
 
-      // Verificar conexión SMTP
-      console.log("🔍 Verifying SMTP connection...");
-      await transporter.verify();
-      console.log("✅ SMTP connection verified");
-
-      // Configurar opciones del email
-      const mailOptions = {
-        from: `Sistema Monitoreo <${smtpFromEmail}>`,
-        to: recipients.map((recipient: any) => recipient.email).join(", "),
+      const emailResult = await resend.emails.send({
+        from: "Sistema Monitoreo <onboarding@resend.dev>",
+        to: recipients.map((recipient: any) => recipient.email),
         subject: emailSubject,
         html: emailBody,
-        // Añadir headers adicionales para tracking
-        headers: {
-          "X-Category": notificationType === 'solicitud' ? "request-notification" : "incident-notification",
-          "X-Priority": notificationData.prioridad || "normal",
-          "X-ID": notificationData.incidencia_id || notificationData.solicitud_id,
-        },
-      };
-
-      console.log("📧 Sending email with options:", {
-        from: mailOptions.from,
-        to: mailOptions.to,
-        subject: mailOptions.subject,
       });
 
-      // Enviar el email
-      const emailResult = await transporter.sendMail(mailOptions);
       console.log("✅ Email sent successfully:", emailResult);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Notificación enviada exitosamente via SMTP",
-          data: { 
-            messageId: emailResult.messageId,
-            accepted: emailResult.accepted,
-            rejected: emailResult.rejected 
-          },
+          message: "Notificación enviada exitosamente",
+          data: emailResult,
           recipients_count: recipients.length,
           recipients: recipients.map((recipient: any) => recipient.email),
           email_sent: true,
-          smtp_info: {
-            host: smtpHost,
-            port: smtpPort,
-            from: smtpFromEmail
-          }
         }),
         {
           status: 200,
@@ -383,16 +329,15 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     } catch (emailError) {
-      console.error("❌ Error sending email via SMTP:", emailError);
+      console.error("❌ Error sending email via Resend:", emailError);
 
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Error enviando notificaciones por email via SMTP",
+          error: "Error enviando notificaciones por email",
           details: emailError.message,
           recipients_count: recipients.length,
           email_sent: false,
-          smtp_error: true,
         }),
         {
           status: 500,
