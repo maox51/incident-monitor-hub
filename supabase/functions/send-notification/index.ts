@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import nodemailer from "npm:nodemailer@6.9.7";
+import { createTransport } from "npm:nodemailer@6.9.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -306,7 +306,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Crear transporter de nodemailer con configuración SMTP
-    const transporter = nodemailer.createTransporter({
+    const transporter = createTransport({
       host: smtpHost,
       port: parseInt(smtpPort),
       secure: parseInt(smtpPort) === 465, // true para 465, false para otros puertos
