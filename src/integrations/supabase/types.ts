@@ -1650,6 +1650,15 @@ export type Database = {
           role: string
         }[]
       }
+      get_solicitudes_notification_users: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          id: string
+          role: string
+        }[]
+      }
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]

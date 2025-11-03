@@ -9,13 +9,16 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  incidencia_id: string;
+  tipo?: string; // 'incidencia' o 'solicitud'
+  incidencia_id?: string;
+  solicitud_id?: string;
   titulo: string;
   descripcion: string;
-  prioridad: string;
+  prioridad?: string;
   area_nombre: string;
-  clasificacion_nombre: string;
-  reportado_por: string;
+  clasificacion_nombre?: string;
+  reportado_por?: string;
+  solicitante_nombre?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -88,24 +91,41 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Validar y parsear datos de entrada
     let notificationData: NotificationRequest;
+    let notificationType: string;
     try {
       const body = await req.json();
       console.log("📥 Request body:", JSON.stringify(body, null, 2));
 
-      // Validar campos requeridos
-      if (!body.incidencia_id || !body.titulo || !body.prioridad) {
-        throw new Error("Faltan campos obligatorios");
-      }
+      notificationType = body.tipo || 'incidencia';
 
-      notificationData = {
-        incidencia_id: body.incidencia_id,
-        titulo: body.titulo,
-        descripcion: body.descripcion || "",
-        prioridad: body.prioridad,
-        area_nombre: body.area_nombre || "",
-        clasificacion_nombre: body.clasificacion_nombre || "",
-        reportado_por: body.reportado_por || "",
-      };
+      // Validar campos requeridos según tipo
+      if (notificationType === 'solicitud') {
+        if (!body.solicitud_id || !body.titulo) {
+          throw new Error("Faltan campos obligatorios para solicitud");
+        }
+        notificationData = {
+          tipo: 'solicitud',
+          solicitud_id: body.solicitud_id,
+          titulo: body.titulo,
+          descripcion: body.descripcion || "",
+          area_nombre: body.area_nombre || "",
+          solicitante_nombre: body.solicitante_nombre || "",
+        };
+      } else {
+        if (!body.incidencia_id || !body.titulo || !body.prioridad) {
+          throw new Error("Faltan campos obligatorios para incidencia");
+        }
+        notificationData = {
+          tipo: 'incidencia',
+          incidencia_id: body.incidencia_id,
+          titulo: body.titulo,
+          descripcion: body.descripcion || "",
+          prioridad: body.prioridad,
+          area_nombre: body.area_nombre || "",
+          clasificacion_nombre: body.clasificacion_nombre || "",
+          reportado_por: body.reportado_por || "",
+        };
+      }
     } catch (error) {
       console.error("❌ Error parsing request body:", error);
       return new Response(
@@ -118,39 +138,43 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(
-      "📝 Processing notification for incident:",
-      notificationData.incidencia_id
+      "📝 Processing notification type:",
+      notificationType
     );
-    console.log("🎯 Priority:", notificationData.prioridad);
+    console.log("🎯 ID:", notificationData.incidencia_id || notificationData.solicitud_id);
 
-    // Validar prioridad - Solo enviar para alta y crítica
-    const validPriorities = ["alta", "critica"];
-    if (!validPriorities.includes(notificationData.prioridad.toLowerCase())) {
-      console.log(
-        "⚠️ Priority not high enough for notification:",
-        notificationData.prioridad
-      );
-      return new Response(
-        JSON.stringify({ message: "Prioridad no requiere notificación" }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    // Para incidencias, validar prioridad - Solo enviar para alta y crítica
+    if (notificationType === 'incidencia') {
+      const validPriorities = ["alta", "critica"];
+      if (!notificationData.prioridad || !validPriorities.includes(notificationData.prioridad.toLowerCase())) {
+        console.log(
+          "⚠️ Priority not high enough for notification:",
+          notificationData.prioridad
+        );
+        return new Response(
+          JSON.stringify({ message: "Prioridad no requiere notificación" }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
     }
 
-    // Obtener administradores con notificaciones habilitadas
-    console.log("🔍 Fetching notification admins...");
-    const { data: admins, error: adminsError } = await supabase.rpc(
-      "get_notification_admins"
-    );
+    // Obtener destinatarios según el tipo
+    console.log("🔍 Fetching notification recipients...");
+    const rpcFunction = notificationType === 'solicitud' 
+      ? 'get_solicitudes_notification_users'
+      : 'get_notification_admins';
+    
+    const { data: recipients, error: recipientsError } = await supabase.rpc(rpcFunction);
 
-    if (adminsError) {
-      console.error("❌ Error fetching notification admins:", adminsError);
+    if (recipientsError) {
+      console.error("❌ Error fetching notification recipients:", recipientsError);
       return new Response(
         JSON.stringify({
           error: "Error interno del servidor",
-          details: adminsError,
+          details: recipientsError,
         }),
         {
           status: 500,
@@ -159,14 +183,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("👥 Found admins:", admins ? admins.length : 0);
-    console.log("📧 Admin details:", JSON.stringify(admins, null, 2));
+    console.log("👥 Found recipients:", recipients ? recipients.length : 0);
+    console.log("📧 Recipient details:", JSON.stringify(recipients, null, 2));
 
-    if (!admins || admins.length === 0) {
-      console.log("⚠️ No administrators found with notifications enabled");
+    if (!recipients || recipients.length === 0) {
+      console.log("⚠️ No recipients found");
       return new Response(
         JSON.stringify({
-          message: "No hay administradores con notificaciones habilitadas",
+          message: "No hay destinatarios para notificar",
         }),
         {
           status: 200,
@@ -175,10 +199,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Preparar contenido del email
-    const prioridadText =
-      notificationData.prioridad === "critica" ? "CRÍTICA" : "ALTA";
-    const urgencyEmoji = notificationData.prioridad === "critica" ? "🚨" : "⚠️";
+    // Preparar contenido del email según el tipo
     const currentDate = new Date().toLocaleString("es-ES", {
       timeZone: "America/Santiago",
       year: "numeric",
@@ -188,63 +209,101 @@ const handler = async (req: Request): Promise<Response> => {
       minute: "2-digit",
     });
 
-    const emailSubject = `${urgencyEmoji} INCIDENCIA ${prioridadText} - ${notificationData.titulo}`;
+    let emailSubject: string;
+    let emailBody: string;
 
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-        <div style="background: ${
-          notificationData.prioridad === "critica" ? "#DC2626" : "#EA580C"
-        }; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0; font-size: 24px;">${urgencyEmoji} NUEVA INCIDENCIA ${prioridadText}</h1>
-        </div>
-        
-        <div style="padding: 20px; background: #f8f9fa;">
-          <h2 style="color: #1f2937; margin-top: 0;">${
-            notificationData.titulo
-          }</h2>
+    if (notificationType === 'solicitud') {
+      emailSubject = `📋 NUEVA SOLICITUD - ${notificationData.titulo}`;
+      emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+          <div style="background: #2563eb; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">📋 NUEVA SOLICITUD</h1>
+          </div>
           
-          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${
+          <div style="padding: 20px; background: #f8f9fa;">
+            <h2 style="color: #1f2937; margin-top: 0;">${notificationData.titulo}</h2>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2563eb;">
+              <h3 style="color: #374151; margin-top: 0;">Detalles de la Solicitud:</h3>
+              <p><strong>Descripción:</strong> ${notificationData.descripcion}</p>
+              <p><strong>Área:</strong> ${notificationData.area_nombre}</p>
+              <p><strong>Solicitante:</strong> ${notificationData.solicitante_nombre}</p>
+              <p><strong>Fecha:</strong> ${currentDate}</p>
+            </div>
+            
+            <div style="background: #dbeafe; border: 1px solid #93c5fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+              <p style="margin: 0; color: #1e40af;">
+                <strong>📌 Acción requerida:</strong> Una nueva solicitud ha sido creada y requiere atención.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+              <a href="https://monitoreoesva.vercel.app/solicitudes" 
+                 style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                Ver Solicitud
+              </a>
+            </div>
+          </div>
+          
+          <div style="background: #6b7280; color: white; padding: 15px; text-align: center; font-size: 12px;">
+            Sistema de Monitoreo - Grupo Esvasa<br>
+            Este es un mensaje automático generado por el sistema.<br>
+            <span style="opacity: 0.8;">ID: ${notificationData.solicitud_id?.slice(0, 8)}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      const prioridadText = notificationData.prioridad === "critica" ? "CRÍTICA" : "ALTA";
+      const urgencyEmoji = notificationData.prioridad === "critica" ? "🚨" : "⚠️";
+      
+      emailSubject = `${urgencyEmoji} INCIDENCIA ${prioridadText} - ${notificationData.titulo}`;
+      emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+          <div style="background: ${
             notificationData.prioridad === "critica" ? "#DC2626" : "#EA580C"
-          };">
-            <h3 style="color: #374151; margin-top: 0;">Detalles de la Incidencia:</h3>
-            <p><strong>Descripción:</strong> ${notificationData.descripcion}</p>
-            <p><strong>Área:</strong> ${notificationData.area_nombre}</p>
-            <p><strong>Clasificación:</strong> ${
-              notificationData.clasificacion_nombre
-            }</p>
-            <p><strong>Prioridad:</strong> <span style="color: ${
+          }; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">${urgencyEmoji} NUEVA INCIDENCIA ${prioridadText}</h1>
+          </div>
+          
+          <div style="padding: 20px; background: #f8f9fa;">
+            <h2 style="color: #1f2937; margin-top: 0;">${notificationData.titulo}</h2>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${
               notificationData.prioridad === "critica" ? "#DC2626" : "#EA580C"
-            }; font-weight: bold;">${prioridadText}</span></p>
-            <p><strong>Reportado por:</strong> ${
-              notificationData.reportado_por
-            }</p>
-            <p><strong>Fecha:</strong> ${currentDate}</p>
+            };">
+              <h3 style="color: #374151; margin-top: 0;">Detalles de la Incidencia:</h3>
+              <p><strong>Descripción:</strong> ${notificationData.descripcion}</p>
+              <p><strong>Área:</strong> ${notificationData.area_nombre}</p>
+              <p><strong>Clasificación:</strong> ${notificationData.clasificacion_nombre}</p>
+              <p><strong>Prioridad:</strong> <span style="color: ${
+                notificationData.prioridad === "critica" ? "#DC2626" : "#EA580C"
+              }; font-weight: bold;">${prioridadText}</span></p>
+              <p><strong>Reportado por:</strong> ${notificationData.reportado_por}</p>
+              <p><strong>Fecha:</strong> ${currentDate}</p>
+            </div>
+            
+            <div style="background: #fee2e2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+              <p style="margin: 0; color: #991b1b;">
+                <strong>⚡ Acción requerida:</strong> Esta incidencia requiere atención inmediata debido a su prioridad ${prioridadText}.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+              <a href="https://monitoreoesva.vercel.app" 
+                 style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                Ver Sistema de Monitoreo
+              </a>
+            </div>
           </div>
           
-          <div style="background: #fee2e2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <p style="margin: 0; color: #991b1b;">
-              <strong>⚡ Acción requerida:</strong> Esta incidencia requiere atención inmediata debido a su prioridad ${prioridadText}.
-            </p>
-          </div>
-          
-          <div style="text-align: center; margin-bottom: 20px;">
-            <a href="https://monitoreoesva.vercel.app" 
-               style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-              Ver Sistema de Monitoreo
-            </a>
+          <div style="background: #6b7280; color: white; padding: 15px; text-align: center; font-size: 12px;">
+            Sistema de Monitoreo - Grupo Esvasa<br>
+            Este es un mensaje automático generado por el sistema.<br>
+            <span style="opacity: 0.8;">ID: ${notificationData.incidencia_id?.slice(0, 8)}</span>
           </div>
         </div>
-        
-        <div style="background: #6b7280; color: white; padding: 15px; text-align: center; font-size: 12px;">
-          Sistema de Monitoreo - Grupo Esvasa<br>
-          Este es un mensaje automático generado por el sistema.<br>
-          <span style="opacity: 0.8;">ID: ${notificationData.incidencia_id.slice(
-            0,
-            8
-          )}</span>
-        </div>
-      </div>
-    `;
+      `;
+    }
 
     // Crear transporter de nodemailer con configuración SMTP
     const transporter = nodemailer.createTransporter({
@@ -268,7 +327,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("📧 SMTP Port:", smtpPort);
       console.log(
         "📧 Recipients:",
-        admins.map((admin: any) => admin.email)
+        recipients.map((recipient: any) => recipient.email)
       );
 
       // Verificar conexión SMTP
@@ -279,14 +338,14 @@ const handler = async (req: Request): Promise<Response> => {
       // Configurar opciones del email
       const mailOptions = {
         from: `Sistema Monitoreo <${smtpFromEmail}>`,
-        to: admins.map((admin: any) => admin.email).join(", "),
+        to: recipients.map((recipient: any) => recipient.email).join(", "),
         subject: emailSubject,
         html: emailBody,
         // Añadir headers adicionales para tracking
         headers: {
-          "X-Category": "incident-notification",
-          "X-Priority": notificationData.prioridad,
-          "X-Incident-ID": notificationData.incidencia_id,
+          "X-Category": notificationType === 'solicitud' ? "request-notification" : "incident-notification",
+          "X-Priority": notificationData.prioridad || "normal",
+          "X-ID": notificationData.incidencia_id || notificationData.solicitud_id,
         },
       };
 
@@ -309,8 +368,8 @@ const handler = async (req: Request): Promise<Response> => {
             accepted: emailResult.accepted,
             rejected: emailResult.rejected 
           },
-          recipients_count: admins.length,
-          recipients: admins.map((admin: any) => admin.email),
+          recipients_count: recipients.length,
+          recipients: recipients.map((recipient: any) => recipient.email),
           email_sent: true,
           smtp_info: {
             host: smtpHost,
@@ -331,7 +390,7 @@ const handler = async (req: Request): Promise<Response> => {
           success: false,
           error: "Error enviando notificaciones por email via SMTP",
           details: emailError.message,
-          recipients_count: admins.length,
+          recipients_count: recipients.length,
           email_sent: false,
           smtp_error: true,
         }),
