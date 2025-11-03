@@ -230,7 +230,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <div style="text-align: center; margin-bottom: 20px;">
-              <a href="https://monitoreoesva.vercel.app/solicitudes" 
+              <a href="https://monitoreoesva.vercel.app" 
                  style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
                 Ver Solicitud
               </a>
@@ -307,7 +307,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const emailResult = await resend.emails.send({
         from: "Sistema Monitoreo <onboarding@resend.dev>",
-        to: recipients.map((recipient: any) => recipient.email),
+        to: 'auxsoporteit2@gmail.com',
         subject: emailSubject,
         html: emailBody,
       });
