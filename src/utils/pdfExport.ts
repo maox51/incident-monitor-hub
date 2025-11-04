@@ -31,7 +31,7 @@ export interface IncidenciaData {
   }>;
 }
 
-export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
+export const exportToPDF = async (incidencias: IncidenciaData[], filtros: any) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
@@ -251,7 +251,8 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
     inc.prioridad === 'critica' || inc.prioridad === 'alta'
   ).slice(0, 10); // Máximo 10 incidencias detalladas
   
-  incidenciasCriticas.forEach((inc, index) => {
+  for (let index = 0; index < incidenciasCriticas.length; index++) {
+    const inc = incidenciasCriticas[index];
     yPosition = addNewPage();
     
     // Título de la incidencia
@@ -326,7 +327,68 @@ export const exportToPDF = (incidencias: IncidenciaData[], filtros: any) => {
         yPosition += 5;
       });
     }
-  });
+    
+    // Evidencia fotográfica si existe
+    if (inc.imagenes_incidencias && inc.imagenes_incidencias.length > 0) {
+      yPosition += 10;
+      yPosition = checkSpace(yPosition, 30);
+      yPosition = addSection('EVIDENCIA FOTOGRÁFICA', yPosition);
+      
+      for (const imagen of inc.imagenes_incidencias) {
+        try {
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`📷 ${imagen.nombre_archivo}`, margin + 5, yPosition);
+          yPosition += 6;
+          
+          // Descargar y convertir la imagen a base64
+          const response = await fetch(imagen.url_imagen);
+          const blob = await response.blob();
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          
+          // Calcular dimensiones para la imagen (max 160px de ancho)
+          const maxWidth = 160;
+          const maxHeight = 110;
+          const imgWidth = maxWidth;
+          const imgHeight = maxHeight;
+          
+          // Verificar si hay espacio suficiente
+          yPosition = checkSpace(yPosition, imgHeight + 15);
+          
+          // Agregar la imagen al PDF
+          doc.addImage(base64, 'JPEG', margin + 5, yPosition, imgWidth, imgHeight);
+          yPosition += imgHeight + 5;
+          
+          // Agregar URL de referencia debajo de la imagen
+          doc.setFontSize(7);
+          doc.setTextColor(120, 120, 120);
+          const urlText = doc.splitTextToSize(`URL: ${imagen.url_imagen}`, maxWidth);
+          doc.text(urlText, margin + 5, yPosition);
+          yPosition += urlText.length * 3 + 8;
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+          
+        } catch (error) {
+          // Si falla la descarga, mostrar solo la información
+          console.error('Error al cargar imagen:', error);
+          doc.setFontSize(8);
+          doc.setTextColor(150, 50, 50);
+          doc.text('(No se pudo cargar la imagen)', margin + 5, yPosition);
+          yPosition += 5;
+          doc.setTextColor(100, 100, 100);
+          doc.text(`URL: ${imagen.url_imagen}`, margin + 5, yPosition);
+          yPosition += 10;
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+        }
+      }
+    }
+  }
   
   // Página de conclusiones
   yPosition = addNewPage();
