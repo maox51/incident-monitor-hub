@@ -163,21 +163,78 @@ export const generarConsolidadoPDF = async (consolidado: ConsolidadoParaPDF): Pr
       yPosition += 8;
 
       doc.setFont('helvetica', 'normal');
-      incidencia.imagenes.forEach((archivo, index) => {
-        if (yPosition > pageHeight - 20) {
+      
+      for (const archivo of incidencia.imagenes) {
+        if (yPosition > pageHeight - 100) {
           doc.addPage();
           yPosition = margin;
         }
         
-        const tipoIcono = archivo.es_video ? '🎥' : '📷';
-        doc.text(`${tipoIcono} ${archivo.nombre} (${archivo.tipo})`, margin + 5, yPosition);
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`URL: ${archivo.url}`, margin + 5, yPosition + 4);
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        yPosition += 10;
-      });
+        if (archivo.es_video) {
+          // Para videos, mostrar información con ícono
+          doc.text(`🎥 Video: ${archivo.nombre}`, margin + 5, yPosition);
+          yPosition += 6;
+          doc.setFontSize(8);
+          doc.setTextColor(100, 100, 100);
+          doc.text(`Ver en: ${archivo.url}`, margin + 5, yPosition);
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          yPosition += 10;
+        } else {
+          // Para imágenes, intentar incrustarlas en el PDF
+          try {
+            doc.text(`📷 ${archivo.nombre}`, margin + 5, yPosition);
+            yPosition += 6;
+            
+            // Descargar y convertir la imagen a base64
+            const response = await fetch(archivo.url);
+            const blob = await response.blob();
+            const base64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            
+            // Calcular dimensiones para la imagen (max 150px de ancho)
+            const maxWidth = 150;
+            const maxHeight = 100;
+            const imgWidth = maxWidth;
+            const imgHeight = maxHeight;
+            
+            // Verificar si hay espacio suficiente
+            if (yPosition + imgHeight + 10 > pageHeight - 20) {
+              doc.addPage();
+              yPosition = margin;
+            }
+            
+            // Agregar la imagen al PDF
+            doc.addImage(base64, 'JPEG', margin + 5, yPosition, imgWidth, imgHeight);
+            yPosition += imgHeight + 5;
+            
+            // Agregar URL de referencia debajo de la imagen
+            doc.setFontSize(7);
+            doc.setTextColor(120, 120, 120);
+            const urlText = doc.splitTextToSize(`URL: ${archivo.url}`, maxWidth);
+            doc.text(urlText, margin + 5, yPosition);
+            yPosition += urlText.length * 3;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+          } catch (error) {
+            // Si falla la descarga, mostrar solo la información
+            console.error('Error al cargar imagen:', error);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 50, 50);
+            doc.text('(No se pudo cargar la imagen)', margin + 5, yPosition);
+            yPosition += 5;
+            doc.setTextColor(100, 100, 100);
+            doc.text(`URL: ${archivo.url}`, margin + 5, yPosition);
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+          }
+          yPosition += 8;
+        }
+      }
     }
 
     yPosition += 10;
