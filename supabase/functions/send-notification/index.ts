@@ -193,7 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Preparar contenido del email según el tipo
     const currentDate = new Date().toLocaleString("es-ES", {
-      timeZone: "America/Santiago",
+      timeZone: "America/Guatemala",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
