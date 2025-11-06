@@ -15,24 +15,6 @@ import { exportToPDF } from "@/utils/pdfExport";
 import { toast } from "sonner";
 
 const ReportesView = () => {
-  const { isAdmin, isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento } = useAuth();
-  
-  // Mapeo de roles a nombres de áreas
-  const roleAreaMapping = useMemo(() => ({
-    rrhh: "Recursos Humanos",
-    finanzas: "Contabilidad", 
-    supervisor_salas: "Supervisión Salas",
-    mantenimiento: "Mantenimiento"
-  }), []);
-
-  // Obtener el área correspondiente al rol del usuario
-  const userAreaName = useMemo(() => {
-    if (isRRHH) return roleAreaMapping.rrhh;
-    if (isFinanzas) return roleAreaMapping.finanzas;
-    if (isSupervisorSalas) return roleAreaMapping.supervisor_salas;
-    if (isMantenimiento) return roleAreaMapping.mantenimiento;
-    return null;
-  }, [isRRHH, isFinanzas, isSupervisorSalas, isMantenimiento, roleAreaMapping]);
 
   const [filtros, setFiltros] = useState({
     fechaInicio: "",
@@ -104,14 +86,7 @@ const ReportesView = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      let filteredData = data || [];
-
-      // Filtrar por área según el rol del usuario (solo si no es admin)
-      if (!isAdmin && userAreaName) {
-        filteredData = filteredData.filter((incidencia: any) => 
-          incidencia.areas?.nombre === userAreaName
-        );
-      }
+      const filteredData = data || [];
 
       // Obtener información de perfiles para los usuarios reportadores
       const uniqueUserIds = [...new Set(filteredData
