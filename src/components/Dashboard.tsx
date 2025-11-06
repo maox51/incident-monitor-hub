@@ -18,7 +18,6 @@ const IncidenciaForm = React.lazy(() => import('./IncidenciaForm'));
 const ReportesView = React.lazy(() => import('./ReportesView'));
 const UserManagement = React.lazy(() => import('./admin/UserManagement'));
 const AuditLog = React.lazy(() => import('./admin/AuditLog'));
-const BorradoresView = React.lazy(() => import('./supervisor/BorradoresView'));
 const QuinzenalStatsCard = React.lazy(() => import('./dashboard/QuinzenalStatsCard'));
 const PeriodComparisonCard = React.lazy(() => import('./dashboard/PeriodComparisonCard'));
 const SalaTimingModule = React.lazy(() => import('./monitoring/SalaTimingModule'));
@@ -196,14 +195,6 @@ const Dashboard = () => {
         return profile?.role === 'admin' ? (
           <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
             <AuditLog />
-          </React.Suspense>
-        ) : (
-          <div>No tienes permisos para acceder a esta sección.</div>
-        );
-      case 'borradores':
-        return (profile?.role === 'supervisor_monitoreo' || profile?.role === 'admin') ? (
-          <React.Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg" />}>
-            <BorradoresView />
           </React.Suspense>
         ) : (
           <div>No tienes permisos para acceder a esta sección.</div>

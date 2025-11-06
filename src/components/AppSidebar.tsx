@@ -71,7 +71,6 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     { id: 'pagos724', label: 'Pagos 724', icon: DollarSign, roles: ['admin', 'supervisor_monitoreo', 'finanzas'] },
     { id: 'movimiento-activos', label: 'Movimiento de Activos', icon: Package, roles: ['admin', 'supervisor_monitoreo', 'finanzas', 'monitor','gestor_solicitudes'] },
     { id: 'billeteros', label: 'Billeteros', icon: CreditCard, roles: ['admin', 'supervisor_monitoreo', 'finanzas', 'monitor', 'gestor_solicitudes'] },
-    { id: 'borradores', label: 'Aprobar Incidencias', icon: Clock, roles: ['supervisor_monitoreo', 'admin'] },
     { id: 'consolidado', label: 'Consolidado Diario', icon: Calendar, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
     { id: 'reportes', label: 'Reportes', icon: FileText, roles: ['admin', 'rrhh', 'supervisor_salas', 'finanzas', 'mantenimiento', 'lector'] },
     { id: 'monitoreo-salas', label: 'Monitoreo de Salas', icon: MonitorSpeaker, roles: ['admin', 'rrhh', 'lector'] },
@@ -98,7 +97,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
 
   // Dividir items en grupos lógicos
   const mainItems = filteredMenuItems.filter(item => 
-    ['dashboard', 'nueva-incidencia', 'borradores'].includes(item.id)
+    ['dashboard', 'nueva-incidencia'].includes(item.id)
   );
   
   const moduleItems = filteredMenuItems.filter(item => 

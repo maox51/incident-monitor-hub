@@ -169,7 +169,9 @@ export const useIncidenciaForm = () => {
         observaciones: data.observaciones,
         reportado_por: user.id,
         tiempo_minutos: data.tiempo_minutos,
-        estado: 'borrador' // Las incidencias inician como borrador
+        estado: 'aprobado', // Las incidencias se aprueban automáticamente
+        aprobado_por: user.id,
+        fecha_aprobacion: new Date().toISOString()
       };
 
       const { data: incidencia, error: incidenciaError } = await supabase
@@ -226,6 +228,51 @@ export const useIncidenciaForm = () => {
         });
 
         await Promise.all(imageRecordPromises);
+      }
+
+      // Actualizar contador quincenal si aplica
+      if (data.tiempo_minutos && data.sala_id) {
+        console.log('📊 Actualizando contador quincenal para sala');
+        
+        // Obtener información de la clasificación
+        const { data: clasificacionData } = await supabase
+          .from('clasificaciones')
+          .select('nombre')
+          .eq('id', data.clasificacion_ids[0])
+          .single();
+        
+        // Determinar el tipo de incidencia basado en la clasificación
+        let tipoIncidencia = null;
+        const clasificacionNombre = clasificacionData?.nombre?.toLowerCase() || '';
+        
+        if (clasificacionNombre.includes('ingreso') && clasificacionNombre.includes('tardio')) {
+          tipoIncidencia = 'ingreso_tardio';
+        } else if (clasificacionNombre.includes('cierre') && clasificacionNombre.includes('prematuro')) {
+          tipoIncidencia = 'cierre_prematuro';
+        }
+
+        if (tipoIncidencia) {
+          console.log('🔢 Actualizando contador quincenal:', {
+            sala_id: data.sala_id,
+            tipo: tipoIncidencia,
+            minutos: data.tiempo_minutos,
+            fecha: data.fecha_incidencia
+          });
+
+          const { error: conteoError } = await supabase.rpc('actualizar_conteo_quincenal_sala', {
+            p_sala_id: data.sala_id,
+            p_tipo_incidencia: tipoIncidencia,
+            p_minutos: data.tiempo_minutos,
+            p_fecha: data.fecha_incidencia.split('T')[0]
+          });
+
+          if (conteoError) {
+            console.error('❌ Error updating quincenal count:', conteoError);
+            toast.warning('Incidencia creada, pero hubo un problema actualizando las estadísticas quincenales');
+          } else {
+            console.log('✅ Contador quincenal actualizado exitosamente');
+          }
+        }
       }
 
       toast.success("Incidencia creada exitosamente");

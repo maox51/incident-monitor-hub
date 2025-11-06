@@ -5,7 +5,6 @@ import ReportesView from "@/components/ReportesView";
 import UserManagement from "@/components/admin/UserManagement";
 import ConsolidadoDiario from "@/components/ConsolidadoDiario";
 import ImportDataModule from "@/components/ImportDataModule";
-import BorradoresView from "@/components/supervisor/BorradoresView";
 import SalaTimingModule from "@/components/monitoring/SalaTimingModule";
 import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
 import { GestionPagosView } from "@/components/gestion-pagos/GestionPagosView";
@@ -32,8 +31,6 @@ const Index = () => {
     if (isGestorSolicitudes && !isAdmin) return "solicitudes";
     // Si es lector, mostrar reportes por defecto
     if (isLector && !isAdmin) return "reportes";
-    // Si es supervisor, mostrar borradores por defecto
-    if (isSupervisorMonitoreo && !isAdmin) return "borradores";
     // Si es monitor, mostrar nueva incidencia
     if (isMonitor && !isAdmin && !isSupervisorMonitoreo) return "nueva-incidencia";
     // Si es RRHH, finanzas o supervisor de salas, mostrar reportes por defecto
@@ -103,8 +100,6 @@ const Index = () => {
         return <SolicitudesView />;
       case "pagos724":
         return <Pagos724View />;
-      case "borradores":
-        return <BorradoresView />;
       case "consolidado":
         return <ConsolidadoDiario />;
       case "reportes":
