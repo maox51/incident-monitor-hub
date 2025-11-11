@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Download, Filter, Eye, Image as ImageIcon, FileText } from "lucide-react";
+import { Calendar, Download, Filter, Eye, Image as ImageIcon, FileText, Video } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { exportToPDF } from "@/utils/pdfExport";
@@ -367,7 +367,7 @@ const ReportesView = () => {
                       </div>
                     )}
 
-                    {incidencia.imagenes_incidencias && incidencia.imagenes_incidencias.length > 0 && (
+                     {incidencia.imagenes_incidencias && incidencia.imagenes_incidencias.length > 0 && (
                       <div className="border-t pt-4">
                         <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                           <ImageIcon className="w-4 h-4" />
@@ -379,16 +379,29 @@ const ReportesView = () => {
                             return (
                               <div key={imagen.id} className="relative">
                                 {isVideo ? (
-                                  <div className="w-full h-20 bg-gray-100 rounded flex items-center justify-center">
-                                    <span className="text-xs text-gray-500">🎥 Video</span>
+                                  <div className="relative group">
+                                    <video
+                                      src={imagen.url_imagen}
+                                      className="w-full h-32 object-cover rounded-lg"
+                                      controls
+                                      preload="metadata"
+                                    />
+                                    <div className="absolute top-2 left-2 bg-black bg-opacity-70 rounded-full p-1">
+                                      <Video className="w-4 h-4 text-white" />
+                                    </div>
                                   </div>
                                 ) : (
-                                  <img
-                                    src={imagen.url_imagen}
-                                    alt="Evidencia"
-                                    className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-80"
-                                    onClick={() => window.open(imagen.url_imagen, '_blank')}
-                                  />
+                                  <div className="relative group">
+                                    <img
+                                      src={imagen.url_imagen}
+                                      alt="Evidencia"
+                                      className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => window.open(imagen.url_imagen, '_blank')}
+                                    />
+                                    <div className="absolute top-2 left-2 bg-black bg-opacity-70 rounded-full p-1">
+                                      <ImageIcon className="w-4 h-4 text-white" />
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             );
