@@ -67,13 +67,9 @@ export const useSolicitudes = () => {
         // Aplicar filtros según el rol del usuario
         console.log('User role:', userProfile?.role, 'User area_id:', userProfile?.area_id);
         
-        if (userProfile?.role === 'admin' || userProfile?.role === 'supervisor_monitoreo') {
-          // Administradores y supervisores de monitoreo pueden ver todas las solicitudes
-          console.log('Admin/Supervisor: Ver todas las solicitudes');
-        } else if (userProfile?.role === 'monitor') {
-          // Monitores solo pueden ver sus propias solicitudes
-          console.log('Monitor: Ver solo solicitudes propias');
-          query = query.eq('solicitante_id', user.id);
+        if (userProfile?.role === 'admin' || userProfile?.role === 'supervisor_monitoreo' || userProfile?.role === 'monitor') {
+          // Administradores, supervisores de monitoreo y monitores pueden ver todas las solicitudes
+          console.log('Admin/Supervisor/Monitor: Ver todas las solicitudes');
         } else {
           // Para todos los demás roles: ver solicitudes propias O dirigidas a su área
           console.log('Aplicando lógica estándar para rol:', userProfile?.role);
