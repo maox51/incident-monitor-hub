@@ -13,7 +13,8 @@ import {
   CreditCard,
   Settings,
   LogOut,
-  Package
+  Package,
+  CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,6 +67,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
     { id: 'nueva-incidencia', label: 'Nueva Incidencia', icon: AlertTriangle, roles: ['admin', 'monitor', 'supervisor_monitoreo'] },
+    { id: 'aprobar-incidencias', label: 'Aprobar Incidencias', icon: CheckCircle, roles: ['admin', 'supervisor_monitoreo'] },
     { id: 'solicitudes', label: 'Solicitudes', icon: MessageSquare, roles: ['admin', 'supervisor_monitoreo', 'monitor', 'rrhh', 'finanzas', 'supervisor_salas', 'mantenimiento', 'gestor_solicitudes'] },
     { id: 'gestion-pagos', label: 'Gestión de Pagos', icon: CreditCard, roles: ['admin', 'finanzas', 'mantenimiento', 'gestor_solicitudes'] },
     { id: 'pagos724', label: 'Pagos 724', icon: DollarSign, roles: ['admin', 'finanzas'] },
