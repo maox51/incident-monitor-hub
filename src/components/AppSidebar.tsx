@@ -99,7 +99,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
 
   // Dividir items en grupos lógicos
   const mainItems = filteredMenuItems.filter(item => 
-    ['dashboard', 'nueva-incidencia'].includes(item.id)
+    ['dashboard', 'nueva-incidencia', 'aprobar-incidencias'].includes(item.id)
   );
   
   const moduleItems = filteredMenuItems.filter(item => 
