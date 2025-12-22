@@ -169,9 +169,7 @@ export const useIncidenciaForm = () => {
         observaciones: data.observaciones,
         reportado_por: user.id,
         tiempo_minutos: data.tiempo_minutos,
-        estado: 'aprobado', // Las incidencias se aprueban automáticamente
-        aprobado_por: user.id,
-        fecha_aprobacion: new Date().toISOString()
+        estado: 'borrador', // Las incidencias inician como borrador para aprobación
       };
 
       const { data: incidencia, error: incidenciaError } = await supabase
@@ -230,84 +228,10 @@ export const useIncidenciaForm = () => {
         await Promise.all(imageRecordPromises);
       }
 
-      // Actualizar contador quincenal si aplica
-      if (data.tiempo_minutos && data.sala_id) {
-        console.log('📊 Actualizando contador quincenal para sala');
-        
-        // Obtener información de la clasificación
-        const { data: clasificacionData } = await supabase
-          .from('clasificaciones')
-          .select('nombre')
-          .eq('id', data.clasificacion_ids[0])
-          .single();
-        
-        // Determinar el tipo de incidencia basado en la clasificación
-        let tipoIncidencia = null;
-        const clasificacionNombre = clasificacionData?.nombre?.toLowerCase() || '';
-        
-        if (clasificacionNombre.includes('ingreso') && clasificacionNombre.includes('tardio')) {
-          tipoIncidencia = 'ingreso_tardio';
-        } else if (clasificacionNombre.includes('cierre') && clasificacionNombre.includes('prematuro')) {
-          tipoIncidencia = 'cierre_prematuro';
-        }
+      // Nota: El contador quincenal se actualizará cuando la incidencia sea aprobada
+      // Las notificaciones también se enviarán al aprobar
 
-        if (tipoIncidencia) {
-          console.log('🔢 Actualizando contador quincenal:', {
-            sala_id: data.sala_id,
-            tipo: tipoIncidencia,
-            minutos: data.tiempo_minutos,
-            fecha: data.fecha_incidencia
-          });
-
-          const { error: conteoError } = await supabase.rpc('actualizar_conteo_quincenal_sala', {
-            p_sala_id: data.sala_id,
-            p_tipo_incidencia: tipoIncidencia,
-            p_minutos: data.tiempo_minutos,
-            p_fecha: data.fecha_incidencia.split('T')[0]
-          });
-
-          if (conteoError) {
-            console.error('❌ Error updating quincenal count:', conteoError);
-            toast.warning('Incidencia creada, pero hubo un problema actualizando las estadísticas quincenales');
-          } else {
-            console.log('✅ Contador quincenal actualizado exitosamente');
-          }
-        }
-      }
-
-      toast.success("Incidencia creada exitosamente");
-      
-      // Enviar notificación si es prioridad alta o crítica
-      if (data.prioridad === 'alta' || data.prioridad === 'critica') {
-        console.log('🚨 Sending notification for high/critical priority incident');
-        
-        try {
-          const { data: notificationResult, error: notificationError } = await supabase.functions.invoke('send-notification', {
-            body: {
-              incidencia_id: incidencia.id,
-              titulo: incidencia.titulo,
-              descripcion: incidencia.descripcion,
-              prioridad: incidencia.prioridad,
-              area_nombre: (await supabase.from('areas').select('nombre').eq('id', incidencia.area_id).single()).data?.nombre || '',
-              clasificacion_nombre: (await supabase.from('clasificaciones').select('nombre').eq('id', incidencia.clasificacion_id).single()).data?.nombre || '',
-              reportado_por: incidencia.reportado_por
-            }
-          });
-
-          if (notificationError) {
-            console.error('❌ Error sending notification:', notificationError);
-            toast.error('Incidencia creada, pero hubo un error enviando las notificaciones');
-          } else {
-            console.log('✅ Notification sent successfully:', notificationResult);
-            toast.success('Incidencia creada y notificaciones enviadas exitosamente');
-          }
-        } catch (notifError) {
-          console.error('❌ Unexpected error sending notification:', notifError);
-          toast.error('Incidencia creada, pero hubo un problema enviando las notificaciones');
-        }
-      } else {
-        console.log('ℹ️ Priority is not high enough for notification:', data.prioridad);
-      }
+      toast.success("Incidencia enviada para aprobación");
       
       // Limpiar formulario
       setFormData({

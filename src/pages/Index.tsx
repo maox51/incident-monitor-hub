@@ -10,6 +10,7 @@ import { SolicitudesView } from "@/components/solicitudes/SolicitudesView";
 import { GestionPagosView } from "@/components/gestion-pagos/GestionPagosView";
 import { Pagos724View } from "@/components/pagos724/Pagos724View";
 import MovimientoActivos from "@/pages/MovimientoActivos";
+import BorradoresView from "@/components/supervisor/BorradoresView";
 import Header from "@/components/Header";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -96,6 +97,8 @@ const Index = () => {
         );
       case "nueva-incidencia":
         return <IncidenciaForm />;
+      case "aprobar-incidencias":
+        return <BorradoresView />;
       case "solicitudes":
         return <SolicitudesView />;
       case "pagos724":

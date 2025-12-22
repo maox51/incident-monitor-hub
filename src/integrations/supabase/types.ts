@@ -725,6 +725,47 @@ export type Database = {
           },
         ]
       }
+      incidencia_historial_estados: {
+        Row: {
+          cambiado_por: string | null
+          comentario: string
+          created_at: string
+          estado: Database["public"]["Enums"]["incidencia_estado"]
+          fecha_cambio: string
+          id: string
+          incidencia_id: string
+          tiempo_minutos: number | null
+        }
+        Insert: {
+          cambiado_por?: string | null
+          comentario: string
+          created_at?: string
+          estado: Database["public"]["Enums"]["incidencia_estado"]
+          fecha_cambio?: string
+          id?: string
+          incidencia_id: string
+          tiempo_minutos?: number | null
+        }
+        Update: {
+          cambiado_por?: string | null
+          comentario?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["incidencia_estado"]
+          fecha_cambio?: string
+          id?: string
+          incidencia_id?: string
+          tiempo_minutos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidencia_historial_estados_incidencia_id_fkey"
+            columns: ["incidencia_id"]
+            isOneToOne: false
+            referencedRelation: "incidencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidencias: {
         Row: {
           aprobado_por: string | null
@@ -734,15 +775,19 @@ export type Database = {
           descripcion: string
           estado: string
           fecha_aprobacion: string | null
+          fecha_asignacion: string | null
+          fecha_cierre: string | null
           fecha_incidencia: string
           id: string
           observaciones: string | null
           prioridad: string
           reportado_por: string
+          responsable_id: string | null
           sala_id: string | null
           tiempo_minutos: number | null
           titulo: string
           updated_at: string
+          visible: boolean
         }
         Insert: {
           aprobado_por?: string | null
@@ -752,15 +797,19 @@ export type Database = {
           descripcion: string
           estado?: string
           fecha_aprobacion?: string | null
+          fecha_asignacion?: string | null
+          fecha_cierre?: string | null
           fecha_incidencia?: string
           id?: string
           observaciones?: string | null
           prioridad?: string
           reportado_por: string
+          responsable_id?: string | null
           sala_id?: string | null
           tiempo_minutos?: number | null
           titulo: string
           updated_at?: string
+          visible?: boolean
         }
         Update: {
           aprobado_por?: string | null
@@ -770,15 +819,19 @@ export type Database = {
           descripcion?: string
           estado?: string
           fecha_aprobacion?: string | null
+          fecha_asignacion?: string | null
+          fecha_cierre?: string | null
           fecha_incidencia?: string
           id?: string
           observaciones?: string | null
           prioridad?: string
           reportado_por?: string
+          responsable_id?: string | null
           sala_id?: string | null
           tiempo_minutos?: number | null
           titulo?: string
           updated_at?: string
+          visible?: boolean
         }
         Relationships: [
           {
@@ -793,6 +846,13 @@ export type Database = {
             columns: ["clasificacion_id"]
             isOneToOne: false
             referencedRelation: "clasificaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidencias_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1801,6 +1861,17 @@ export type Database = {
         | "tecnico"
         | "lector"
         | "gestor_solicitudes"
+        | "rol"
+      incidencia_estado:
+        | "borrador"
+        | "pendiente"
+        | "asignada"
+        | "en_curso"
+        | "en_pausa"
+        | "en_espera_info"
+        | "cerrada"
+        | "resuelta"
+        | "rechazado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1939,6 +2010,18 @@ export const Constants = {
         "tecnico",
         "lector",
         "gestor_solicitudes",
+        "rol",
+      ],
+      incidencia_estado: [
+        "borrador",
+        "pendiente",
+        "asignada",
+        "en_curso",
+        "en_pausa",
+        "en_espera_info",
+        "cerrada",
+        "resuelta",
+        "rechazado",
       ],
     },
   },
