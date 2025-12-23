@@ -36,6 +36,8 @@ const Index = () => {
     if (isMonitor && !isAdmin && !isSupervisorMonitoreo) return "nueva-incidencia";
     // Si es RRHH, finanzas o supervisor de salas, mostrar reportes por defecto
     if ((isRRHH || isFinanzas || isSupervisorSalas || isMantenimiento) && !isAdmin) return "reportes";
+    // Si es supervisor de monitoreo, mostrar aprobar incidencias
+    if (isSupervisorMonitoreo && !isAdmin) return "aprobar-incidencias";
     // Si es admin, mostrar dashboard
     return "dashboard";
   });
